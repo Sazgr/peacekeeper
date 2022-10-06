@@ -60,7 +60,19 @@ struct Move {
         return ((piece() & 1) * 2 - 1) * (-middlegame[captured()][end()] - middlegame[piece()][start()]);
     }
     inline int mvv_lva() const {
+        if (flag() == queen_pr) return 384;
+        if (flag() != none && !(flag() & 4)) return 0;
         return (captured() << 5) + piece() ^ 15;
+    }
+    void long_print(std::ostream& out = std::cout) {
+        static const char piece_names[14]{'p', 'P', 'n', 'N', 'b', 'B', 'r', 'R', 'q', 'Q', 'k', 'K', '.', '.'};
+        out << piece_names[piece()] << square_names[start()] << square_names[end()] << 'x' << piece_names[captured()];
+        if (flag() == knight_pr) out << "=>n";
+        if (flag() == bishop_pr) out << "=>b";
+        if (flag() == rook_pr) out << "=>r";
+        if (flag() == queen_pr) out << "=>q";
+        if (flag() == enpassant) out << "=ep";
+        out << '\n';
     }
     u64 data;
 };
@@ -85,4 +97,5 @@ inline std::ostream& operator<<(std::ostream& out, const Move move) {
     if (move.flag() == queen_pr) out << "q";
     return out;
 }
+
 #endif

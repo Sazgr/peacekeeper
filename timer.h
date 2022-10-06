@@ -33,11 +33,11 @@ public:
     bool depth_limit_active;
     Stop_timer(int t=0, u64 n=0, int d=0) {
         stop = false;
-        time_limit_active = (t == 0);
+        time_limit_active = (t != 0);
         time_limit = t;
-        nodes_limit_active = (n == 0);
+        nodes_limit_active = (n != 0);
         nodes_limit = n;
-        depth_limit_active = (d == 0);
+        depth_limit_active = (d != 0);
         depth_limit = d;
         timer.reset();
     }
@@ -57,6 +57,9 @@ public:
         if (nodes_limit_active) stop = stop || (nodes >= nodes_limit);
         if (depth_limit_active) stop = stop || (depth > depth_limit);
         return stop;
+    }
+    int percent_time() {
+        return (time_limit_active ? static_cast<int>(elapsed() * 100000 / time_limit) : 0);
     }
     double elapsed() {
         return timer.elapsed();

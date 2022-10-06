@@ -7,9 +7,7 @@ struct History_table {
     void edit(int piece, int to_square, int change) {
         table[piece][to_square] += change;
         sum += change;
-        if (sum >= 0xFFFFFF || sum <= -0xFFFFFF) {
-            age();
-        }
+        if (sum >= 0xFFFFFF || sum <= -0xFFFFFF) age();
     }
     void age() {
         for (int i{}; i<12; ++i) {
@@ -18,6 +16,14 @@ struct History_table {
             }
         }
         sum = sum * 3 / 4;
+    }
+    void reset() {
+        for (int i{}; i<12; ++i) {
+            for (int j{}; j<64; ++j) {
+                table[i][j] = 0;
+            }
+        }
+        sum = 0;
     }
 };
 

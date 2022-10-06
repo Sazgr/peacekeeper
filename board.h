@@ -27,6 +27,12 @@ enum Piece_types {
     empty_square
 };
 
+enum Move_types {
+    quiet = 1,
+    noisy,
+    all
+};
+
 const int castling_disable[64] {
     14, 15, 15, 15, 12, 15, 15, 13,
     15, 15, 15, 15, 15, 15, 15, 15,
@@ -39,8 +45,22 @@ const int castling_disable[64] {
 };
 
 class Position {
+private: //simple templates
+    template <bool side> inline u64 pawns_forward_one(u64 pawns);
+    template <bool side> inline u64 pawns_backward_one(u64 pawns);
+    template <bool side> inline u64 pawns_forward_two(u64 pawns);
+    template <bool side> inline u64 pawns_backward_two(u64 pawns);
+    template <bool side> inline u64 pawns_forward_left(u64 pawns);
+    template <bool side> inline u64 pawns_backward_left(u64 pawns);
+    template <bool side> inline u64 pawns_forward_right(u64 pawns);
+    template <bool side> inline u64 pawns_backward_right(u64 pawns);
+    template <bool side> inline u64 promotion_rank();
+    template <bool side> inline u64 second_rank();
 public:
+    template <bool side_to_attack> u64 attack_map(u64 occupied);
     bool check();
+    template <Move_types types, bool side> void gen_legal(Movelist& movelist);
+    template <Move_types types, bool side> u64 count_legal();
     void legal_moves(Movelist& movelist);
     void legal_noisy(Movelist& movelist);
     void legal_quiet(Movelist& movelist);
@@ -49,20 +69,8 @@ public:
     void print(std::ostream& out);
     void make_move(Move move);
     void undo_move(Move move);
-    void make_null() {
-        ++ply;
-        hash[ply] = hash[ply - 1];
-        hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]];
-        hash[ply] ^= zobrist_black;
-        side_to_move = !side_to_move;
-        castling_rights[ply] = castling_rights[ply - 1];
-        enpassant_square[ply] = 64;
-        hash[ply] ^= zobrist_enpassant[64];
-    }
-    void undo_null() {
-        side_to_move = !side_to_move;
-        --ply;
-    }
+    inline void make_null();
+    inline void undo_null();
     template <bool update_hash> inline void fill_sq(int sq, int piece);
     void load(std::vector<int> position, bool stm = true);
     bool load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock, std::string fen_fmove_counter);
@@ -95,7 +103,6 @@ public:
     u64 checkers(u64 occupied);
     u64 xray_rook_attacks(u64 occupied, u64 blockers, int from_square);
     u64 xray_bishop_attacks(u64 occupied, u64 blockers, int from_square);
-    u64 attack_map(u64 occupied, bool side_to_attack);
     u64 hashkey() {return hash[ply];}
 public:
     u64 pieces[13] {
@@ -139,6 +146,72 @@ public:
         zobrist_init();
     }
 };
+
+template <bool side> inline u64 Position::pawns_forward_one(u64 pawns) {
+    if constexpr (side) return pawns >> 8;
+    else return pawns << 8;
+}
+
+template <bool side> inline u64 Position::pawns_backward_one(u64 pawns) {
+    if constexpr (side) return pawns << 8;
+    else return pawns >> 8;
+}
+
+template <bool side> inline u64 Position::pawns_forward_two(u64 pawns) {
+    if constexpr (side) return pawns >> 16;
+    else return pawns << 16;
+}
+
+template <bool side> inline u64 Position::pawns_backward_two(u64 pawns) {
+    if constexpr (side) return pawns << 16;
+    else return pawns >> 16;
+}
+
+template <bool side> inline u64 Position::pawns_forward_left(u64 pawns) {
+    if constexpr (side) return (pawns & ~0x0101010101010101) >> 9;
+    else return (pawns & ~0x0101010101010101) << 7;
+}
+
+template <bool side> inline u64 Position::pawns_backward_left(u64 pawns) {
+    if constexpr (side) return (pawns & ~0x0101010101010101) << 7;
+    else return (pawns & ~0x0101010101010101) >> 9;
+}
+
+template <bool side> inline u64 Position::pawns_forward_right(u64 pawns) {
+    if constexpr (side) return (pawns & ~0x8080808080808080) >> 7;
+    else return (pawns & ~0x8080808080808080) << 9;
+}
+
+template <bool side> inline u64 Position::pawns_backward_right(u64 pawns) {
+    if constexpr (side) return (pawns & ~0x8080808080808080) << 9;
+    else return (pawns & ~0x8080808080808080) >> 7;
+}
+
+template <bool side> inline u64 Position::promotion_rank() {
+    if constexpr (side) return 0x000000000000FF00;
+    else return 0x00FF000000000000;
+}
+
+template <bool side> inline u64 Position::second_rank() {
+    if constexpr (side) return 0x00FF000000000000;
+    else return 0x000000000000FF00;
+}
+
+inline void Position::make_null() {
+    ++ply;
+    hash[ply] = hash[ply - 1];
+    hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]];
+    hash[ply] ^= zobrist_black;
+    side_to_move = !side_to_move;
+    castling_rights[ply] = castling_rights[ply - 1];
+    enpassant_square[ply] = 64;
+    hash[ply] ^= zobrist_enpassant[64];
+}
+
+inline void Position::undo_null() {
+    side_to_move = !side_to_move;
+    --ply;
+}
 
 std::ostream& operator<<(std::ostream& out, Position& position);
 

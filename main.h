@@ -5,8 +5,11 @@
 #include "hash.h"
 #include "history.h"
 #include "timer.h"
+#include <array>
 
 u64 perft(Position& position, int depth);
+template <bool side> u64 perft_f(Position& position, int depth);
+u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
 int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int beta);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null);
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Move& bestmove);
