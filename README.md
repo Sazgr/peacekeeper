@@ -9,13 +9,18 @@ UCI Chess Engine in Progress
     - Principal Variation Search (PVS)
     - Quiescence Search
     - Iterative Deepening
+    - Time management
     - Transposition Table
+        - Incremental updated Zobrist hash
     - History Table
-    - Null Move Pruning
-    - Late Move Pruning
-    - Futility Pruning
-    - Delta Pruning
+    - Selectivity
+        - Null Move Pruning (NMP)
+        - Late Move Reductions (LMR)
+        - Late Move Pruning (LMP)
+        - Futility Pruning
+        - Delta Pruning
 - Evaluation
-    - Piece Square Tables
+    - Piece Square Tables (PST)
+        - Incrementally updated
     - Tapered Eval
     - Tempo Bonus
