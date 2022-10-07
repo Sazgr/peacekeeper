@@ -2,8 +2,10 @@
 UCI Chess Engine in Progress
 
 ### Features:
-- Move Generation
+- Board Representation and Move Generation
     - Bitboard-based
+    - Redundant Mailbox Board
+    - Make-Unmake
     - Fixed-shift Fancy Magic Bitboards for slider move generation
 - Search
     - Principal Variation Search (PVS)
