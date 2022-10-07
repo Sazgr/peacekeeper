@@ -348,11 +348,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         ++nodes;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
-        if (depth >= 1 && moves_searched >= 10 && !position.check()) {
+        if (depth == 1 && moves_searched >= 8 && !in_check && !position.check()) {
             position.undo_move(movelist[i]);
             continue;
         }
-        if (depth == 2 && moves_searched >= 18 && !position.check()) {
+        if (depth == 2 && moves_searched >= 14 && !in_check && !position.check()) {
             position.undo_move(movelist[i]);
             continue;
         }
