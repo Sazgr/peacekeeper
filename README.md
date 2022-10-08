@@ -1,7 +1,9 @@
 ## Peacekeeper
+
 UCI Chess Engine in Progress
 
-### Features:
+### Features
+
 - Board Representation and Move Generation
     - Bitboard-based
     - Redundant Mailbox Board
@@ -33,3 +35,13 @@ UCI Chess Engine in Progress
         - Incrementally updated
     - Tapered Eval
     - Tempo Bonus
+
+### Credits
+
+- The [Chess Programming Wiki](https://www.chessprogramming.org) for being a great resource for everything related to chess programming
+- The [Talkchess](talkchess.com) forum and the people on it for answering my more specific questions
+- Some engines which I got inspiration from (in alphabetical order):
+    - [Blunder](https://github.com/algerbrex/blunder)
+    - [Leorik](https://github.com/lithander/Leorik)
+    - [Stockfish](https://github.com/official-stockfish/Stockfish)
+    - [Sunfish](https://github.com/thomasahle/sunfish)
