@@ -40,6 +40,7 @@ UCI Chess Engine in Progress
 
 - The [Chess Programming Wiki](https://www.chessprogramming.org) for being a great resource for everything related to chess programming
 - The [Talkchess](talkchess.com) forum and the people on it for answering my more specific questions
+- Andrew Zhuo (@StackFish5) for constantly looking over my code
 - Some engines which I got inspiration from (in alphabetical order):
     - [Blunder](https://github.com/algerbrex/blunder)
     - [Leorik](https://github.com/lithander/Leorik)
