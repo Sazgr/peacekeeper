@@ -11,6 +11,10 @@ UCI Chess Engine in Progress
     - Principal Variation Search (PVS)
     - Quiescence Search
     - Iterative Deepening
+    - Staged Move Generation
+        - Hash move
+        - Captures
+        - Quiets
     - Time management
     - Transposition Table
         - Incremental updated Zobrist hash
@@ -21,6 +25,9 @@ UCI Chess Engine in Progress
         - Late Move Pruning (LMP)
         - Futility Pruning
         - Delta Pruning
+    - Move Ordering
+        - MVV-LVA for captures
+        - History Heuristic and PST for quiet moves
 - Evaluation
     - Piece Square Tables (PST)
         - Incrementally updated
