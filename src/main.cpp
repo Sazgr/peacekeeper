@@ -100,7 +100,6 @@ int main() {
                 movetime -= 50; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
-            out << "info string searchtime " << movetime << std::endl;
             timer.reset(movetime, nodes, depth);
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(move)};
             search.detach();
@@ -150,7 +149,7 @@ int main() {
         }
         if (tokens[0] == "quit") {
             stop = true;
-            std::this_thread::sleep_for(std::chrono::milliseconds(200)); //delay to ensure that the search stops
+            std::this_thread::sleep_for(std::chrono::milliseconds(200)); //wait 200 milliseconds to make sure that any ongoing searches stop before quitting
             return 0;
         }
         if (tokens[0] == "setoption" && tokens.size() >= 4) {
@@ -224,7 +223,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         int result = -20000;
         Movelist movelist;
         position.legal_moves(movelist);
-        if (movelist.size() == 0) return -20000+ply; //checkmate
+        if (movelist.size() == 0) return -20000+ply;
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].evade_order());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
@@ -281,7 +280,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int old_alpha{alpha};
     int reduction{};
     Move bestmove{};
-    if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase > 4) && !in_check) {//null move pruning
+    //Null Move Pruning
+    if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase > 4) && !in_check) {
         position.make_null();
         ++nodes;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_null(); return 0;}
@@ -299,6 +299,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         return entry.score;
     }
     //if (in_check) ++depth;//check extension
+    //Stage 1 - Hash Move
     if (entry.type != nonexistent && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured()) {//searching best move from hashtable
         position.make_move(entry.bestmove);
         ++nodes;
@@ -321,10 +322,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             }
         }
     }
-    Movelist movelist;//finally generating and sorting moves
+    Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
     movelist.sort(0, movelist.size());
+    //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
@@ -360,6 +362,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].quiet_order());
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && (-18000 < alpha) && (beta < 18000) && ((depth == 1 && static_eval + 120 < alpha) || (depth == 2 && static_eval + 200 < alpha) || (depth == 3 && static_eval + 280 < alpha));
+    //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
@@ -417,7 +420,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             }
         }
     }
-    if (move_num == 0) {//checking for checkmate, stalemate
+    if (move_num == 0) {
         if (in_check) return -20000 + ply;
         else return 0;
     }
