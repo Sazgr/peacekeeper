@@ -258,7 +258,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     if (position.draw()) return 0;
     bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = position.static_eval();
-    int moves_searched{0};
+    int move_num{0};
     int result{};
     int old_alpha{alpha};
     int reduction{};
@@ -282,9 +282,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     }
     //if (in_check) ++depth;//check extension
     if (entry.type != nonexistent && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured()) {//searching best move from hashtable
-        ++moves_searched;
         position.make_move(entry.bestmove);
         ++nodes;
+        ++move_num;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(entry.bestmove); return 0;}
         result = -pvs(position, timer, table, history, depth-1, ply + 1, -beta, -alpha, is_pv, true);
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(entry.bestmove); return 0;}
@@ -311,8 +311,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         ++nodes;
+        ++move_num;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
-        if (depth == 1 || !is_pv || moves_searched == 0) {
+        if (depth == 1 || !is_pv || move_num == 0) {
             result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         } else {
@@ -324,7 +325,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             }
         }
         position.undo_move(movelist[i]);
-        ++moves_searched;
         if (result > alpha) {
             alpha = result;
             bestmove = movelist[i];
@@ -342,29 +342,33 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].quiet_order());
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && (-18000 < alpha) && (beta < 18000) && ((depth == 1 && static_eval + 120 < alpha) || (depth == 2 && static_eval + 200 < alpha) || (depth == 3 && static_eval + 280 < alpha));
-    int fut_pruned = 0;
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         ++nodes;
+        ++move_num;
+        bool gives_check = position.check();
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
-        if (depth == 1 && moves_searched >= 8 && !in_check && !position.check()) {
+        //Late Move Pruning
+        if (depth == 1 && move_num >= 8 && !in_check && !gives_check) {
             position.undo_move(movelist[i]);
             continue;
         }
-        if (depth == 2 && moves_searched >= 14 && !in_check && !position.check()) {
+        if (depth == 2 && move_num >= 14 && !in_check && !gives_check) {
             position.undo_move(movelist[i]);
             continue;
         }
-        if (can_fut_prune && moves_searched && !position.check()) {
+        //Futility Pruning
+        if (can_fut_prune && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
             continue;
         }
+        //Late Move Reductions
         reduction = 0;
-        if (depth > 2 && moves_searched >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !position.check()) {
-            reduction = lmr_table[is_pv][std::min(depth, 31)][std::min(moves_searched, 31)];
+        if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
+            reduction = lmr_table[is_pv][std::min(depth, 31)][std::min(move_num, 31)];
         }
-        if (depth == 1 || !is_pv || moves_searched == 0) {
+        if (depth == 1 || !is_pv || move_num == 0) {
             result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         } else {
@@ -380,7 +384,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             }
         }
         position.undo_move(movelist[i]);
-        ++moves_searched;
         if (result > alpha) {
             alpha = result;
             bestmove = movelist[i];
@@ -396,7 +399,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             }
         }
     }
-    if (moves_searched + fut_pruned == 0) {//checking for checkmate, stalemate
+    if (move_num == 0) {//checking for checkmate, stalemate
         if (in_check) return -20000 + ply;
         else return 0;
     }
