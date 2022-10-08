@@ -40,36 +40,36 @@ u64 Position::file_attacks(u64 occ, int square) {
 }
 
 void Position::slider_attacks_init() {
-    for (int square{}; square < 64; ++square) { //bishops
-        u64 attack_mask = bishop_premask[square];
+    for (int slider_loc{}; slider_loc < 64; ++slider_loc) { //bishops
+        u64 attack_mask = bishop_premask[slider_loc];
         int num_sets = (1 << popcount(attack_mask));
         u64 temp;
         for (int index{}; index < num_sets; ++index) {
             temp = attack_mask;
             u64 occupancy = 0;
-            int squre{};
+            int square{};
             for (int count = 0; count < popcount(attack_mask); count++) {
-                squre = pop_lsb(temp);
-                if (index & (1 << count)) occupancy |= (1ull << squre);
+                square = pop_lsb(temp);
+                if (index & (1 << count)) occupancy |= (1ull << square);
             }
-            u64 magic_index = (occupancy * bishop_magics[square].magic) >> 55;
-            lookup_table[bishop_magics[square].start + magic_index] = classical_bishop_attacks(occupancy, square);
+            u64 magic_index = (occupancy * bishop_magics[slider_loc].magic) >> 55;
+            lookup_table[bishop_magics[slider_loc].start + magic_index] = classical_bishop_attacks(occupancy, slider_loc);
         }
     }
-    for (int square{}; square < 64; ++square) { //rooks
-        u64 attack_mask = rook_premask[square];
+    for (int slider_loc{}; slider_loc < 64; ++slider_loc) { //rooks
+        u64 attack_mask = rook_premask[slider_loc];
         int num_sets = (1 << popcount(attack_mask));
         u64 temp;
         for (int index{}; index < num_sets; ++index) {
             temp = attack_mask;
             u64 occupancy = 0;
-            int squre{};
+            int square{};
             for (int count = 0; count < popcount(attack_mask); count++) {
-                squre = pop_lsb(temp);
-                if (index & (1 << count)) occupancy |= (1ull << squre);
+                square = pop_lsb(temp);
+                if (index & (1 << count)) occupancy |= (1ull << square);
             }
-            u64 magic_index = (occupancy * rook_magics[square].magic >> 52);
-            lookup_table[rook_magics[square].start + magic_index] = classical_rook_attacks(occupancy, square);
+            u64 magic_index = (occupancy * rook_magics[slider_loc].magic >> 52);
+            lookup_table[rook_magics[slider_loc].start + magic_index] = classical_rook_attacks(occupancy, slider_loc);
         }
     }
 }
@@ -94,9 +94,8 @@ u64 Position::queen_attacks(u64 occ, int square) {
     return rook_attacks(occ, square) | bishop_attacks(occ, square);
 }
 
-
 bool Position::square_attacked(u64 occ, int square, bool side) {
-    return (pawn_attacks[side ^ 1][square] & pieces[black_pawn + side]) 
+    return (pawn_attacks[!side][square] & pieces[black_pawn + side]) 
     || (knight_attacks[square] & pieces[black_knight + side])
     || (king_attacks[square] & pieces[black_king + side])
     || (bishop_attacks(occ, square) & (pieces[black_queen + side] | pieces[black_bishop + side]))
@@ -122,15 +121,11 @@ bool Position::draw() {
 
 u64 Position::checkers(u64 occ) {
     int square = get_lsb(pieces[side_to_move + 10]);
-    u64 checkers{};
-    checkers |= pawn_attacks[side_to_move][square] & pieces[black_pawn + !side_to_move];
-    checkers |= knight_attacks[square] & pieces[black_knight + !side_to_move];
-    checkers |= king_attacks[square] & pieces[black_king + !side_to_move];
-    u64 bishops_queens = pieces[black_queen + !side_to_move] | pieces[black_bishop + !side_to_move];
-    checkers |= bishop_attacks(occ, square) & bishops_queens;
-    u64 rooks_queens = pieces[black_queen + !side_to_move] | pieces[black_rook + !side_to_move];
-    checkers |= rook_attacks(occ, square) & rooks_queens;
-    return checkers;
+    return (pawn_attacks[side_to_move][square] & pieces[black_pawn + !side_to_move])
+         | (knight_attacks[square] & pieces[black_knight + !side_to_move])
+         | (king_attacks[square] & pieces[black_king + !side_to_move])
+         | (bishop_attacks(occ, square) & (pieces[black_queen + !side_to_move] | pieces[black_bishop + !side_to_move]))
+         | (rook_attacks(occ, square) & (pieces[black_queen + !side_to_move] | pieces[black_rook + !side_to_move]));
 }
 
 u64 Position::xray_rook_attacks(u64 occ, u64 blockers, int from_square) {
@@ -692,7 +687,7 @@ void Position::print(std::ostream& out) {
     std::vector<std::string> pieces{"♟", "♙", "♞", "♘", "♝", "♗", "♜", "♖", "♛", "♕", "♚", "♔", ".", "."};
     out << "8 ";
     for (int square{0}; square < 64; ++square) {
-        out << pieces[board[square]^1] << ' ';
+        out << pieces[board[square]] << ' ';
         if ((square & 7) == 7) out << '\n' << (7 - (square >> 3)) << ' ';
     }
     out << "a b c d e f g h\n";
@@ -813,7 +808,7 @@ template <bool update_hash> inline void Position::fill_sq(int sq, int piece) {
 
 int Position::static_eval() {
     int phase{std::min(eval_phase, 24)};
-    return ((2 * side_to_move - 1) * (mg_static_eval * phase + eg_static_eval * (24 - phase)) / 24) + eval_phase;
+    return ((2 * side_to_move - 1) * (mg_static_eval * phase + eg_static_eval * (24 - phase)) / 24) + phase;
 }
 
 void Position::load(std::vector<int> position, bool stm) {
@@ -872,9 +867,6 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
     else if (fen_ep.size() == 2) enpassant_square[0] = (static_cast<int>(fen_ep[0]) - 97) + 8 * (56 - static_cast<int>(fen_ep[1]));//ascii 'a' = 97 '8' = 56
     else return false;
     halfmove_clock[0] = stoi(fen_hmove_clock);
-    /******************************************************
-     * FIX LATER: NOT PARSING FULLMOVE CLOCK *
-     ******************************************************/
     zobrist_update();
     return true;
 }
