@@ -2,6 +2,12 @@
 
 UCI Chess Engine in Progress
 
+### Compilation
+
+Peacekeeper can be compiled from source with GNU C++, `-O3 -DNDEBUG -march=native` are recommended compiler flags.
+
+I tried to support MSVC intrinsics, but since I do not have it, there might be errors.
+
 ### Features
 
 - Board Representation and Move Generation
