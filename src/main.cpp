@@ -387,7 +387,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         //Late Move Reductions
         reduction = 0;
         if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
-            reduction = lmr_table[is_pv][std::min(depth, 31)][std::min(move_num, 31)];
+            reduction = lmr_reduction(is_pv, depth, move_num);
         }
         if (depth == 1 || !is_pv || move_num == 0) {
             result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
