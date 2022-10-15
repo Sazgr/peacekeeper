@@ -13,7 +13,7 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
 int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int beta);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null);
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Move& bestmove);
-lmr_reduction(bool is_pv, int depth, int move_num) {
+inline int lmr_reduction(bool is_pv, int depth, int move_num) {
     if (is_pv) return static_cast<int>((std::log(move_num - 2) * std::log(depth) + 1.44) / 4.1);
     else return static_cast<int>((std::log(move_num - 2) * std::log(depth) + 0.9) / 1.9);
 }
