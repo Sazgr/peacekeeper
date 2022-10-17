@@ -1,5 +1,5 @@
-#ifndef STONEFISH_MAIN
-#define STONEFISH_MAIN
+#ifndef PEACEKEEPER_MAIN
+#define PEACEKEEPER_MAIN
 
 #include "board.h"
 #include "hash.h"
