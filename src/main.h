@@ -6,6 +6,7 @@
 #include "history.h"
 #include "timer.h"
 #include <array>
+#include <cmath>
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
