@@ -25,7 +25,7 @@ void print_uci(std::ostream& out, int score, int depth, int nodes, int nps, int 
 }
 
 void print_info(std::ostream& out) {
-    out << "id name Peacekeeper v0.10" << '\n'
+    out << "id name Peacekeeper v1.0" << '\n'
               << "id author Kyle Zhang" << '\n'
               << "option name Hash type spin default 1 min 1 max 128" << '\n'
               << "uciok" << std::endl;
