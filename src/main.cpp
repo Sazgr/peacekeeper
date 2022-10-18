@@ -1,17 +1,14 @@
 /*
 Peacekeeper Chess Engine
     Copyright (C) 2022  Kyle Zhang
-
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation, either version 3 of the License, or
     (at your option) any later version.
-
     This program is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
     GNU General Public License for more details.
-
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
@@ -39,7 +36,7 @@ Move pv_table[128][128];
 std::ifstream infile ("peacekeeper/logs/input.txt");
 std::ofstream debug ("logs/debug.txt");
 std::ostream& out = std::cout;
-std::istream& in = std::cin;
+std::istream& in = infile;
 
 int main() {
     Move move{};
@@ -281,7 +278,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int reduction{};
     Move bestmove{};
     //Null Move Pruning
-    if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase > 4) && !in_check) {
+    if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase() > 4) && !in_check) {
         position.make_null();
         ++nodes;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_null(); return 0;}
@@ -508,24 +505,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             }
             movelist.sort(1, movelist.size());
             print_uci(out, alpha == -20000 ? last_score : alpha, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
-            //int movenum{};
-            //for (;pv_table[0][movenum].not_null(); ++movenum) {
-            //    position.make_move(pv_table[0][movenum]);
-            //    pv_table[0][movenum].long_print();
-            //}
-            //int mg{}, eg{};
-            //for (int i{}; i<64; ++i) {
-            //    mg += middlegame[position.board[i]][i];
-            //    eg += endgame[position.board[i]][i];
-            //}
-            //std::cout << position << "frsc mg " << mg << " eg " << eg << std::endl;
-            //std::cout << "incr mg " << position.mg_static_eval << " eg " << position.eg_static_eval << std::endl;
-            //std::cout << "static " << position.static_eval() << std::endl;
-            //std::cout << "qs " << quiescence(position, timer, movenum, -20000, 20000) << std::endl;
-            //--movenum;
-            //for (;movenum >= 0; --movenum) {
-            //    position.undo_move(pv_table[0][movenum]);
-            //}
         }
         table.insert(position.hashkey(), alpha, tt_exact, bestmove, depth);
         print_bestmove(out, bestmove);
