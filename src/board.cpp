@@ -711,23 +711,18 @@ void Position::make_move(Move move) {
     switch (move.flag()) {
         case none:
             fill_sq<true>(end, piece);
-            eval_phase = eval_phase - gamephase[captured];
             break;
         case knight_pr:
             fill_sq<true>(end, piece + 2);
-            eval_phase = eval_phase - gamephase[captured] + 1;
             break;
         case bishop_pr:
             fill_sq<true>(end, piece + 4);
-            eval_phase = eval_phase - gamephase[captured] + 1;
             break;
         case rook_pr:
             fill_sq<true>(end, piece + 6);
-            eval_phase = eval_phase - gamephase[captured] + 2;
             break;
         case queen_pr:
             fill_sq<true>(end, piece + 8);
-            eval_phase = eval_phase - gamephase[captured] + 4;
             break;
         case k_castling:
             fill_sq<true>(start + 3, empty_square);
@@ -761,23 +756,18 @@ void Position::undo_move(Move move) {
     switch (move.flag()) {
         case none:
             fill_sq<false>(end, captured);
-            eval_phase = eval_phase + gamephase[captured];
             break;
         case knight_pr:
             fill_sq<false>(end, captured);
-            eval_phase = eval_phase + gamephase[captured] - 1;
             break;
         case bishop_pr:
             fill_sq<false>(end, captured);
-            eval_phase = eval_phase + gamephase[captured] - 1;
             break;
         case rook_pr:
             fill_sq<false>(end, captured);
-            eval_phase = eval_phase + gamephase[captured] - 2;
             break;
         case queen_pr:
             fill_sq<false>(end, captured);
-            eval_phase = eval_phase + gamephase[captured] - 4;
             break;
         case k_castling:
             fill_sq<false>(end, empty_square);
@@ -806,8 +796,12 @@ template <bool update_hash> inline void Position::fill_sq(int sq, int piece) {
     board[sq] = piece;
 }
 
+int Position::eval_phase() {
+    return popcount(pieces[2]) + popcount(pieces[3]) + popcount(pieces[4]) + popcount(pieces[5])
+        + 2 * (popcount(pieces[6]) + popcount(pieces[7])) + 4 * (popcount(pieces[8]) + popcount(pieces[9]))
+}
 int Position::static_eval() {
-    int phase{std::min(eval_phase, 24)};
+    int phase{std::min(eval_phase(), 24)};
     return ((2 * side_to_move - 1) * (mg_static_eval * phase + eg_static_eval * (24 - phase)) / 24) + phase;
 }
 
