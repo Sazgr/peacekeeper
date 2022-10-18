@@ -36,7 +36,7 @@ Move pv_table[128][128];
 std::ifstream infile ("peacekeeper/logs/input.txt");
 std::ofstream debug ("logs/debug.txt");
 std::ostream& out = std::cout;
-std::istream& in = infile;
+std::istream& in = std::cin;
 
 int main() {
     Move move{};
