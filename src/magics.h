@@ -158,6 +158,6 @@ const struct {u64 magic; int start;} rook_magics[64] {
     { 0x0001ffff99ffab2full,  21479 }
 };
 
-extern u64 lookup_table[97264];
+static u64 lookup_table[97264];
 
 #endif
