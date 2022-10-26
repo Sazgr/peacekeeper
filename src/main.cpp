@@ -56,7 +56,10 @@ int main() {
         while (parser >> token) {tokens.push_back(token);}
         if (tokens.size() == 0) {continue;}
         if (tokens[0] == "eval") {
-            out << position << "PSQT: " << position.static_eval() << std::endl;
+            out << "middlegame psqt: " << position.mg_static_eval << std::endl;
+            out << "endgame psqt: " << position.eg_static_eval << std::endl;
+            out << "phase: " << position.eval_phase() << std::endl;
+            out << "weighted psqt: " << position.static_eval() - position.eval_phase() << std::endl; 
         }
         if (tokens[0] == "go") {
             if (std::find(tokens.begin(), tokens.end(), "infinite") != tokens.end()) {
