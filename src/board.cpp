@@ -798,7 +798,7 @@ template <bool update_hash> inline void Position::fill_sq(int sq, int piece) {
 
 int Position::eval_phase() {
     return popcount(pieces[2]) + popcount(pieces[3]) + popcount(pieces[4]) + popcount(pieces[5])
-        + 2 * (popcount(pieces[6]) + popcount(pieces[7])) + 4 * (popcount(pieces[8]) + popcount(pieces[9]))
+        + 2 * (popcount(pieces[6]) + popcount(pieces[7])) + 4 * (popcount(pieces[8]) + popcount(pieces[9]));
 }
 int Position::static_eval() {
     int phase{std::min(eval_phase(), 24)};
