@@ -56,10 +56,7 @@ int main() {
         while (parser >> token) {tokens.push_back(token);}
         if (tokens.size() == 0) {continue;}
         if (tokens[0] == "eval") {
-            out << "middlegame psqt: " << position.mg_static_eval << std::endl;
-            out << "endgame psqt: " << position.eg_static_eval << std::endl;
-            out << "phase: " << position.eval_phase() << std::endl;
-            out << "weighted psqt: " << position.static_eval() - position.eval_phase() << std::endl; 
+            out << position << "PSQT: " << position.static_eval() << std::endl;
         }
         if (tokens[0] == "go") {
             if (std::find(tokens.begin(), tokens.end(), "infinite") != tokens.end()) {
@@ -294,13 +291,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         }
     }
     Element entry = table.query(position.hashkey());
-    if (!is_pv && entry.type != nonexistent && entry.full_hash == position.hashkey() && entry.depth >= depth && abs(entry.score) <= 18000 && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+    if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && abs(entry.score) <= 18000 && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         ++tthits;
         return entry.score;
     }
     //if (in_check) ++depth;//check extension
     //Stage 1 - Hash Move
-    if (entry.type != nonexistent && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured()) {//searching best move from hashtable
+    if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured()) {//searching best move from hashtable
         position.make_move(entry.bestmove);
         ++nodes;
         ++move_num;
@@ -371,11 +368,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         bool gives_check = position.check();
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         //Late Move Pruning
-        if (depth == 1 && move_num >= 8 && !in_check && !gives_check) {
+        if (depth == 1 && move_num >= 6 && !in_check && !gives_check) {
             position.undo_move(movelist[i]);
             continue;
         }
-        if (depth == 2 && move_num >= 14 && !in_check && !gives_check) {
+        if (depth == 2 && move_num >= 10 && !in_check && !gives_check) {
             position.undo_move(movelist[i]);
             continue;
         }
@@ -441,7 +438,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         for (int i = 0; i < movelist.size(); ++i) {
             movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].order());
         }
-        if (entry.type != nonexistent && entry.full_hash == position.hashkey() && entry.bestmove.not_null()) {
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null()) {
             for (int i{0}; i < movelist.size(); ++i) {
                 if (movelist[i] == entry.bestmove) {
                     Move temp = movelist[0];
