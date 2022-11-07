@@ -812,7 +812,7 @@ void Position::load(std::vector<int> position, bool stm) {
     zobrist_update();
 }
 
-bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock, std::string fen_fmove_counter) {
+bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock = "0", std::string fen_fmove_counter = "1") {
     int sq = 0;
     ply = 0;
     for (int i{}; i<64; ++i) fill_sq<false>(i, empty_square);
