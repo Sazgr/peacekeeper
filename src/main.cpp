@@ -418,6 +418,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         }
     }
     if (move_num == 0) {
+        pv_table[ply][0] = Move{};
         if (in_check) return -20000 + ply;
         else return 0;
     }
