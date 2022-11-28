@@ -363,10 +363,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
-        ++nodes;
         ++move_num;
         bool gives_check = position.check();
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         //Late Move Pruning
         if (depth == 1 && move_num >= 6 && !in_check && !gives_check) {
             position.undo_move(movelist[i]);
@@ -381,6 +379,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             position.undo_move(movelist[i]);
             continue;
         }
+        ++nodes;
+        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         //Late Move Reductions
         reduction = 0;
         if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
