@@ -149,8 +149,8 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(200)); //wait 200 milliseconds to make sure that any ongoing searches stop before quitting
             return 0;
         }
-        if (tokens[0] == "setoption" && tokens.size() >= 4) {
-            if (tokens[1] == "Hash" && tokens[2] == "value") {hash.resize(stoi(tokens[3]));}
+        if (tokens[0] == "setoption" && tokens[1] == "name") {
+            if (tokens.size() >= 4 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
         }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
