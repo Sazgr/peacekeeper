@@ -16,7 +16,7 @@ inline void print_pv(std::ostream& out, Move pv[]) {
     for (int i{}; !pv[i].is_null(); ++i) out << ' ' << pv[i];
 }
 
-inline void print_uci(std::ostream& out, int score, int depth, int nodes, int nps, int time, Move pv[]) {
+inline void print_uci(std::ostream& out, int score, int depth, u64 nodes, int nps, int time, Move pv[]) {
     out << "info score ";
     print_score(out, score);
     out << " depth " << depth << " nodes " << nodes << " nps " << nps << " time " << time << " pv";
