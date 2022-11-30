@@ -46,6 +46,7 @@ int main() {
     Hashtable hash{1};
     History_table history{};
     Stop_timer timer{0, 0, 0};
+    int move_overhead = 20;
     std::atomic<bool>& stop = timer.stop;
     std::string command, token;
     std::vector<std::string> tokens;
@@ -91,10 +92,10 @@ int main() {
             if (movetime == 0 && calculate == true) {
                 int mytime{position.side_to_move ? wtime : btime};
                 int myinc{position.side_to_move ? winc : binc};
-                if (movestogo == 0 || movestogo > std::max(20, (50 - position.ply / 5))) {movestogo = std::max(15, (50 - position.ply / 5));} //estimated number of moves until fresh time or end of game
+                if (movestogo == 0 || movestogo > std::max(30, (50 - position.ply / 5))) {movestogo = std::max(30, (50 - position.ply / 5));} //estimated number of moves until fresh time or end of game
                 movetime = mytime / movestogo + winc; //time usable in terms of time remaining and increment
                 movetime = std::min(movetime, mytime); //in case time is low, do not run out of time on this move
-                movetime -= 50; //accounting for lag, network delay, etc
+                movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
             timer.reset(movetime, nodes, depth);
@@ -150,7 +151,8 @@ int main() {
             return 0;
         }
         if (tokens[0] == "setoption" && tokens[1] == "name") {
-            if (tokens.size() >= 4 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
+            if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
+            if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
         }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
