@@ -1,12 +1,10 @@
 #ifndef PEACEKEEPER_EVAL
 #define PEACEKEEPER_EVAL
 
-//const int piece_value[6] = {100, 300, 320, 500, 900, 20000};
-
 const int flag_priority[7] = {  0, 254, 282, 394, 939, 38, 85};
 
-const int mg_value[6] = { 83, 337, 365, 477, 1022, 20000};
-const int eg_value[6] = { 94, 281, 297, 512,  936, 20000};
+const int mg_value[7] = { 83, 337, 365, 477, 1022, 20000, 0};
+const int eg_value[7] = { 94, 281, 297, 512,  936, 20000, 0};
 
 const int mg_table[6][64] = {{
       0,   0,   0,   0,   0,   0,  0,   0,
