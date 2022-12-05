@@ -271,7 +271,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     //debug << ply << std::endl;//for tree visualization
     if (depth <= 0) return quiescence(position, timer, ply + 1, alpha, beta);
     if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
-    if (position.draw()) return 0;
+    if (position.draw()) {
+        pv_table[ply][0] = Move{};
+        return 0;
+    }
     bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = position.static_eval();
     int move_num{0};
