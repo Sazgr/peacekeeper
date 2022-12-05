@@ -684,7 +684,7 @@ u64 Position::count_legal_moves() {
     else return count_legal<all, false>();
 }
 void Position::print(std::ostream& out) {
-    std::vector<std::string> pieces{"♟", "♙", "♞", "♘", "♝", "♗", "♜", "♖", "♛", "♕", "♚", "♔", ".", "."};
+    std::vector<std::string> pieces{"p", "P", "n", "N", "b", "B", "r", "R", "q", "Q", "k", "K", ".", "."};
     out << "8 ";
     for (int square{0}; square < 64; ++square) {
         out << pieces[board[square]] << ' ';
