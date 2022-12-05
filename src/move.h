@@ -50,6 +50,9 @@ struct Move {
     inline bool is_null() const {return (data & 0x100200);}
     inline bool not_null() const {return !(data & 0x100200);}
     inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key+0x1FFFFFFF) << 32);}
+    inline int gain() const {
+        return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
+    }
     inline int order() const {
         return ((piece() & 1) * 2 - 1) * (middlegame[piece()][end()] - middlegame[piece()][start()] - middlegame[captured()][end()]) + flag_priority[flag()];
     }
