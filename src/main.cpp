@@ -222,7 +222,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         int result = -20000;
         Movelist movelist;
         position.legal_moves(movelist);
-        if (movelist.size() == 0) return -20000+ply;
+        if (movelist.size() == 0) return -20000 + ply;
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].evade_order());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
@@ -239,16 +239,16 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         }
         return alpha;
     } else {
-        int stand_pat = position.static_eval();
-        if (stand_pat >= beta) return stand_pat; //if the position is already so good, cutoff immediately
-        if (alpha < stand_pat) alpha = stand_pat;
+        int static_eval = position.static_eval();
+        if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
+        if (alpha < static_eval) alpha = static_eval;
         Movelist movelist;
         position.legal_noisy(movelist);
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         int result = -20000;
         for (int i = 0; i < movelist.size(); ++i) {
-            if (stand_pat + mg_value[movelist[i].captured() >> 1] + 250 < alpha) break; //delta pruning
+            if (static_eval + movelist[i].gain() + 120 < alpha) break; //delta pruning
             position.make_move(movelist[i]);
             ++nodes;
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
