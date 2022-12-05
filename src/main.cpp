@@ -483,9 +483,9 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); break;}
                     }
                 }
-                if (timer.check(nodes, depth)) {break;}
                 movelist[i].add_sortkey(nodes - orig_nodes);
                 position.undo_move(movelist[i]);
+                if (timer.check(nodes, depth)) {break;}
                 if (result > alpha) {
                     alpha = result;
                     bestmove = movelist[i];
