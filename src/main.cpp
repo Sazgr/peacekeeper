@@ -280,7 +280,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int move_num{0};
     int result{};
     int old_alpha{alpha};
-    int reduction{};
+    int reduce_all{1};
+    int reduce_this{};
     Move bestmove{};
     //Null Move Pruning
     if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase() > 4) && !in_check) {
@@ -300,14 +301,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++tthits;
         return entry.score;
     }
-    //if (in_check) ++depth;//check extension
+    if (in_check && depth <= 2) --reduce_all;//check extension
     //Stage 1 - Hash Move
     if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured()) {//searching best move from hashtable
         position.make_move(entry.bestmove);
         ++nodes;
         ++move_num;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(entry.bestmove); return 0;}
-        result = -pvs(position, timer, table, history, depth-1, ply + 1, -beta, -alpha, is_pv, true);
+        result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(entry.bestmove); return 0;}
         position.undo_move(entry.bestmove);
         if (result > alpha) {
@@ -336,13 +337,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++move_num;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         if (depth == 1 || !is_pv || move_num == 0) {
-            result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
+            result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         } else {
-            result = -pvs(position, timer, table, history, depth - 1, ply + 1, -alpha-1, -alpha, false, true);
+            result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha-1, -alpha, false, true);
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             if (alpha < result && result < beta) {
-                result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
+                result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
                 if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             }
         }
@@ -387,22 +388,22 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++nodes;
         if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         //Late Move Reductions
-        reduction = 0;
+        reduce_this = 0;
         if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
-            reduction = lmr_reduction(is_pv, depth, move_num);
+            reduce_this = lmr_reduction(is_pv, depth, move_num);
         }
         if (depth == 1 || !is_pv || move_num == 0) {
-            result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
+            result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         } else {
-            result = -pvs(position, timer, table, history, depth - 1 - reduction, ply + 1, -alpha - 1, -alpha, false, true);
+            result = -pvs(position, timer, table, history, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
-            if (alpha < result && result < beta && reduction) {
-                result = -pvs(position, timer, table, history, depth - 1, ply + 1, -alpha - 1, -alpha, false, true);
+            if (alpha < result && result < beta && reduce_this) {
+                result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
                 if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             }
             if (alpha < result && result < beta) {
-                result = -pvs(position, timer, table, history, depth - 1, ply + 1, -beta, -alpha, is_pv, true);
+                result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
                 if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             }
         }
