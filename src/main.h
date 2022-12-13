@@ -8,6 +8,8 @@
 #include <array>
 #include <cmath>
 
+std::array<int, 4> futile_margins{120, 150, 200, 270};
+
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
 u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
