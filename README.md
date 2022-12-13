@@ -1,6 +1,6 @@
 ## Peacekeeper
 
-UCI Chess Engine in Progress
+UCI Chess Engine in Progress, written in C++17
 
 ### Compilation
 
@@ -28,9 +28,9 @@ I tried to support MSVC intrinsics, but since I do not have it, there might be e
         - Incremental updated Zobrist hash
     - History Table
     - Selectivity
+        - Check Extensions
         - Null Move Pruning (NMP)
         - Late Move Reductions (LMR)
-        - Late Move Pruning (LMP)
         - Futility Pruning
         - Delta Pruning
     - Move Ordering
@@ -45,7 +45,7 @@ I tried to support MSVC intrinsics, but since I do not have it, there might be e
 ### Credits
 
 - The [Chess Programming Wiki](https://www.chessprogramming.org) for being a great resource for everything related to chess programming
-- The [Talkchess](talkchess.com) forum and the people on it for answering my more specific questions
+- The [Talkchess](https://talkchess.com) forum and the people on it for answering my more specific questions
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
 - PeSTO for piece square tables
 - Some engines which I got inspiration from (in alphabetical order):
