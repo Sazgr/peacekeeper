@@ -364,7 +364,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].quiet_order());
     movelist.sort(0, movelist.size());
-    bool can_fut_prune = !in_check && (-18000 < alpha) && (beta < 18000) && depth < 4 && static_eval + futile_margins[depth] < alpha);
+    bool can_fut_prune = !in_check && (-18000 < alpha) && (beta < 18000) && depth < 4 && static_eval + futile_margins[depth] < alpha;
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
