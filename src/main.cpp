@@ -371,15 +371,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         ++move_num;
         bool gives_check = position.check();
-        //Late Move Pruning
-        if (depth == 1 && move_num >= 6 && !in_check && !gives_check) {
-            position.undo_move(movelist[i]);
-            continue;
-        }
-        if (depth == 2 && move_num >= 10 && !in_check && !gives_check) {
-            position.undo_move(movelist[i]);
-            continue;
-        }
         //Futility Pruning
         if (can_fut_prune && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
