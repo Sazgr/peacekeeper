@@ -248,7 +248,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         movelist.sort(0, movelist.size());
         int result = -20000;
         for (int i = 0; i < movelist.size(); ++i) {
-            if (static_eval + movelist[i].gain() + 120 < alpha) break; //delta pruning
+            if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
             position.make_move(movelist[i]);
             ++nodes;
             if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
@@ -364,7 +364,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].quiet_order());
     movelist.sort(0, movelist.size());
-    bool can_fut_prune = !in_check && (-18000 < alpha) && (beta < 18000) && ((depth == 1 && static_eval + 120 < alpha) || (depth == 2 && static_eval + 200 < alpha) || (depth == 3 && static_eval + 280 < alpha));
+    bool can_fut_prune = !in_check && (-18000 < alpha) && (beta < 18000) && depth < 4 && static_eval + futile_margins[depth] < alpha);
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
