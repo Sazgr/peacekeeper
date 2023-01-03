@@ -366,27 +366,27 @@ template <Move_types types, bool side> void Position::gen_legal(Movelist& moveli
                 }
             }
             if constexpr (gen_quiet) {
-                curr_board = pieces[side] & nonpromote_mask & hv_pinmask;//pinned non-promoting pawns
-                while (curr_board != 0) {
-                    piece_location = pop_lsb(curr_board);
-                    curr_moves |= file_attacks(occupied, piece_location) & pawn_pushes[side][piece_location] & (~occupied) & hv_pinmask;
-                    while (curr_moves != 0) {
-                        end = pop_lsb(curr_moves);
-                        movelist.add(Move{board[piece_location], piece_location, board[end], end, none});
-                    }
-                }
-            }
-            if constexpr (gen_noisy) {
-                curr_board = pieces[side] & nonpromote_mask & dd_pinmask;//pinned non-promoting pawns
-                while (curr_board != 0) {
-                    piece_location = pop_lsb(curr_board);
-                    curr_moves = pawn_attacks[side][piece_location] & opp_pieces & dd_pinmask;
-                    while (curr_moves != 0) {
-                        end = pop_lsb(curr_moves);
-                        movelist.add(Move{board[piece_location], piece_location, board[end], end, none});
-                    }
-                }
-            }
+                curr_board = pieces[side] & nonpromote_mask & hv_pinmask;//pinned non-promoting pawns
+                while (curr_board != 0) {
+                    piece_location = pop_lsb(curr_board);
+                    curr_moves |= file_attacks(occupied, piece_location) & pawn_pushes[side][piece_location] & (~occupied) & hv_pinmask;
+                    while (curr_moves != 0) {
+                        end = pop_lsb(curr_moves);
+                        movelist.add(Move{board[piece_location], piece_location, board[end], end, none});
+                    }
+                }
+            }
+            if constexpr (gen_noisy) {
+                curr_board = pieces[side] & nonpromote_mask & dd_pinmask;//pinned non-promoting pawns
+                while (curr_board != 0) {
+                    piece_location = pop_lsb(curr_board);
+                    curr_moves = pawn_attacks[side][piece_location] & opp_pieces & dd_pinmask;
+                    while (curr_moves != 0) {
+                        end = pop_lsb(curr_moves);
+                        movelist.add(Move{board[piece_location], piece_location, board[end], end, none});
+                    }
+                }
+            }
             curr_board = pieces[side] & promote_mask & dd_pinmask;//pinned promoting pawns
             //Note: HV-pinned pawns on 7th rank cannot push (or capture) in either case
             if constexpr (gen_noisy) {
