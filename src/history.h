@@ -12,10 +12,10 @@ struct History_table {
     void age() {
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
-                table[i][j] = table[i][j] * 3 / 4;
+                table[i][j] /= 2;
             }
         }
-        sum = sum * 3 / 4;
+        sum /= 2;
     }
     void reset() {
         for (int i{}; i<12; ++i) {
