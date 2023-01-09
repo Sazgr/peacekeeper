@@ -218,6 +218,7 @@ template <bool side> u64 perft_f(Position& position, int depth) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int beta) {
+    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
     if (position.check()) {
         int result = -20000;
         Movelist movelist;
@@ -228,9 +229,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         for (int i = 0; i < movelist.size(); ++i) {
             position.make_move(movelist[i]);
             ++nodes;
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             result = -quiescence(position, timer, ply + 1, -beta, -alpha);
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             position.undo_move(movelist[i]);
             if (result > alpha) {
                 alpha = result;
@@ -251,9 +250,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
             position.make_move(movelist[i]);
             ++nodes;
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             result = -quiescence(position, timer, ply + 1, -beta, -alpha);
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             position.undo_move(movelist[i]);
             if (result > alpha) {
                 alpha = result;
@@ -268,7 +265,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
 
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
 {
-    //debug << ply << std::endl;//for tree visualization
+    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
     if (depth <= 0) return quiescence(position, timer, ply + 1, alpha, beta);
     if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
     if (position.draw()) {
@@ -287,12 +284,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     if constexpr (null_move_pruning) if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase() > 4) && !in_check) {
         position.make_null();
         ++nodes;
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_null(); return 0;}
         result = -pvs(position, timer, table, history, std::max(1, depth - 4), ply + 1, -beta, -beta + 1, false, false);
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_null(); return 0;}
         position.undo_null();
         if (result >= beta) {
-            //table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
+            //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
             return result;
         }
     }
@@ -307,11 +302,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(entry.bestmove);
         ++nodes;
         ++move_num;
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(entry.bestmove); return 0;}
         result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(entry.bestmove); return 0;}
         position.undo_move(entry.bestmove);
-        if (result > alpha) {
+        if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = entry.bestmove;
             if (is_pv) {
@@ -335,20 +328,16 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         if (depth == 1 || !is_pv || move_num == 0) {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         } else {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha-1, -alpha, false, true);
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             if (alpha < result && result < beta) {
                 result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-                if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             }
         }
         position.undo_move(movelist[i]);
-        if (result > alpha) {
+        if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = movelist[i];
             if (is_pv) {
@@ -377,7 +366,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             continue;
         }
         ++nodes;
-        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
@@ -385,21 +373,17 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         }
         if (depth == 1 || !is_pv || move_num == 0) {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
         } else {
             result = -pvs(position, timer, table, history, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
-            if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             if (alpha < result && result < beta && reduce_this) {
                 result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
-                if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             }
             if (alpha < result && result < beta) {
                 result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-                if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); return 0;}
             }
         }
         position.undo_move(movelist[i]);
-        if (result > alpha) {
+        if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = movelist[i];
             if (is_pv) {
@@ -419,8 +403,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         if (in_check) return -20000 + ply;
         else return 0;
     }
-    table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, depth);
-    return alpha;
+    if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, depth);
+    return timer.stopped()?0:alpha;
 }
 
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Move& bestmove) {
@@ -465,23 +449,18 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             for (int i{0}; i < movelist.size(); ++i) {
                 position.make_move(movelist[i]);
                 ++nodes;
-                if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); break;}
                 orig_nodes = nodes;
                 if (depth == 1 || i == 0) {
                     result = -pvs(position, timer, table, history, depth - 1, 1, -20000, -alpha, true, true);
-                    if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); break;}
                 } else {
                     result = -pvs(position, timer, table, history, depth - 1, 1, -alpha-1, -alpha, true, true);
-                    if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); break;}
                     if (result > alpha) {
                         result = -pvs(position, timer, table, history, depth - 1, 1, -20000, -alpha, true, true);
-                        if (!(nodes & 8191) && timer.check(nodes)) {position.undo_move(movelist[i]); break;}
                     }
                 }
                 movelist[i].add_sortkey(nodes - orig_nodes);
                 position.undo_move(movelist[i]);
-                if (timer.check(nodes, depth)) {break;}
-                if (result > alpha) {
+                if (!timer.stopped() && result > alpha) {
                     alpha = result;
                     bestmove = movelist[i];
                     pv_table[0][0] = bestmove;
@@ -489,16 +468,12 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 }
                 
             }
-            if (timer.check(nodes, depth)) {break;}
-            if (movelist[0] == bestmove) {
-                print_uci(out, alpha == -20000 ? last_score : alpha, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
-                movelist.sort(1, movelist.size());
-                continue;
-            }
-            for (int i{0}; i < movelist.size(); ++i) {
-                if (movelist[i] == bestmove) {
-                    movelist[i] = movelist[0];
-                    movelist[0] = bestmove;
+            if (movelist[0] != bestmove) {
+                for (int i{0}; i < movelist.size(); ++i) {
+                    if (movelist[i] == bestmove) {
+                        movelist[i] = movelist[0];
+                        movelist[0] = bestmove;
+                    }
                 }
             }
             movelist.sort(1, movelist.size());
