@@ -8,6 +8,15 @@
 #include <array>
 #include <cmath>
 
+enum Features : bool {
+    check_extensions     = false,
+    delta_pruning        = false,
+    futility_pruning     = false,
+    history_heuristic    = false,
+    late_move_reductions = false,
+    null_move_pruning    = false,
+};
+
 std::array<int, 4> futile_margins{120, 150, 200, 270};
 
 u64 perft(Position& position, int depth);
