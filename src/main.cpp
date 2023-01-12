@@ -50,6 +50,7 @@ int main() {
     std::atomic<bool>& stop = timer.stop;
     std::string command, token;
     std::vector<std::string> tokens;
+    std::cout << "peacekeeper by sazgr" << std::endl;
     while (true) {
         getline(in, command);
         tokens.clear();
