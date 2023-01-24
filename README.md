@@ -1,12 +1,20 @@
 ## Peacekeeper
 
-UCI Chess Engine in Progress, written in C++17
+Yet another UCI Chess Engine in Progress written in C++17.
 
 ### Compilation
 
 Peacekeeper can be compiled from source with GNU C++, `-O3 -DNDEBUG -march=native` are recommended compiler flags.
 
 I tried to support MSVC intrinsics, but since I do not have it, there might be errors.
+
+Windows are linux executables are also provided.
+
+### Ratings
+
+Version | CCRL Blitz | CCRL 40/15 | MCERL
+--------|------------|------------|------
+v1.10   | 2426       | (2413)     | 2248
 
 ### Features
 
@@ -15,6 +23,7 @@ I tried to support MSVC intrinsics, but since I do not have it, there might be e
     - Redundant Mailbox Board
     - Make-Unmake
     - Fixed-shift Fancy Magic Bitboards for slider move generation
+    - Legal move generation
 - Search
     - Principal Variation Search (PVS)
     - Quiescence Search
@@ -26,17 +35,18 @@ I tried to support MSVC intrinsics, but since I do not have it, there might be e
     - Time management
     - Transposition Table
         - Incremental updated Zobrist hash
-    - History Table
     - Selectivity
         - Check Extensions
+        - Static Null Move Pruning/Reverse Futility Pruning (SNMP/RFP)
         - Null Move Pruning (NMP)
         - Late Move Reductions (LMR)
         - Futility Pruning
         - Delta Pruning
     - Move Ordering
         - MVV-LVA for captures
-        - History Heuristic and PST for quiet moves
+        - History Heuristic for quiet moves
 - Evaluation
+    - Texel Tuned
     - Piece Square Tables (PST)
         - Incrementally updated
     - Tapered Eval
@@ -44,6 +54,8 @@ I tried to support MSVC intrinsics, but since I do not have it, there might be e
 
 ### Credits
 
+- Pradu Kannan for magic multipliers
+- CPW (and Sungorus) for zobrist hash pseudorandom number generator
 - The [Chess Programming Wiki](https://www.chessprogramming.org) for being a great resource for everything related to chess programming
 - The [Talkchess](https://talkchess.com) forum and the people on it for answering my more specific questions
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
