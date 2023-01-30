@@ -14,7 +14,7 @@ Windows are linux executables are also provided.
 
 Version | CCRL Blitz | CCRL 40/15 | MCERL
 --------|------------|------------|------
-v1.10   | 2426       | (2413)     | 2248
+v1.10   | 2422       | (2407)     | 2248
 
 ### Features
 
