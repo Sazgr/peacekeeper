@@ -357,14 +357,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     position.legal_quiet(movelist);
     if constexpr (history_heuristic) for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].quiet_order());
     movelist.sort(0, movelist.size());
-    can_fut_prune &= (static_eval + futile_margins[depth] < alpha);
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
             continue;
         }
