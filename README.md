@@ -8,13 +8,13 @@ Peacekeeper can be compiled from source with GNU C++, `-O3 -DNDEBUG -march=nativ
 
 I tried to support MSVC intrinsics, but since I do not have it, there might be errors.
 
-Windows are linux executables are also provided.
+Windows and linux executables are also provided.
 
 ### Ratings
 
 Version | CCRL Blitz | CCRL 40/15 | MCERL
 --------|------------|------------|------
-v1.10   | 2422       | (2407)     | 2248
+v1.10   | 2421       | 2385       | 2248
 
 ### Features
 
@@ -34,7 +34,7 @@ v1.10   | 2422       | (2407)     | 2248
         - Quiets
     - Time management
     - Transposition Table
-        - Incremental updated Zobrist hash
+        - Incrementally updated Zobrist hash
     - Selectivity
         - Check Extensions
         - Static Null Move Pruning/Reverse Futility Pruning (SNMP/RFP)
@@ -52,16 +52,17 @@ v1.10   | 2422       | (2407)     | 2248
     - Tapered Eval
     - Tempo Bonus
 
-### Credits
+### Credits & Thanks
 
 - Pradu Kannan for magic multipliers
 - CPW (and Sungorus) for zobrist hash pseudorandom number generator
 - The [Chess Programming Wiki](https://www.chessprogramming.org) for being a great resource for everything related to chess programming
 - The [Talkchess](https://talkchess.com) forum and the people on it for answering my more specific questions
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
-- PeSTO for piece square tables
+- PeSTO for starter piece square tables
 - Some engines which I got inspiration from (in alphabetical order):
     - [Blunder](https://github.com/algerbrex/blunder)
     - [Leorik](https://github.com/lithander/Leorik)
     - [Stockfish](https://github.com/official-stockfish/Stockfish)
     - [Sunfish](https://github.com/thomasahle/sunfish)
+- Rating list testers for testing my engine
