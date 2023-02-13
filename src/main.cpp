@@ -333,7 +333,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
-        if (depth == 1 || !is_pv || move_num == 0) {
+        if (depth == 1 || !is_pv || move_num == 1) {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha-1, -alpha, false, true);
@@ -375,7 +375,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
             reduce_this = lmr_reduction(is_pv, depth, move_num);
         }
-        if (depth == 1 || !is_pv || move_num == 0) {
+        if (depth == 1 || !is_pv || move_num == 1) {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
             result = -pvs(position, timer, table, history, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
