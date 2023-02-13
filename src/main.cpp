@@ -300,8 +300,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         return entry.score;
     }
     if constexpr (check_extensions) if (in_check && depth <= 2) --reduce_all;//check extension
+    bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     //Stage 1 - Hash Move
-    if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured()) {//searching best move from hashtable
+    if (hash_move_usable) {//searching best move from hashtable
         position.make_move(entry.bestmove);
         ++nodes;
         ++move_num;
@@ -328,7 +329,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 4;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
-        if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
+        if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
@@ -359,7 +360,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
-        if (movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
+        if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
