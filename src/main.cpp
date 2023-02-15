@@ -457,7 +457,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (depth == 1 || i == 0) {
                     result = -pvs(position, timer, table, history, depth - 1, 1, -20000, -alpha, true, true);
                 } else {
-                    result = -pvs(position, timer, table, history, depth - 1, 1, -alpha-1, -alpha, true, true);
+                    result = -pvs(position, timer, table, history, depth - 1, 1, -alpha-1, -alpha, false, true);
                     if (result > alpha) {
                         result = -pvs(position, timer, table, history, depth - 1, 1, -20000, -alpha, true, true);
                     }
