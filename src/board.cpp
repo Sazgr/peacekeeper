@@ -823,7 +823,7 @@ int Position::eval_phase() {
 }
 int Position::static_eval() {
     int phase{std::min(eval_phase(), 24)};
-    return ((2 * side_to_move - 1) * (mg_static_eval * phase + eg_static_eval * (24 - phase)) / 24) + phase;
+    return ((2 * side_to_move - 1) * (mg_static_eval * phase + eg_static_eval * (24 - phase)) / 24) + phase / 2;
 }
 
 void Position::load(std::vector<int> position, bool stm) {
