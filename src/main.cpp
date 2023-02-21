@@ -412,14 +412,18 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
             reduce_this = lmr_reduction(is_pv, depth, move_num);
         }
-        if (depth == 1 || !is_pv || move_num == 1) {
+        if (move_num == 1) {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
-            result = -pvs(position, timer, table, history, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
-            if (alpha < result && result < beta && reduce_this) {
+            if (reduce_this) { //try a reduced search
+                ++red_attempts;
+                result = -pvs(position, timer, table, history, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
+                if (result <= alpha || (result >= beta && is_pv)) ++reduced;
+            }
+            if (!reduce_this || (alpha < result && (result < beta || !is_pv))) {
                 result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
             }
-            if (alpha < result && result < beta) {
+            if (alpha < result && result < beta && is_pv) {
                 result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
             }
         }
