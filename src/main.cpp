@@ -30,13 +30,30 @@ Peacekeeper Chess Engine
 #include <vector>
 
 u64 nodes{0};
-u64 tthits{0};
 Move pv_table[128][128];
 
 std::ifstream infile ("peacekeeper/logs/input.txt");
 std::ofstream debug ("logs/debug.txt");
 std::ostream& out = std::cout;
 std::istream& in = std::cin;
+
+bool debug_mode{false};
+
+u64 beta_cuts;
+u64 cut_num;
+
+u64 tt_queries;
+u64 tt_hits;
+u64 tt_moves;
+u64 tt_cutoffs;
+
+u64 main_nodes;
+u64 extended;
+u64 red_attempts;
+u64 reduced;
+u64 pruned;
+u64 null_attempts;
+u64 nulled;
 
 int main() {
     Move move{};
@@ -57,6 +74,10 @@ int main() {
         std::istringstream parser(command);
         while (parser >> token) {tokens.push_back(token);}
         if (tokens.size() == 0) {continue;}
+        if (tokens[0] == "debug") {
+            if (tokens.size() >= 2 && tokens[1] == "on") debug_mode = true;
+            if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
+        }
         if (tokens[0] == "eval") {
             out << position << "PSQT: " << position.static_eval() << std::endl;
         }
@@ -282,30 +303,37 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int reduce_this{};
     Move bestmove{};
     if constexpr (static_null_move) if (depth < 4 && !is_pv && !in_check && no_mate(alpha, beta) && (static_eval - futile_margins[depth] >= beta)) {
+        ++pruned;
         return static_eval - futile_margins[depth];
     }
     if constexpr (null_move_pruning) if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase() > 4) && !in_check) {
         position.make_null();
         ++nodes;
+        ++null_attempts;
         result = -pvs(position, timer, table, history, std::max(1, depth - reduce_all - 3 - (depth > 7) - (depth > 11) - (depth > 16)), ply + 1, -beta, -beta + 1, false, false);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
+            ++nulled;
             return result;
         }
     }
     Element entry = table.query(position.hashkey());
+    ++tt_queries;
+    if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
     if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
-        ++tthits;
+        ++tt_cutoffs;
         return entry.score;
     }
-    if constexpr (check_extensions) if (in_check && depth <= 2) --reduce_all;//check extension
+    if constexpr (check_extensions) if (in_check && depth <= 2) {++extended; --reduce_all;} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
         position.make_move(entry.bestmove);
         ++nodes;
         ++move_num;
+        ++main_nodes;
+        ++tt_moves;
         result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         position.undo_move(entry.bestmove);
         if (!timer.stopped() && result > alpha) {
@@ -318,6 +346,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             if (alpha >= beta) {
                 if constexpr (history_heuristic) if (bestmove.captured() == 12) history.edit(bestmove.piece(), bestmove.end(), depth * depth);
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                ++beta_cuts;
+                cut_num += move_num;
                 return alpha;
             }
         }
@@ -333,6 +363,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
+        ++main_nodes;
         if (depth == 1 || !is_pv || move_num == 1) {
             result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
@@ -351,12 +382,16 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             }
             if (alpha >= beta) {
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                ++beta_cuts;
+                cut_num += move_num;
                 return alpha;
             }
         }
     }
     position.legal_quiet(movelist);
-    if constexpr (history_heuristic) for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()] + movelist[i].quiet_order());
+    for (int i = 0; i < movelist.size(); ++i) {
+        if constexpr (history_heuristic) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()]);
+    }
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
@@ -366,10 +401,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         //Futility Pruning
         if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
+            ++pruned;
             continue;
         }
         ++nodes;
         ++move_num;
+        ++main_nodes;
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
@@ -398,6 +435,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
                 if constexpr (history_heuristic) for (int j{0}; j<i; ++j) history.edit(movelist[j].piece(), movelist[j].end(), -depth);
                 if constexpr (history_heuristic) history.edit(bestmove.piece(), bestmove.end(), depth * depth);
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                ++beta_cuts;
+                cut_num += move_num;
                 return alpha;
             }
         }
@@ -419,7 +458,19 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
     else {
         int alpha = -20000;
         nodes = 0;
-        tthits = 0;
+        beta_cuts = 0;
+        cut_num = 0;
+        tt_queries = 0;
+        tt_hits = 0;
+        tt_moves = 0;
+        tt_cutoffs = 0;
+        main_nodes = 0;
+        extended = 0;
+        red_attempts = 0;
+        reduced = 0;
+        pruned = 0;
+        null_attempts = 0;
+        nulled = 0;
         Element entry = table.query(position.hashkey());
         if constexpr (history_heuristic) for (int i = 0; i < movelist.size(); ++i) {
             movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()]);
@@ -484,6 +535,14 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             print_uci(out, alpha == -20000 ? last_score : alpha, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
         }
         table.insert(position.hashkey(), alpha, tt_exact, bestmove, depth);
+        if (debug_mode) {
+            std::cout << "info string move ordering\ninfo string attempts " << cut_num << " cuts " << beta_cuts << " ratio " << static_cast<double>(cut_num) / beta_cuts << std::endl;
+            std::cout << "info string tt\ninfo string queries " << tt_queries << " hits " << tt_hits << " moves " << tt_moves << " cutoffs " << tt_cutoffs << " hit% " << 100.0 * tt_hits / tt_queries << " move% " << 100.0 * tt_moves / tt_queries << " cutoff% " << 100.0 * tt_cutoffs / tt_queries << std::endl;
+            std::cout << "info string extensions\ninfo string total nodes " << main_nodes << " extensions " << extended << " ext% " << 100.0 * extended / main_nodes << std::endl;
+            std::cout << "info string reductions\ninfo string total nodes " << main_nodes << " reduction attempts " << red_attempts << " reductions " << reduced << " attd% " << 100.0 * red_attempts / main_nodes << " red% " << 100.0 * reduced / main_nodes << " succ% " << 100.0 * reduced / red_attempts << std::endl;
+            std::cout << "info string pruning\ninfo string total nodes " << main_nodes << " pruned " << pruned << " prune% " << 100.0 * pruned / (pruned + main_nodes) << std::endl;
+            std::cout << "info string null move\ninfo string null move attempts " << null_attempts << " successes " << nulled << " null% " << 100.0 * nulled / null_attempts << std::endl;
+        }
         print_bestmove(out, bestmove);
         return;
     }
