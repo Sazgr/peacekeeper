@@ -19,7 +19,7 @@ enum Features : bool {
     check_extensions     = true,
 };
 
-std::array<int, 4> futile_margins{150, 227, 290, 345};
+std::array<int, 4> futile_margins{146, 221, 281, 334};
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
@@ -28,11 +28,11 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null);
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Move& bestmove);
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {
-    if (is_pv) return static_cast<int>((std::log(move_num - 2) * std::log(depth) + 1.44) / 4.1);
-    else return static_cast<int>((std::log(move_num - 2) * std::log(depth) + 0.9) / 1.9);
+    if (is_pv) return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 4.3 + 0.5);
+    else return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 1.85 + 0.5);
 }
 inline int late_move_margin(int depth, int move_num) {
-    if constexpr (late_move_pruning) return (move_num * move_num) / (depth + 2);
+    if constexpr (late_move_pruning) return (move_num * move_num) / (2 * depth + 2);
     else return 0;
 }
 inline bool no_mate(int alpha, int beta) {
