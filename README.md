@@ -1,3 +1,5 @@
+![Logo](peacekeeper-large.jpg)
+
 ## Peacekeeper
 
 Yet another UCI Chess Engine in Progress written in C++17.
@@ -8,7 +10,9 @@ Peacekeeper can be compiled from source with GNU C++, `-O3 -DNDEBUG -march=nativ
 
 I tried to support MSVC intrinsics, but since I do not have it, there might be errors.
 
-Windows and linux executables are also provided.
+Windows and linux executables are provided in the [Releases](https://github.com/Sazgr/peacekeeper/releases) section.
+
+It would be helpful to report any bugs found.
 
 ### Ratings
 
@@ -60,6 +64,7 @@ v1.10   | 2421       | 2385       | 2248
 - The [Talkchess](https://talkchess.com) forum and the people on it for answering my more specific questions
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
 - PeSTO for starter piece square tables
+- [Chess cache](https://www.chesscache.com/ChessEngines.html) (Dusan Stamenkovic) for logo
 - Some engines which I got inspiration from (in alphabetical order):
     - [Blunder](https://github.com/algerbrex/blunder)
     - [Leorik](https://github.com/lithander/Leorik)
