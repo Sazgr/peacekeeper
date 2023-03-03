@@ -290,7 +290,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
     if (depth <= 0) return quiescence(position, timer, ply + 1, alpha, beta);
     if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
-    if (position.draw()) {
+    if (position.draw(ply > 2 ? 1 : 2)) {
         pv_table[ply][0] = Move{};
         return 0;
     }
