@@ -6,8 +6,7 @@ Yet another UCI Chess Engine in Progress written in C++17.
 
 ### Compilation
 
-Peacekeeper can be compiled from source with GNU C++, `-O3 -DNDEBUG -march=native` are recommended compiler flags.
-
+Peacekeeper can be compiled from source with GNU C++ or Clang with `g++ -Ofast -DNDEBUG -march=native -DVERSION=<current version name> -o peacekeeper *.cpp`
 I tried to support MSVC intrinsics, but since I do not have it, there might be errors.
 
 Windows and linux executables are provided in the [Releases](https://github.com/Sazgr/peacekeeper/releases) section.
