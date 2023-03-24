@@ -172,6 +172,10 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(200)); //wait 200 milliseconds to make sure that any ongoing searches stop before quitting
             return 0;
         }
+        if (tokens[0] == "search") {
+            timer.reset(0, 0, 0);
+            iterative_deepening(position, timer, hash, history, move);
+        }
         if (tokens[0] == "setoption" && tokens[1] == "name") {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
