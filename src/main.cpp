@@ -319,6 +319,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         }
     }
     Element entry = table.query(position.hashkey());
+    Move hash_move = Move(entry.bestmove);
     ++tt_queries;
     if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
     if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
@@ -326,19 +327,19 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         return entry.score;
     }
     if constexpr (check_extensions) if (in_check && depth <= 2) {++extended; --reduce_all;} //check extension
-    bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
+    bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && hash_move.not_null() && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
-        position.make_move(entry.bestmove);
+        position.make_move(hash_move);
         ++nodes;
         ++move_num;
         ++main_nodes;
         ++tt_moves;
         result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-        position.undo_move(entry.bestmove);
+        position.undo_move(hash_move);
         if (!timer.stopped() && result > alpha) {
             alpha = result;
-            bestmove = entry.bestmove;
+            bestmove = hash_move;
             if (is_pv) {
                 pv_table[ply][0] = bestmove;
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
@@ -359,7 +360,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 4;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
-        if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
+        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
@@ -395,7 +396,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
-        if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
+        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
@@ -476,12 +477,13 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         null_attempts = 0;
         nulled = 0;
         Element entry = table.query(position.hashkey());
+        Move hash_move = Move(entry.bestmove);
         if constexpr (history_heuristic) for (int i = 0; i < movelist.size(); ++i) {
             movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()]);
         }
-        if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null()) {
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && hash_move.not_null()) {
             for (int i{0}; i < movelist.size(); ++i) {
-                if (movelist[i] == entry.bestmove) {
+                if (movelist[i] == hash_move) {
                     Move temp = movelist[0];
                     movelist[0] = movelist[i];
                     movelist[i] = temp;
