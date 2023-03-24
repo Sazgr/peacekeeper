@@ -39,6 +39,9 @@ struct Move {
     Move(int piece, int start_square, int captured_piece, int end_square, int flag = none) {
         data = (piece << 21) ^ (start_square << 14) ^ (captured_piece << 10) ^ (end_square << 3) ^ flag;
     }
+    Move(const u32 move_data) {
+        data = move_data;
+    }
     Move(const Move& rhs) {
         data = rhs.data;
     }
@@ -49,7 +52,7 @@ struct Move {
     inline int end() const {return (data >> 3) & 0x7F;}
     inline bool is_null() const {return (data & 0x100200);}
     inline bool not_null() const {return !(data & 0x100200);}
-    inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key+0x1FFFFFFF) << 32);}
+    inline void add_sortkey(int key) {sortkey = key;}
     inline int gain() const {
         return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
     }
@@ -77,19 +80,20 @@ struct Move {
         if (flag() == enpassant) out << "=ep";
         out << '\n';
     }
-    u64 data;
+    int sortkey;
+    u32 data;
 };
 
 inline bool operator==(const Move& move1, const Move& move2) {
-    return (move1.data & 0xFFFFFFFF) == (move2.data & 0xFFFFFFFF);
+    return move1.data == move2.data;
 }
 
 inline bool operator!=(const Move& move1, const Move& move2) {
-    return (move1.data & 0xFFFFFFFF) != (move2.data & 0xFFFFFFFF);
+    return move1.data != move2.data;
 }
 
 inline bool operator<(const Move& move1, const Move& move2) {
-    return move1.data > move2.data;//reversed so higher sortkeys go first by default
+    return move1.sortkey > move2.sortkey;//reversed so higher sortkeys go first by default
 }
 
 inline std::ostream& operator<<(std::ostream& out, const Move move) {
