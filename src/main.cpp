@@ -428,11 +428,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         } else {
             if (reduce_this) { //try a reduced search
                 ++red_attempts;
-                result = -pvs(position, timer, table, history, killer, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
-                if (result <= alpha || (result >= beta && is_pv)) ++reduced;
             }
-            if (!reduce_this || (alpha < result && (result < beta || !is_pv))) {
-                result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
+            result = -pvs(position, timer, table, history, killer, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
+            if (reduce_this) {
+                if (alpha < result) {
+                    result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
+                } else {
+                    ++reduced;
+                }
             }
             if (alpha < result && result < beta && is_pv) {
                 result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
