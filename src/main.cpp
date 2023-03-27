@@ -456,6 +456,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
 
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Move& bestmove) {
     if constexpr (history_heuristic) history.age();
+    table.age();
     Movelist movelist;
     position.legal_moves(movelist);
     if (movelist.size() == 0) return;
