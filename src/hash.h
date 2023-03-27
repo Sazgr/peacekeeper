@@ -16,7 +16,7 @@ enum Transposition_entry_types {
 
 struct Element {
     u64 full_hash;                  //8
-    Move bestmove;                  //8
+    u32 bestmove;                   //4
     int score;                      //4
     std::uint8_t type{tt_none}; //1
     std::uint8_t depth;             //1
