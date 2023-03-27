@@ -39,9 +39,6 @@ struct Move {
     Move(int piece, int start_square, int captured_piece, int end_square, int flag = none) {
         data = (piece << 21) ^ (start_square << 14) ^ (captured_piece << 10) ^ (end_square << 3) ^ flag;
     }
-    Move(const u32 move_data) {
-        data = move_data;
-    }
     Move(const Move& rhs) {
         data = rhs.data;
     }
@@ -52,18 +49,12 @@ struct Move {
     inline int end() const {return (data >> 3) & 0x7F;}
     inline bool is_null() const {return (data & 0x100200);}
     inline bool not_null() const {return !(data & 0x100200);}
-    inline void add_sortkey(int key) {sortkey = key;}
+    inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key+0x1FFFFFFF) << 32);}
     inline int gain() const {
         return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
     }
-    inline int order() const {
-        return ((piece() & 1) * 2 - 1) * (middlegame[piece()][end()] - middlegame[piece()][start()] - middlegame[captured()][end()]) + flag_priority[flag()];
-    }
-    inline int quiet_order() const {
-        return ((piece() & 1) * 2 - 1) * (middlegame[piece()][end()] - middlegame[piece()][start()]);
-    }
     inline int evade_order() const {
-        return ((piece() & 1) * 2 - 1) * (-middlegame[captured()][end()] - middlegame[piece()][start()]);
+        return 0;
     }
     inline int mvv_lva() const {
         if (flag() == queen_pr) return 384;
@@ -80,20 +71,19 @@ struct Move {
         if (flag() == enpassant) out << "=ep";
         out << '\n';
     }
-    int sortkey;
-    u32 data;
+    u64 data;
 };
 
 inline bool operator==(const Move& move1, const Move& move2) {
-    return move1.data == move2.data;
+    return (move1.data & 0xFFFFFFFF) == (move2.data & 0xFFFFFFFF);
 }
 
 inline bool operator!=(const Move& move1, const Move& move2) {
-    return move1.data != move2.data;
+    return (move1.data & 0xFFFFFFFF) != (move2.data & 0xFFFFFFFF);
 }
 
 inline bool operator<(const Move& move1, const Move& move2) {
-    return move1.sortkey > move2.sortkey;//reversed so higher sortkeys go first by default
+    return move1.data > move2.data;//reversed so higher sortkeys go first by default
 }
 
 inline std::ostream& operator<<(std::ostream& out, const Move move) {
