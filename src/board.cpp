@@ -810,8 +810,8 @@ void Position::undo_move(Move move) {
 
 template <bool update_hash> inline void Position::fill_sq(int sq, int piece) {
     if constexpr (update_hash) hash[ply] ^= zobrist_pieces[board[sq]][sq] ^ zobrist_pieces[piece][sq];
-    mg_static_eval = mg_static_eval - middlegame[board[sq]][sq] + middlegame[piece][sq];
-    eg_static_eval = eg_static_eval - endgame[board[sq]][sq] + endgame[piece][sq];
+    //mg_static_eval = mg_static_eval - middlegame[board[sq]][sq] + middlegame[piece][sq];
+    //eg_static_eval = eg_static_eval - endgame[board[sq]][sq] + endgame[piece][sq];
     pieces[board[sq]] ^= (1ull << sq);
     pieces[piece] ^= (1ull << sq);
     board[sq] = piece;
@@ -823,7 +823,17 @@ int Position::eval_phase() {
 }
 int Position::static_eval() {
     int phase{std::min(eval_phase(), 24)};
-    return ((2 * side_to_move - 1) * (mg_static_eval * phase + eg_static_eval * (24 - phase)) / 24) + phase / 2;
+    int mg{}, eg{};
+    int bk = get_lsb(pieces[10]), wk = get_lsb(pieces[11]);
+    for (int i{}; i<10; ++i) {
+        for (u64 bb = pieces[i]; bb;) {
+            int sq = pop_lsb(bb);
+            mg += middlegame[bk][0][i][sq] + middlegame[wk][1][i][sq];
+            eg += endgame[bk][0][i][sq] + endgame[wk][1][i][sq];
+
+        }
+    }
+    return ((2 * side_to_move - 1) * (mg * phase + eg * (24 - phase)) / 24) + phase / 2;
 }
 
 void Position::load(std::vector<int> position, bool stm) {
