@@ -172,10 +172,6 @@ int main() {
             std::this_thread::sleep_for(std::chrono::milliseconds(200)); //wait 200 milliseconds to make sure that any ongoing searches stop before quitting
             return 0;
         }
-        if (tokens[0] == "search") {
-            timer.reset(0, 0, 0);
-            iterative_deepening(position, timer, hash, history, move);
-        }
         if (tokens[0] == "setoption" && tokens[1] == "name") {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
@@ -323,7 +319,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         }
     }
     Element entry = table.query(position.hashkey());
-    Move hash_move = Move(entry.bestmove);
     ++tt_queries;
     if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
     if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
@@ -331,25 +326,25 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         return entry.score;
     }
     if constexpr (check_extensions) if (in_check && depth <= 2) {++extended; --reduce_all;} //check extension
-    bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && hash_move.not_null() && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
+    bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
-        position.make_move(hash_move);
+        position.make_move(entry.bestmove);
         ++nodes;
         ++move_num;
         ++main_nodes;
         ++tt_moves;
         result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
-        position.undo_move(hash_move);
+        position.undo_move(entry.bestmove);
         if (!timer.stopped() && result > alpha) {
             alpha = result;
-            bestmove = hash_move;
+            bestmove = entry.bestmove;
             if (is_pv) {
                 pv_table[ply][0] = bestmove;
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                if constexpr (history_heuristic) if (bestmove.captured() == 12) history.edit(bestmove.piece(), bestmove.end(), depth * depth);
+                if constexpr (history_heuristic) if (bestmove.captured() == 12) history.edit(bestmove.piece(), bestmove.end(), depth * depth, true);
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
                 ++beta_cuts;
                 cut_num += move_num;
@@ -364,7 +359,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 4;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
-        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
+        if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
@@ -395,12 +390,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        if constexpr (history_heuristic) movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()]);
+        if constexpr (history_heuristic) movelist[i].add_sortkey(history.value(movelist[i].piece(), movelist[i].end()));
     }
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
-        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
+        if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
@@ -414,7 +409,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++main_nodes;
         //Late Move Reductions
         reduce_this = 0;
-        if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && history.table[movelist[i].piece()][movelist[i].end()] <= (history.sum >> 10) && !gives_check) {
+        if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && !gives_check) {
             reduce_this = lmr_reduction(is_pv, depth, move_num);
         }
         if (move_num == 1) {
@@ -441,8 +436,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                if constexpr (history_heuristic) for (int j{0}; j<i; ++j) history.edit(movelist[j].piece(), movelist[j].end(), -depth);
-                if constexpr (history_heuristic) history.edit(bestmove.piece(), bestmove.end(), depth * depth);
+                if constexpr (history_heuristic) for (int j{0}; j<i; ++j) history.edit(movelist[j].piece(), movelist[j].end(), depth * depth, false);
+                if constexpr (history_heuristic) history.edit(bestmove.piece(), bestmove.end(), depth * depth, true);
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
                 ++beta_cuts;
                 cut_num += move_num;
@@ -482,13 +477,12 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         null_attempts = 0;
         nulled = 0;
         Element entry = table.query(position.hashkey());
-        Move hash_move = Move(entry.bestmove);
         if constexpr (history_heuristic) for (int i = 0; i < movelist.size(); ++i) {
-            movelist[i].add_sortkey(history.table[movelist[i].piece()][movelist[i].end()]);
+            movelist[i].add_sortkey(history.value(movelist[i].piece(), movelist[i].end()));
         }
-        if (entry.type != tt_none && entry.full_hash == position.hashkey() && hash_move.not_null()) {
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null()) {
             for (int i{0}; i < movelist.size(); ++i) {
-                if (movelist[i] == hash_move) {
+                if (movelist[i] == entry.bestmove) {
                     Move temp = movelist[0];
                     movelist[0] = movelist[i];
                     movelist[i] = temp;
