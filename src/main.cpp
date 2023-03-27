@@ -62,6 +62,7 @@ int main() {
     Position position;
     Hashtable hash{1};
     History_table history{};
+    Killer_table killer{};
     Stop_timer timer{0, 0, 0};
     int move_overhead = 20;
     std::atomic<bool>& stop = timer.stop;
@@ -84,7 +85,7 @@ int main() {
         if (tokens[0] == "go") {
             if (std::find(tokens.begin(), tokens.end(), "infinite") != tokens.end()) {
                 timer.reset();
-                std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(move)};
+                std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(killer), std::ref(move)};
                 search.detach();
                 continue;
             }
@@ -121,7 +122,7 @@ int main() {
                 movetime = std::max(1, movetime); //no negative movetime
             }
             timer.reset(movetime, nodes, depth);
-            std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(move)};
+            std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(killer), std::ref(move)};
             search.detach();
         }
         if (tokens[0] == "isready") {out << "readyok" << std::endl;}
@@ -285,7 +286,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
     }
 }
 
-int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
+int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
 {
     if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
     if (depth <= 0) return quiescence(position, timer, ply + 1, alpha, beta);
@@ -310,7 +311,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_null();
         ++nodes;
         ++null_attempts;
-        result = -pvs(position, timer, table, history, std::max(1, depth - reduce_all - 3 - (depth > 7) - (depth > 11) - (depth > 16)), ply + 1, -beta, -beta + 1, false, false);
+        result = -pvs(position, timer, table, history, killer, std::max(1, depth - reduce_all - 3 - (depth > 7) - (depth > 11) - (depth > 16)), ply + 1, -beta, -beta + 1, false, false);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
@@ -334,7 +335,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++move_num;
         ++main_nodes;
         ++tt_moves;
-        result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
+        result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         position.undo_move(entry.bestmove);
         if (!timer.stopped() && result > alpha) {
             alpha = result;
@@ -365,11 +366,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++move_num;
         ++main_nodes;
         if (depth == 1 || !is_pv || move_num == 1) {
-            result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
+            result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
-            result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha-1, -alpha, false, true);
+            result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -alpha-1, -alpha, false, true);
             if (alpha < result && result < beta) {
-                result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
+                result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
             }
         }
         position.undo_move(movelist[i]);
@@ -390,7 +391,17 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        if constexpr (history_heuristic) movelist[i].add_sortkey(history.value(movelist[i].piece(), movelist[i].end()));
+        int score{};
+        if constexpr (history_heuristic) {
+            score += history.value(movelist[i].piece(), movelist[i].end());
+        }
+        if constexpr (killer_heuristic) {
+            if (movelist[i] == killer.table[ply][0]) score += 1600;
+            if (movelist[i] == killer.table[ply][1]) score += 800;
+            if (ply > 2 && movelist[i] == killer.table[ply - 2][0]) score += 400;
+            if (ply > 2 && movelist[i] == killer.table[ply - 2][1]) score += 200;
+        }
+        movelist[i].add_sortkey(score);
     }
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
@@ -413,18 +424,18 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             reduce_this = lmr_reduction(is_pv, depth, move_num);
         }
         if (move_num == 1) {
-            result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
+            result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
             if (reduce_this) { //try a reduced search
                 ++red_attempts;
-                result = -pvs(position, timer, table, history, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
+                result = -pvs(position, timer, table, history, killer, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
                 if (result <= alpha || (result >= beta && is_pv)) ++reduced;
             }
             if (!reduce_this || (alpha < result && (result < beta || !is_pv))) {
-                result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
+                result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
             }
             if (alpha < result && result < beta && is_pv) {
-                result = -pvs(position, timer, table, history, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
+                result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
             }
         }
         position.undo_move(movelist[i]);
@@ -439,6 +450,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
                 if constexpr (history_heuristic) for (int j{0}; j<i; ++j) history.edit(movelist[j].piece(), movelist[j].end(), depth * depth, false);
                 if constexpr (history_heuristic) history.edit(bestmove.piece(), bestmove.end(), depth * depth, true);
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                if constexpr (killer_heuristic) killer.add(bestmove, ply);
                 ++beta_cuts;
                 cut_num += move_num;
                 return alpha;
@@ -454,7 +466,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     return timer.stopped() ? 0 : alpha;
 }
 
-void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Move& bestmove) {
+void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, Move& bestmove) {
     if constexpr (history_heuristic) history.age();
     table.age();
     Movelist movelist;
@@ -511,11 +523,11 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 ++nodes;
                 orig_nodes = nodes;
                 if (depth == 1 || i == 0) {
-                    result = -pvs(position, timer, table, history, depth - 1, 1, -20000, -alpha, true, true);
+                    result = -pvs(position, timer, table, history, killer, depth - 1, 1, -20000, -alpha, true, true);
                 } else {
-                    result = -pvs(position, timer, table, history, depth - 1, 1, -alpha-1, -alpha, false, true);
+                    result = -pvs(position, timer, table, history, killer, depth - 1, 1, -alpha-1, -alpha, false, true);
                     if (result > alpha) {
-                        result = -pvs(position, timer, table, history, depth - 1, 1, -20000, -alpha, true, true);
+                        result = -pvs(position, timer, table, history, killer, depth - 1, 1, -20000, -alpha, true, true);
                     }
                 }
                 movelist[i].add_sortkey(nodes - orig_nodes);
