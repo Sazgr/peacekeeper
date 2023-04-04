@@ -17,8 +17,9 @@ It would be helpful to report any bugs found.
 
 Version | CCRL Blitz | CCRL 40/15 | MCERL
 --------|------------|------------|------
-v1.10   | 2421       | 2385       | 2200
-v1.20   | ----       | (2509)     | 2530
+v1.10   | 2450       | 2385       | 2200
+v1.20   | 2564       | 2474       | 2530
+v1.30   | 2660       | ~2524      | ----
 
 ### Features
 
