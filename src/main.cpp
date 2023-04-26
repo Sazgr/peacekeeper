@@ -293,7 +293,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
     if (position.draw(ply > 2 ? 1 : 2)) {
         pv_table[ply][0] = Move{};
-        return 0;
+        return (ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
     }
     bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = position.static_eval();
