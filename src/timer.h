@@ -54,8 +54,11 @@ public:
         if (depth_limit_active) stop = stop || (depth > depth_limit);
         return stop;
     }
-    inline int percent_time() {
-        return (time_limit_active ? static_cast<int>(elapsed() * 100000 / time_limit) : 0);
+    inline int percent_time(int percent) {
+        if (stop) return true;
+        if (time_limit_active) stop = stop || (static_cast<int>(elapsed() * 100000) >= percent * time_limit);
+        return stop;
+        //return (time_limit_active ? static_cast<int>(elapsed() * 100000 / time_limit) : 0);
     }
     inline double elapsed() {
         return timer.elapsed();
