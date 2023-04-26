@@ -328,6 +328,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     }
     if constexpr (check_extensions) if (in_check && depth <= 2) {++extended; --reduce_all;} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
+    if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) ++reduce_all;
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
         position.make_move(entry.bestmove);
