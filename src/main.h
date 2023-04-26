@@ -19,6 +19,7 @@ enum Features : bool {
     late_move_pruning    = true,
     late_move_reductions = true,
     check_extensions     = true,
+    internal_iterative_reduction = true,
 };
 
 std::array<int, 4> futile_margins{146, 221, 281, 334};
