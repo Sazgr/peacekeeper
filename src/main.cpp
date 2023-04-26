@@ -303,15 +303,15 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int reduce_all{1};
     int reduce_this{};
     Move bestmove{};
-    if constexpr (static_null_move) if (depth < 4 && !is_pv && !in_check && no_mate(alpha, beta) && (static_eval - futile_margins[depth] >= beta)) {
+    if constexpr (static_null_move) if (depth < 4 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth] >= beta)) {
         ++pruned;
         return static_eval - futile_margins[depth];
     }
-    if constexpr (null_move_pruning) if (depth > 1 && can_null && !is_pv && static_eval > beta && (position.eval_phase() > 4) && !in_check) {
+    if constexpr (null_move_pruning) if (depth > 2 && can_null && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ++nodes;
         ++null_attempts;
-        result = -pvs(position, timer, table, history, killer, std::max(1, depth - reduce_all - 3 - (depth > 7) - (depth > 11) - (depth > 16)), ply + 1, -beta, -beta + 1, false, false);
+        result = -pvs(position, timer, table, history, killer, std::max(1, static_cast<int>(depth - reduce_all - (1.2 + depth / 4.0 + std::sqrt(static_eval - beta) / 12.0))), ply + 1, -beta, -beta + 1, false, false);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
