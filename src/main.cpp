@@ -241,7 +241,7 @@ template <bool side> u64 perft_f(Position& position, int depth) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int beta) {
-    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
+    if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
     if (position.check()) {
         int result = -20000;
         Movelist movelist;
@@ -288,7 +288,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
 
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
 {
-    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
+    if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
     if (depth <= 0) return quiescence(position, timer, ply + 1, alpha, beta);
     if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
     if (position.draw(ply > 2 ? 1 : 2)) {
@@ -502,8 +502,8 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         int last_score, result;
         Move bestmove;
         for (; depth <= 64;) {
-            if (timer.percent_time() >= 80) {break;}
-            if (movelist.size() == 1 && timer.percent_time() >= 40) {break;} //if there is only one move to make do not use as much time
+            if (!bestmove.is_null() && timer.percent_time(72)) {break;}
+            if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;} //if there is only one move to make do not use as much time
             if (timer.check(nodes, depth)) {break;}
             result = pvs(position, timer, table, history, killer, depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
