@@ -483,6 +483,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
     if (movelist.size() == 0) return;
     else {
         int alpha = -20000;
+        int beta = 20000;
         nodes = 0;
         beta_cuts = 0;
         cut_num = 0;
@@ -497,70 +498,34 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         pruned = 0;
         null_attempts = 0;
         nulled = 0;
-        Element entry = table.query(position.hashkey());
-        if constexpr (history_heuristic) for (int i = 0; i < movelist.size(); ++i) {
-            movelist[i].add_sortkey(history.value(movelist[i].piece(), movelist[i].end()));
-        }
-        if (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null()) {
-            for (int i{0}; i < movelist.size(); ++i) {
-                if (movelist[i] == entry.bestmove) {
-                    Move temp = movelist[0];
-                    movelist[0] = movelist[i];
-                    movelist[i] = temp;
-                    break;
-                }
-            }
-            movelist.sort(1, movelist.size());//sorting on history score, tiebreaking using PSTs
-        } else {
-            movelist.sort(0, movelist.size());
-        }
         int depth{1};
-        int result{0};
-        int orig_nodes;
-        int last_score;
-        pv_table[1][0] = Move{};
-        bestmove = movelist[0];//make sure we return a legal move
-        for (; depth <= 64; ++depth) {
-            if (movelist.size() == 0) return;
+        int last_score, result;
+        Move bestmove;
+        for (; depth <= 64;) {
             if (timer.percent_time() >= 80) {break;}
             if (movelist.size() == 1 && timer.percent_time() >= 40) {break;} //if there is only one move to make do not use as much time
             if (timer.check(nodes, depth)) {break;}
-            last_score = alpha;
-            alpha = -20000;
-            for (int i{0}; i < movelist.size(); ++i) {
-                position.make_move(movelist[i]);
-                ++nodes;
-                orig_nodes = nodes;
-                if (depth == 1 || i == 0) {
-                    result = -pvs(position, timer, table, history, killer, depth - 1, 1, -20000, -alpha, true, true);
-                } else {
-                    result = -pvs(position, timer, table, history, killer, depth - 1, 1, -alpha-1, -alpha, false, true);
-                    if (result > alpha) {
-                        result = -pvs(position, timer, table, history, killer, depth - 1, 1, -20000, -alpha, true, true);
-                    }
-                }
-                movelist[i].add_sortkey(nodes - orig_nodes);
-                position.undo_move(movelist[i]);
-                if (!timer.stopped() && result > alpha) {
-                    alpha = result;
-                    bestmove = movelist[i];
-                    pv_table[0][0] = bestmove;
-                    memcpy(&pv_table[0][1], &pv_table[1][0], sizeof(Move) * 127);
-                }
-                
+            result = pvs(position, timer, table, history, killer, depth, 0, alpha, beta, true, true);
+            if (alpha < result && result < beta) {
+                ++depth;
+                print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
+                last_score = result;
+                bestmove = pv_table[0][0];
+                alpha = last_score - aspiration_bounds[0];
+                beta = last_score + aspiration_bounds[0];
+                continue;
             }
-            if (movelist[0] != bestmove) {
-                for (int i{0}; i < movelist.size(); ++i) {
-                    if (movelist[i] == bestmove) {
-                        movelist[i] = movelist[0];
-                        movelist[0] = bestmove;
-                    }
-                }
-            }
-            movelist.sort(1, movelist.size());
-            print_uci(out, alpha == -20000 ? last_score : alpha, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
+            if (result <= alpha) {
+                if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
+                else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
+                else alpha = -20000;
+            } 
+            if (result >= beta) {
+                if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
+                else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
+                else beta = 20000;
+            } 
         }
-        table.insert(position.hashkey(), alpha, tt_exact, bestmove, depth);
         if (debug_mode) {
             std::cout << "info string move ordering\ninfo string attempts " << cut_num << " cuts " << beta_cuts << " ratio " << static_cast<double>(cut_num) / beta_cuts << std::endl;
             std::cout << "info string tt\ninfo string queries " << tt_queries << " hits " << tt_hits << " moves " << tt_moves << " cutoffs " << tt_cutoffs << " hit% " << 100.0 * tt_hits / tt_queries << " move% " << 100.0 * tt_moves / tt_queries << " cutoff% " << 100.0 * tt_cutoffs / tt_queries << std::endl;
