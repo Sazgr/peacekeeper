@@ -75,6 +75,12 @@ int main() {
         std::istringstream parser(command);
         while (parser >> token) {tokens.push_back(token);}
         if (tokens.size() == 0) {continue;}
+        if (tokens[0] == "bench") {
+            position.load_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-", "0", "1");
+            timer.reset(0, 0, 17);
+            iterative_deepening(position, timer, hash, history, killer, move, false);
+            out << nodes << " nodes " << static_cast<int>(nodes / timer.elapsed()) << " nps" << std::endl;
+        }
         if (tokens[0] == "debug") {
             if (tokens.size() >= 2 && tokens[1] == "on") debug_mode = true;
             if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
@@ -85,7 +91,7 @@ int main() {
         if (tokens[0] == "go") {
             if (std::find(tokens.begin(), tokens.end(), "infinite") != tokens.end()) {
                 timer.reset();
-                std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(killer), std::ref(move)};
+                std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(killer), std::ref(move), true};
                 search.detach();
                 continue;
             }
@@ -122,7 +128,7 @@ int main() {
                 movetime = std::max(1, movetime); //no negative movetime
             }
             timer.reset(movetime, nodes, depth);
-            std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(killer), std::ref(move)};
+            std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(history), std::ref(killer), std::ref(move), true};
             search.detach();
         }
         if (tokens[0] == "isready") {out << "readyok" << std::endl;}
@@ -475,7 +481,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     return timer.stopped() ? 0 : alpha;
 }
 
-void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, Move& bestmove) {
+void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, Move& bestmove, bool output) {
     if constexpr (history_heuristic) history.age();
     table.age();
     Movelist movelist;
@@ -508,7 +514,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             result = pvs(position, timer, table, history, killer, depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
                 ++depth;
-                print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
+                if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
                 last_score = result;
                 bestmove = pv_table[0][0];
                 alpha = last_score - aspiration_bounds[0];
@@ -534,7 +540,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             std::cout << "info string pruning\ninfo string total nodes " << main_nodes << " pruned " << pruned << " prune% " << 100.0 * pruned / (pruned + main_nodes) << std::endl;
             std::cout << "info string null move\ninfo string null move attempts " << null_attempts << " successes " << nulled << " null% " << 100.0 * nulled / null_attempts << std::endl;
         }
-        print_bestmove(out, bestmove);
+        if (output) print_bestmove(out, bestmove);
         return;
     }
 }
