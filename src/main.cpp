@@ -80,6 +80,7 @@ int main() {
             timer.reset(0, 0, 17);
             iterative_deepening(position, timer, hash, history, killer, move, false);
             out << nodes << " nodes " << static_cast<int>(nodes / timer.elapsed()) << " nps" << std::endl;
+            return 0;
         }
         if (tokens[0] == "debug") {
             if (tokens.size() >= 2 && tokens[1] == "on") debug_mode = true;
