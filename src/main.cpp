@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
     std::atomic<bool>& stop = timer.stop;
     std::string command, token;
     std::vector<std::string> tokens;
-    if (argv[1] == "bench") {
+    if (argc > 1) {
         position.load_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-", "0", "1");
         timer.reset(0, 0, 17);
         iterative_deepening(position, timer, hash, history, killer, move, false);
