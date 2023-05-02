@@ -55,7 +55,7 @@ u64 pruned;
 u64 null_attempts;
 u64 nulled;
 
-int main() {
+int main(int argc, char *argv[]) {
     Move move{};
     Movelist movelist;
     std::string movestring;
@@ -68,6 +68,13 @@ int main() {
     std::atomic<bool>& stop = timer.stop;
     std::string command, token;
     std::vector<std::string> tokens;
+    if (argv[1] == "bench") {
+        position.load_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-", "0", "1");
+        timer.reset(0, 0, 17);
+        iterative_deepening(position, timer, hash, history, killer, move, false);
+        out << nodes << " nodes " << static_cast<int>(nodes / timer.elapsed()) << " nps" << std::endl;
+        return 0;
+    }
     std::cout << "peacekeeper by sazgr" << std::endl;
     while (true) {
         getline(in, command);
@@ -75,13 +82,6 @@ int main() {
         std::istringstream parser(command);
         while (parser >> token) {tokens.push_back(token);}
         if (tokens.size() == 0) {continue;}
-        if (tokens[0] == "bench") {
-            position.load_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-", "0", "1");
-            timer.reset(0, 0, 17);
-            iterative_deepening(position, timer, hash, history, killer, move, false);
-            out << nodes << " nodes " << static_cast<int>(nodes / timer.elapsed()) << " nps" << std::endl;
-            return 0;
-        }
         if (tokens[0] == "debug") {
             if (tokens.size() >= 2 && tokens[1] == "on") debug_mode = true;
             if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
