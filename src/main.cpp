@@ -310,7 +310,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int reduce_all{1};
     int reduce_this{};
     Move bestmove{};
-    if constexpr (static_null_move) if (depth < 4 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth] >= beta)) {
+    if constexpr (static_null_move) if (depth < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth] >= beta)) {
         ++pruned;
         return static_eval - futile_margins[depth];
     }
@@ -370,7 +370,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
     movelist.sort(0, movelist.size());
-    bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 4;
+    bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
