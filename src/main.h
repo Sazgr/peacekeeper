@@ -37,7 +37,7 @@ inline int lmr_reduction(bool is_pv, int depth, int move_num) {
     else return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 1.85 + 0.5);
 }
 inline int late_move_margin(int depth, int move_num) {
-    if constexpr (late_move_pruning) return (move_num * move_num) / (2 * depth + 2);
+    if constexpr (late_move_pruning) return (move_num * move_num) / (depth * depth);
     else return 0;
 }
 inline bool no_mate(int alpha, int beta) {
