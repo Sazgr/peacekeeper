@@ -29,7 +29,7 @@ constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
 u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
-int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int beta);
+int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply, int alpha, int beta);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null);
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, Move& bestmove, bool output);
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {

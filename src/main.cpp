@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
         }
         if (tokens[0] == "quiesce") {
             timer.reset(0, 0, 0);
-            quiescence(position, timer, 0, -20000, 20000);
+            quiescence(position, timer, hash, 0, -20000, 20000);
             return 0;
         }
         if (tokens[0] == "quit") {
@@ -247,7 +247,7 @@ template <bool side> u64 perft_f(Position& position, int depth) {
     return total;
 }
 
-int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int beta) {
+int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply, int alpha, int beta) {
     if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
     if (position.check()) {
         int result = -20000;
@@ -259,7 +259,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         for (int i = 0; i < movelist.size(); ++i) {
             position.make_move(movelist[i]);
             ++nodes;
-            result = -quiescence(position, timer, ply + 1, -beta, -alpha);
+            result = -quiescence(position, timer, table, ply + 1, -beta, -alpha);
             position.undo_move(movelist[i]);
             if (result > alpha) {
                 alpha = result;
@@ -271,6 +271,15 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
         int static_eval = position.static_eval();
         if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
         if (alpha < static_eval) alpha = static_eval;
+        int old_alpha{alpha};
+        Move bestmove{};
+        Element entry = table.query(position.hashkey());
+        ++tt_queries;
+        if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+            ++tt_cutoffs;
+            return entry.score;
+        }
         Movelist movelist;
         position.legal_noisy(movelist);
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
@@ -280,15 +289,18 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
             position.make_move(movelist[i]);
             ++nodes;
-            result = -quiescence(position, timer, ply + 1, -beta, -alpha);
+            result = -quiescence(position, timer, table, ply + 1, -beta, -alpha);
             position.undo_move(movelist[i]);
             if (result > alpha) {
                 alpha = result;
+                bestmove = movelist[i];
                 if (alpha >= beta) {
+                    if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0);
                     return alpha;
                 }
             }
         }
+        if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0);
         return alpha;
     }
 }
@@ -296,7 +308,7 @@ int quiescence(Position& position, Stop_timer& timer, int ply, int alpha, int be
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
 {
     if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
-    if (depth <= 0) return quiescence(position, timer, ply + 1, alpha, beta);
+    if (depth <= 0) return quiescence(position, timer, table, ply + 1, alpha, beta);
     if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
     if (position.draw(ply > 2 ? 1 : 2)) {
         pv_table[ply][0] = Move{};
