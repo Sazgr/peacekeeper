@@ -507,7 +507,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         nulled = 0;
         int depth{1};
         int last_score, result;
-        Move bestmove;
+        Move bestmove = movelist[0];
         for (; depth <= 64;) {
             if (!bestmove.is_null() && timer.percent_time(72)) {break;}
             if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;} //if there is only one move to make do not use as much time
@@ -517,7 +517,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 ++depth;
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
                 last_score = result;
-                bestmove = pv_table[0][0];
+                if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
                 alpha = last_score - aspiration_bounds[0];
                 beta = last_score + aspiration_bounds[0];
                 continue;
