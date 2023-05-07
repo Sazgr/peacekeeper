@@ -280,11 +280,28 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply,
             ++tt_cutoffs;
             return entry.score;
         }
+        int result = -20000;
+        bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && entry.bestmove.captured() != 12 && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
+        if (hash_move_usable) {//searching best move from hashtable
+            if (!(delta_pruning && static_eval + entry.bestmove.gain() + futile_margins[0] < alpha)) { //delta pruning
+                position.make_move(entry.bestmove);
+                ++nodes;
+                result = -quiescence(position, timer, table, ply + 1, -beta, -alpha);
+                position.undo_move(entry.bestmove);
+                if (result > alpha) {
+                    alpha = result;
+                    bestmove = entry.bestmove;
+                    if (alpha >= beta) {
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0);
+                        return alpha;
+                    }
+                }
+            }
+        }
         Movelist movelist;
         position.legal_noisy(movelist);
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
-        int result = -20000;
         for (int i = 0; i < movelist.size(); ++i) {
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
             position.make_move(movelist[i]);
