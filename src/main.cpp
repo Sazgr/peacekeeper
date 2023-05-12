@@ -325,8 +325,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply,
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& history, Killer_table& killer, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
 {
     if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
-    if (depth <= 0) return quiescence(position, timer, table, ply + 1, alpha, beta);
-    if (depth == 1 && is_pv) pv_table[ply + 1][0] = Move{};
+    if ((depth / 4) <= 0) return quiescence(position, timer, table, ply + 1, alpha, beta);
+    if ((depth / 4) == 1 && is_pv) pv_table[ply + 1][0] = Move{};
     if (position.draw(ply > 2 ? 1 : 2)) {
         pv_table[ply][0] = Move{};
         return (ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
@@ -336,21 +336,21 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int move_num{0};
     int result{};
     int old_alpha{alpha};
-    int reduce_all{1};
+    int reduce_all{4};
     int reduce_this{};
     Move bestmove{};
-    if constexpr (static_null_move) if (depth < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth] >= beta)) {
+    if constexpr (static_null_move) if ((depth / 4) < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[(depth / 4)] >= beta)) {
         ++pruned;
-        return static_eval - futile_margins[depth];
+        return static_eval - futile_margins[(depth / 4)];
     }
-    if constexpr (null_move_pruning) if (depth > 2 && can_null && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
+    if constexpr (null_move_pruning) if ((depth / 4) > 2 && can_null && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ++nodes;
         ++null_attempts;
-        result = -pvs(position, timer, table, history, killer, std::max(1, static_cast<int>(depth - reduce_all - (1.2 + depth / 4.0 + std::sqrt(static_eval - beta) / 12.0))), ply + 1, -beta, -beta + 1, false, false);
+        result = -pvs(position, timer, table, history, killer, std::max(4, depth - reduce_all - 4 * static_cast<int>(2.19999999 + (depth / 4) / 4.0 + std::sqrt(static_eval - beta) / 12.0)), ply + 1, -beta, -beta + 1, false, false);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
-            //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
+            //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, (depth / 4));
             ++nulled;
             return result;
         }
@@ -358,18 +358,18 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     Element entry = table.query(position.hashkey());
     ++tt_queries;
     if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
-    if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+    if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= (depth / 4) && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         ++tt_cutoffs;
         return entry.score;
     }
-    if constexpr (check_extensions) if (in_check && depth <= 2) {++extended; --reduce_all;} //check extension
+    if constexpr (check_extensions) if (in_check && (depth / 4) <= 2) {++extended; reduce_all -= 4;} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
-    if constexpr (internal_iterative_deepening) if (is_pv && depth >= 6 && !hash_move_usable) {
-        -pvs(position, timer, table, history, killer, depth - 1, ply, alpha, beta, is_pv, can_null);
+    if constexpr (internal_iterative_deepening) if (is_pv && (depth / 4) >= 6 && !hash_move_usable) {
+        -pvs(position, timer, table, history, killer, depth - 4, ply, alpha, beta, is_pv, can_null);
         entry = table.query(position.hashkey());
         hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     }
-    if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) ++reduce_all;
+    if constexpr (internal_iterative_reduction) if ((depth / 4) >= 6 && !hash_move_usable) reduce_all += 4;
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
         position.make_move(entry.bestmove);
@@ -387,8 +387,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                if constexpr (history_heuristic) if (bestmove.captured() == 12) history.edit(bestmove.piece(), bestmove.end(), depth * depth, true);
-                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                if constexpr (history_heuristic) if (bestmove.captured() == 12) history.edit(bestmove.piece(), bestmove.end(), (depth / 4) * (depth / 4), true);
+                table.insert(position.hashkey(), alpha, tt_beta, bestmove, (depth / 4));
                 ++beta_cuts;
                 cut_num += move_num;
                 return alpha;
@@ -399,7 +399,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
     movelist.sort(0, movelist.size());
-    bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
+    bool can_fut_prune = !in_check && no_mate(alpha, beta) && (depth / 4) < 6;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
@@ -407,7 +407,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++nodes;
         ++move_num;
         ++main_nodes;
-        if (depth == 1 || !is_pv || move_num == 1) {
+        if ((depth / 4) == 1 || !is_pv || move_num == 1) {
             result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         } else {
             result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -alpha-1, -alpha, false, true);
@@ -424,7 +424,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                table.insert(position.hashkey(), alpha, tt_beta, bestmove, (depth / 4));
                 ++beta_cuts;
                 cut_num += move_num;
                 return alpha;
@@ -452,7 +452,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num) < alpha) && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[(depth / 4)] - late_move_margin((depth / 4), move_num) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
             ++pruned;
             continue;
@@ -462,8 +462,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++main_nodes;
         //Late Move Reductions
         reduce_this = 0;
-        if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && !gives_check) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
+        if constexpr (late_move_reductions) if ((depth / 4) > 2 && move_num >= 4 && !in_check && !gives_check) {
+            reduce_this = lmr_reduction(is_pv, (depth / 4), move_num);
         }
         if (move_num == 1) {
             result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
@@ -471,7 +471,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
             if (reduce_this) { //try a reduced search
                 ++red_attempts;
             }
-            result = -pvs(position, timer, table, history, killer, depth - reduce_all - reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
+            result = -pvs(position, timer, table, history, killer, depth - reduce_all - 4 * reduce_this, ply + 1, -alpha - 1, -alpha, false, true);
             if (reduce_this) {
                 if (alpha < result) {
                     result = -pvs(position, timer, table, history, killer, depth - reduce_all, ply + 1, -alpha - 1, -alpha, false, true);
@@ -492,9 +492,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                if constexpr (history_heuristic) for (int j{0}; j<i; ++j) history.edit(movelist[j].piece(), movelist[j].end(), depth * depth, false);
-                if constexpr (history_heuristic) history.edit(bestmove.piece(), bestmove.end(), depth * depth, true);
-                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                if constexpr (history_heuristic) for (int j{0}; j<i; ++j) history.edit(movelist[j].piece(), movelist[j].end(), (depth / 4) * (depth / 4), false);
+                if constexpr (history_heuristic) history.edit(bestmove.piece(), bestmove.end(), (depth / 4) * (depth / 4), true);
+                table.insert(position.hashkey(), alpha, tt_beta, bestmove, (depth / 4));
                 if constexpr (killer_heuristic) killer.add(bestmove, ply);
                 ++beta_cuts;
                 cut_num += move_num;
@@ -507,7 +507,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         if (in_check) return -20000 + ply;
         else return 0;
     }
-    if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, depth);
+    if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, (depth / 4));
     return timer.stopped() ? 0 : alpha;
 }
 
@@ -541,7 +541,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             if (!bestmove.is_null() && timer.percent_time(72)) {break;}
             if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;} //if there is only one move to make do not use as much time
             if (timer.check(nodes, depth)) {break;}
-            result = pvs(position, timer, table, history, killer, depth, 0, alpha, beta, true, true);
+            result = pvs(position, timer, table, history, killer, 4 * depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
                 ++depth;
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
