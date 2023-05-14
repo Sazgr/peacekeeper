@@ -183,6 +183,8 @@ int main(int argc, char *argv[]) {
         if (tokens[0] == "setoption" && tokens[1] == "name") {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
+            if (tokens.size() >= 5 && tokens[2] == "a" && tokens[3] == "value") {a = 0.01 * stoi(tokens[4]);}
+            if (tokens.size() >= 5 && tokens[2] == "b" && tokens[3] == "value") {b = 0.01 * stoi(tokens[4]);}
         }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
@@ -362,7 +364,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++tt_cutoffs;
         return entry.score;
     }
-    if constexpr (check_extensions) if (in_check && (depth / 4) <= 2) {++extended; reduce_all -= 4;} //check extension
+    if constexpr (check_extensions) if (in_check && (depth / 4) <= 2) {++extended; reduce_all -= static_cast<int>(6.45 * pow(depth + 1, -0.48));} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     if constexpr (internal_iterative_deepening) if (is_pv && (depth / 4) >= 6 && !hash_move_usable) {
         -pvs(position, timer, table, history, killer, depth - 4, ply, alpha, beta, is_pv, can_null);
