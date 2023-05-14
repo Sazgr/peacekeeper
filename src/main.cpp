@@ -183,8 +183,6 @@ int main(int argc, char *argv[]) {
         if (tokens[0] == "setoption" && tokens[1] == "name") {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
-            if (tokens.size() >= 5 && tokens[2] == "a" && tokens[3] == "value") {a = 0.01 * stoi(tokens[4]);}
-            if (tokens.size() >= 5 && tokens[2] == "b" && tokens[3] == "value") {b = 0.01 * stoi(tokens[4]);}
         }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
