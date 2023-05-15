@@ -362,7 +362,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++tt_cutoffs;
         return entry.score;
     }
-    if constexpr (check_extensions) if (in_check && (depth / 4) <= 2) {++extended; reduce_all -= static_cast<int>(2.09 / sqrt(depth + 1) + 2.44);} //check extension
+    if constexpr (check_extensions) if (in_check && (depth / 4) <= 2) {++extended; reduce_all -= static_cast<int>(4.6 / cbrt(depth / 4.0 + 1.0) + 1.0);} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     if constexpr (internal_iterative_deepening) if (is_pv && (depth / 4) >= 6 && !hash_move_usable) {
         -pvs(position, timer, table, history, killer, depth - 4, ply, alpha, beta, is_pv, can_null);
