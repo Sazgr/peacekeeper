@@ -339,9 +339,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     int reduce_all{4};
     int reduce_this{};
     Move bestmove{};
-    if constexpr (static_null_move) if ((depth / 4) < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[(depth / 4)] >= beta)) {
+    bool improving = !in_check && ply >= 2 && position.eval_stack[position.ply - 2] != -20001 && position.eval_stack[position.ply] > position.eval_stack[position.ply - 2];
+    if constexpr (static_null_move) if ((depth / 4) < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[(depth / 4) - improving] >= beta)) {
         ++pruned;
-        return static_eval - futile_margins[(depth / 4)];
+        return static_eval - futile_margins[(depth / 4) - improving];
     }
     if constexpr (null_move_pruning) if ((depth / 4) > 2 && can_null && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();

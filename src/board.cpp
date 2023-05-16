@@ -721,6 +721,7 @@ std::ostream& operator<<(std::ostream& out, Position& position) {
 
 void Position::make_move(Move move) {
     ++ply;
+    eval_stack[ply] = -20001;
     hash[ply] = hash[ply - 1];
     hash[ply] ^= zobrist_black;
     side_to_move = !side_to_move;
@@ -833,7 +834,8 @@ int Position::static_eval() {
 
         }
     }
-    return ((2 * side_to_move - 1) * (mg * phase + eg * (24 - phase)) / 24) + phase / 2;
+    eval_stack[ply] = ((2 * side_to_move - 1) * (mg * phase + eg * (24 - phase)) / 24) + phase / 2;
+    return eval_stack[ply];
 }
 
 void Position::load(std::vector<int> position, bool stm) {
