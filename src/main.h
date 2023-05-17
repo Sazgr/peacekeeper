@@ -23,7 +23,7 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
-constexpr std::array<int, 7> futile_margins{103, 171, 230, 283, 334, 381, 426};
+constexpr std::array<int, 6> futile_margins{103, 171, 230, 283, 334, 381};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 
 u64 perft(Position& position, int depth);

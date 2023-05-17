@@ -453,7 +453,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[(depth / 4) + improving] - late_move_margin((depth / 4), move_num) < alpha) && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[(depth / 4)] - late_move_margin((depth / 4), move_num) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
             ++pruned;
             continue;
