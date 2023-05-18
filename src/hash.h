@@ -45,7 +45,8 @@ public:
         table.resize(size);
     }
     void prefetch(const u64 hash) const {
-        __builtin_prefetch(&table[hash & (size-1)]);
+        __builtin_prefetch(&table[hash & (size - 2)]);
+        __builtin_prefetch(&table[(hash & (size - 2)) + 1]);
     }
     Element& query(const u64 hash) {
         if (table[(hash & (size - 2))].full_hash == hash) {

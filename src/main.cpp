@@ -268,6 +268,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply,
         }
         return alpha;
     } else {
+        table.prefetch(position.hashkey());
         int static_eval = position.static_eval();
         if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
         if (alpha < static_eval) alpha = static_eval;
@@ -344,6 +345,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         ++pruned;
         return static_eval - futile_margins[(depth / 4) - improving];
     }
+    table.prefetch(position.hashkey());
     if constexpr (null_move_pruning) if ((depth / 4) > 2 && can_null && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ++nodes;
