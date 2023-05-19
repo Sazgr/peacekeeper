@@ -350,7 +350,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
         position.make_null();
         ++nodes;
         ++null_attempts;
-        result = -pvs(position, timer, table, history, killer, std::max(4, depth - reduce_all - 4 * static_cast<int>(2.19999999 + (depth / 4) / 4.0 + std::sqrt(static_eval - beta) / 12.0)), ply + 1, -beta, -beta + 1, false, false);
+        result = -pvs(position, timer, table, history, killer, std::max(4, depth - reduce_all - 4 * static_cast<int>(2.19999999 + (depth / 4) / 4.0 + improving + std::sqrt(static_eval - beta) / 12.0)), ply + 1, -beta, -beta + 1, false, false);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, (depth / 4));
