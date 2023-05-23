@@ -368,7 +368,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, History_table& 
     if constexpr (check_extensions) if (in_check) {++extended; reduce_all -= static_cast<int>(4.27 / cbrt(depth / 4.0 + 1.0) + 1.14);} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     if constexpr (internal_iterative_deepening) if (is_pv && (depth / 4) >= 6 && !hash_move_usable) {
-        -pvs(position, timer, table, history, killer, depth - 6, ply, alpha, beta, is_pv, can_null);
+        -pvs(position, timer, table, history, killer, depth - 8, ply, alpha, beta, is_pv, can_null);
         entry = table.query(position.hashkey());
         hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
     }
