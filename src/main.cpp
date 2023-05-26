@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
                         else result_string = " c9 \"1/2-1/2\";";
                         break;
                     }
-                    timer.reset(40, 0, 0);
+                    timer.reset(100, 0, 0);
                     int score = iterative_deepening(position, timer, hash, history, killer, move, false);
                     if (abs(score) > 18000) {
                         if ((score > 18000) == (position.side_to_move)) result_string = " c9 \"1-0\";";
@@ -124,13 +124,12 @@ int main(int argc, char *argv[]) {
                     }
                     if (position.draw(2)) {
                         result_string = " c9 \"1/2-1/2\";";
+                        if (position.halfmove_clock[position.ply] >= 100) for (int i{}; i<20; ++i) buffer.pop_back();
                         break;
                     }
-                    //std::cout << position << std::endl << std::endl;
-                    if (move.captured() == 12) buffer.push_back(position.export_fen());
+                    if (move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling) && !position.draw(1)) buffer.push_back(position.export_fen());
                     position.make_move(move);
                 }
-                //std::cout << "game ended" << std::endl;
                 for (std::string fen : buffer) {
                     fout << fen << result_string << std::endl;
                 }
