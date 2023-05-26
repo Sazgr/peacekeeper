@@ -115,6 +115,15 @@ int main(int argc, char *argv[]) {
                         else result_string = " c9 \"1/2-1/2\";";
                         break;
                     }
+                    if (position.draw(2)) {
+                        result_string = " c9 \"1/2-1/2\";";
+                        if (position.halfmove_clock[position.ply] >= 100) for (int i{}; i<20; ++i) buffer.pop_back();
+                        break;
+                    }
+                    if (position.eval_phase() <= 1 && !position.board[0] && !position.board[1]) {
+                        result_string = " c9 \"1/2-1/2\";";
+                        break;
+                    } 
                     timer.reset(100, 0, 0);
                     int score = iterative_deepening(position, timer, hash, history, killer, move, false);
                     if (abs(score) > 18000) {
@@ -122,14 +131,12 @@ int main(int argc, char *argv[]) {
                         else result_string = " c9 \"0-1\";";
                         break;
                     }
-                    if (position.draw(2)) {
-                        result_string = " c9 \"1/2-1/2\";";
-                        if (position.halfmove_clock[position.ply] >= 100) for (int i{}; i<20; ++i) buffer.pop_back();
-                        break;
-                    }
                     if (move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling) && !position.draw(1)) buffer.push_back(position.export_fen());
                     position.make_move(move);
                 }
+                if (result_string == " c9 \"0-1\";") std::cout << "0";
+                if (result_string == " c9 \"1/2-1/2\";") std::cout << "=";
+                if (result_string == " c9 \"1-0\";") std::cout << "1";
                 for (std::string fen : buffer) {
                     fout << fen << result_string << std::endl;
                 }
