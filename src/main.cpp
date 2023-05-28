@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
             std::cout << "indexing openings..." << std::endl;
             srand(time(0));
             std::ifstream fin (tokens[1]);
-            std::ofstream fout (tokens[2]);
+            std::ofstream fout (tokens[2], std::ios_base::app);
             std::vector<std::array<std::string, 6>> openings{};
             std::array<std::string, 6> opening;
             while (fin) {
