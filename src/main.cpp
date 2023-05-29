@@ -546,9 +546,9 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             if (timer.check(nodes, depth)) {break;}
             result = pvs(position, timer, table, history, killer, 4 * depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
-                ++depth;
+                if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
-                last_score = result;
+                ++depth;
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
                 alpha = last_score - aspiration_bounds[0];
                 beta = last_score + aspiration_bounds[0];
