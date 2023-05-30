@@ -85,6 +85,62 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 2 && tokens[1] == "on") debug_mode = true;
             if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
         }
+        if (tokens[0] == "datagen") {
+            std::cout << "indexing openings..." << std::endl;
+            srand(time(0));
+            std::ifstream fin (tokens[1]);
+            std::ofstream fout (tokens[2], std::ios_base::app);
+            std::vector<std::array<std::string, 6>> openings{};
+            std::array<std::string, 6> opening;
+            while (fin) {
+                fin >> opening[0] >> opening[1] >> opening[2] >> opening[3] >> opening[4] >> opening[5];
+                if (fin) openings.push_back(opening);
+            }
+            std::cout << "playing games..." << std::endl;
+            std::string result_string;
+            std::vector<std::string> buffer{};
+            while (true) {
+                buffer.clear();
+                int id = rand() % openings.size();
+                position.load_fen(openings[id][0], openings[id][1], openings[id][2], openings[id][3], openings[id][4], openings[id][5]);
+                hash.clear();
+                history.reset();
+                while (true) {
+                    if (!position.count_legal_moves()) {
+                        if (position.check()) {
+                            if (position.side_to_move) result_string = " c9 \"0-1\";";
+                            else result_string = " c9 \"1-0\";";
+                        }
+                        else result_string = " c9 \"1/2-1/2\";";
+                        break;
+                    }
+                    if (position.draw(2)) {
+                        result_string = " c9 \"1/2-1/2\";";
+                        if (position.halfmove_clock[position.ply] >= 100) for (int i{}; i<20; ++i) buffer.pop_back();
+                        break;
+                    }
+                    if (position.eval_phase() <= 1 && !position.board[0] && !position.board[1]) {
+                        result_string = " c9 \"1/2-1/2\";";
+                        break;
+                    } 
+                    timer.reset(100, 0, 0);
+                    int score = iterative_deepening(position, timer, hash, history, killer, move, false);
+                    if (abs(score) > 18000) {
+                        if ((score > 18000) == (position.side_to_move)) result_string = " c9 \"1-0\";";
+                        else result_string = " c9 \"0-1\";";
+                        break;
+                    }
+                    if (move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling) && !position.draw(1)) buffer.push_back(position.export_fen());
+                    position.make_move(move);
+                }
+                if (result_string == " c9 \"0-1\";") std::cout << "0";
+                if (result_string == " c9 \"1/2-1/2\";") std::cout << "=";
+                if (result_string == " c9 \"1-0\";") std::cout << "1";
+                for (std::string fen : buffer) {
+                    fout << fen << result_string << std::endl;
+                }
+            }
+        }
         if (tokens[0] == "eval") {
             out << position << "PSQT: " << position.static_eval() << std::endl;
         }
@@ -513,12 +569,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     return timer.stopped() ? 0 : alpha;
 }
 
-void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, bool output) {
+int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, bool output) {
     if constexpr (history_heuristic) move_order.age();
     table.age();
     Movelist movelist;
     position.legal_moves(movelist);
-    if (movelist.size() == 0) return;
+    if (movelist.size() == 0) return 0;
     else {
         int alpha = -20000;
         int beta = 20000;
@@ -538,7 +594,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         nulled = 0;
         int depth{1};
         int last_score, result;
-        Move bestmove = movelist[0];
+        bestmove = movelist[0];
         for (; depth <= 64;) {
             result = pvs(position, timer, table, move_order, 4 * depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
@@ -576,6 +632,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             std::cout << "info string null move\ninfo string null move attempts " << null_attempts << " successes " << nulled << " null% " << 100.0 * nulled / null_attempts << std::endl;
         }
         if (output) print_bestmove(out, bestmove);
-        return;
+        return last_score;
     }
 }

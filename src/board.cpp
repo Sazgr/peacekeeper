@@ -845,6 +845,39 @@ void Position::load(std::vector<int> position, bool stm) {
     zobrist_update();
 }
 
+std::string Position::export_fen() {
+    static std::vector<std::string> pieces{"p", "P", "n", "N", "b", "B", "r", "R", "q", "Q", "k", "K", ".", "."};
+    std::string fen{};
+    int empty_streak = 0;
+    for (int rank{}; rank < 8; ++rank) {
+        for (int file{}; file < 8; ++file) {
+            if (board[rank * 8 + file] == 12) {
+                ++empty_streak;
+            } else {
+                if (empty_streak) fen += std::to_string(empty_streak);
+                empty_streak = 0;
+                fen += pieces[board[rank * 8 + file]];
+            }
+        }
+        if (empty_streak) {
+            fen += std::to_string(empty_streak);
+            empty_streak = 0;
+        }
+        if (rank != 7) fen += "/";
+    }
+    if (side_to_move) fen += " w ";
+    else fen += " b ";
+    if (castling_rights[ply] & 8) fen += "K";
+    if (castling_rights[ply] & 4) fen += "Q";
+    if (castling_rights[ply] & 2) fen += "k";
+    if (castling_rights[ply] & 1) fen += "q";
+    if (castling_rights[ply] == 0) fen += "-";
+    if (enpassant_square[ply] == 64) fen += " -";
+    else fen += " " + square_names[enpassant_square[ply]];
+    fen += " 0 1";
+    return fen;
+}
+
 bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock = "0", std::string fen_fmove_counter = "1") {
     int sq = 0;
     ply = 0;

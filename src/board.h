@@ -73,6 +73,7 @@ public:
     inline void undo_null();
     template <bool update_hash> inline void fill_sq(int sq, int piece);
     void load(std::vector<int> position, bool stm = true);
+    std::string export_fen();
     bool load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock, std::string fen_fmove_counter);
     bool parse_move(Move& out, std::string move);
     int static_eval();
