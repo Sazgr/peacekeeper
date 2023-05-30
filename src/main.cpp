@@ -540,25 +540,28 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         int last_score, result;
         Move bestmove = movelist[0];
         for (; depth <= 64;) {
-            if (!bestmove.is_null() && timer.percent_time(72)) {break;}
-            if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;} //if there is only one move to make do not use as much time
-            if (timer.check(nodes, depth)) {break;}
             result = pvs(position, timer, table, move_order, 4 * depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
                 ++depth;
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
+                if (timer.check(nodes, depth)) {break;}
+                if (!bestmove.is_null() && timer.percent_time(72)) {break;}
+                if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;}
                 alpha = last_score - aspiration_bounds[0];
                 beta = last_score + aspiration_bounds[0];
                 continue;
             }
             if (result <= alpha) {
+                //no time checks here because we failed low, we allow for some extra time
                 if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
                 else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
                 else alpha = -20000;
             } 
             if (result >= beta) {
+                if (!bestmove.is_null() && timer.percent_time(72)) {break;}
+                if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;}
                 if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
                 else beta = 20000;
