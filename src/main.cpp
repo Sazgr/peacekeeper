@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
                 int id = rand() % openings.size();
                 position.load_fen(openings[id][0], openings[id][1], openings[id][2], openings[id][3], openings[id][4], openings[id][5]);
                 hash.clear();
-                history.reset();
+                move_order.reset();
                 while (true) {
                     if (!position.count_legal_moves()) {
                         if (position.check()) {
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
                         break;
                     } 
                     timer.reset(100, 0, 0);
-                    int score = iterative_deepening(position, timer, hash, history, killer, move, false);
+                    int score = iterative_deepening(position, timer, hash, move_order, move, false);
                     if (abs(score) > 18000) {
                         if ((score > 18000) == (position.side_to_move)) result_string = " c9 \"1-0\";";
                         else result_string = " c9 \"0-1\";";
