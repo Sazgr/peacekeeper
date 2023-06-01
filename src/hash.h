@@ -32,6 +32,15 @@ struct Element {
     Element() {
         type = tt_none;
     }
+    Element& operator=(const Element& rhs) {
+        if (!rhs.bestmove.is_null() || full_hash != rhs.full_hash) bestmove = rhs.bestmove;
+        full_hash = rhs.full_hash;
+        score = rhs.score;
+        type = rhs.type;
+        depth = rhs.depth;
+        age = rhs.age;
+        return *this;
+    }
 };
 
 class Hashtable {
