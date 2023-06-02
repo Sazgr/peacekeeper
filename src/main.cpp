@@ -387,6 +387,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         pv_table[ply][0] = Move{};
         return (ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
     }
+    table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = position.static_eval();
     int move_num{0};
@@ -400,7 +401,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ++pruned;
         return static_eval - futile_margins[(depth / 4) - improving];
     }
-    table.prefetch(position.hashkey());
+    Element entry = table.query(position.hashkey());
+    ++tt_queries;
+    if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
+    if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= (depth / 4) && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+        ++tt_cutoffs;
+        return entry.score;
+    }
     if constexpr (null_move_pruning) if ((depth / 4) > 2 && can_null && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ++nodes;
@@ -412,13 +419,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ++nulled;
             return result;
         }
-    }
-    Element entry = table.query(position.hashkey());
-    ++tt_queries;
-    if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
-    if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= (depth / 4) && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
-        ++tt_cutoffs;
-        return entry.score;
     }
     if constexpr (check_extensions) if (in_check) {++extended; reduce_all -= static_cast<int>(4.27 / cbrt(depth / 4.0 + 1.0) + 1.14);} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
