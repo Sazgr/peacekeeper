@@ -3,9 +3,6 @@
 
 const int flag_priority[7] = {  0, 254, 282, 394, 939, 38, 85};
 
-const int mg_value[7] = {98, 348, 391, 520, 1049, 20000, 0};
-const int eg_value[7] = {139, 288, 311, 550, 979, 20000, 0};
-
 const int mg_value[7] = { 83, 337, 365, 477, 1022, 20000, 0};
 const int eg_value[7] = { 94, 281, 297, 512,  936, 20000, 0};
 
