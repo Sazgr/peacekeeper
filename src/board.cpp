@@ -825,14 +825,9 @@ int Position::eval_phase() {
 int Position::static_eval() {
     int phase{std::min(eval_phase(), 24)};
     int mg{}, eg{};
-    int bk = get_lsb(pieces[10]), wk = get_lsb(pieces[11]);
-    for (int i{}; i<10; ++i) {
-        for (u64 bb = pieces[i]; bb;) {
-            int sq = pop_lsb(bb);
-            mg += middlegame[bk][0][i][sq] + middlegame[wk][1][i][sq];
-            eg += endgame[bk][0][i][sq] + endgame[wk][1][i][sq];
-
-        }
+    for (int sq{}; sq<64; ++sq) {
+        mg += middlegame[board[sq]][sq];
+        eg += endgame[board[sq]][sq];
     }
     eval_stack[ply] = ((2 * side_to_move - 1) * (mg * phase + eg * (24 - phase)) / 24) + phase / 2;
     return eval_stack[ply];
