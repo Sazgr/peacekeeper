@@ -846,25 +846,25 @@ int Position::static_eval() {
     }
     for (u64 bb{pieces[4]}; bb;) {
         int sq = pop_lsb(bb);
-        int mobility = popcount(bishop_attacks(occupied, sq) & ~black_pieces);
+        int mobility = popcount(bishop_attacks(occupied & ~pieces[8], sq) & ~black_pieces);
         mg -= mg_bishop_mobility[mobility];
         eg -= eg_bishop_mobility[mobility];
     }
     for (u64 bb{pieces[5]}; bb;) {
         int sq = pop_lsb(bb);
-        int mobility = popcount(bishop_attacks(occupied, sq) & ~white_pieces);
+        int mobility = popcount(bishop_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
         mg += mg_bishop_mobility[mobility];
         eg += eg_bishop_mobility[mobility];
     }
     for (u64 bb{pieces[6]}; bb;) {
         int sq = pop_lsb(bb);
-        int mobility = popcount(rook_attacks(occupied, sq) & ~black_pieces);
+        int mobility = popcount(rook_attacks(occupied & ~pieces[8], sq) & ~black_pieces);
         mg -= mg_rook_mobility[mobility];
         eg -= eg_rook_mobility[mobility];
     }
     for (u64 bb{pieces[7]}; bb;) {
         int sq = pop_lsb(bb);
-        int mobility = popcount(rook_attacks(occupied, sq) & ~white_pieces);
+        int mobility = popcount(rook_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
         mg += mg_rook_mobility[mobility];
         eg += eg_rook_mobility[mobility];
     }
