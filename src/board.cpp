@@ -832,6 +832,20 @@ int Position::static_eval() {
     }
     u64 black_pieces = pieces[0] | pieces[2] | pieces[4] | pieces[6] | pieces[8] | pieces[10];
     u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
+    for (u64 bb{pieces[0]}; bb;) {
+        int sq = pop_lsb(bb);
+        if (!(passed[0][sq] & pieces[1]) && !(doubled[0][sq] & pieces[0])) {
+            mg -= mg_passed[sq ^ 56];
+            eg -= eg_passed[sq ^ 56];
+        }
+    }
+    for (u64 bb{pieces[1]}; bb;) {
+        int sq = pop_lsb(bb);
+        if (!(passed[1][sq] & pieces[0]) && !(doubled[1][sq] & pieces[1])) {
+            mg += mg_passed[sq];
+            eg += eg_passed[sq];
+        }
+    }
     for (u64 bb{pieces[2]}; bb;) {
         int sq = pop_lsb(bb);
         int mobility = popcount(knight_attacks[sq] & ~black_pieces);
