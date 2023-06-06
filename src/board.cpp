@@ -835,15 +835,25 @@ int Position::static_eval() {
     for (u64 bb{pieces[0]}; bb;) {
         int sq = pop_lsb(bb);
         if (!(passed[0][sq] & pieces[1]) && !(doubled[0][sq] & pieces[0])) {
-            mg -= mg_passed[sq ^ 56];
-            eg -= eg_passed[sq ^ 56];
+            if (!(doubled[0][sq] & white_pieces)) {
+                mg -= mg_passed_free[sq ^ 56];
+                eg -= eg_passed_free[sq ^ 56];
+            } else {
+                mg -= mg_passed[sq ^ 56];
+                eg -= eg_passed[sq ^ 56];
+            }
         }
     }
     for (u64 bb{pieces[1]}; bb;) {
         int sq = pop_lsb(bb);
         if (!(passed[1][sq] & pieces[0]) && !(doubled[1][sq] & pieces[1])) {
-            mg += mg_passed[sq];
-            eg += eg_passed[sq];
+            if (!(doubled[1][sq] & black_pieces)) {
+                mg += mg_passed_free[sq];
+                eg += eg_passed_free[sq];
+            } else {
+                mg += mg_passed[sq];
+                eg += eg_passed[sq];
+            }
         }
     }
     for (u64 bb{pieces[2]}; bb;) {
