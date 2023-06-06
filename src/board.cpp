@@ -822,12 +822,63 @@ int Position::eval_phase() {
     return popcount(pieces[2]) + popcount(pieces[3]) + popcount(pieces[4]) + popcount(pieces[5])
         + 2 * (popcount(pieces[6]) + popcount(pieces[7])) + 4 * (popcount(pieces[8]) + popcount(pieces[9]));
 }
+
 int Position::static_eval() {
     int phase{std::min(eval_phase(), 24)};
     int mg{}, eg{};
     for (int sq{}; sq<64; ++sq) {
         mg += middlegame[board[sq]][sq];
         eg += endgame[board[sq]][sq];
+    }
+    u64 black_pieces = pieces[0] | pieces[2] | pieces[4] | pieces[6] | pieces[8] | pieces[10];
+    u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
+    for (u64 bb{pieces[2]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(knight_attacks[sq] & ~black_pieces);
+        mg -= mg_knight_mobility[mobility];
+        eg -= eg_knight_mobility[mobility];
+    }
+    for (u64 bb{pieces[3]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(knight_attacks[sq] & ~white_pieces);
+        mg += mg_knight_mobility[mobility];
+        eg += eg_knight_mobility[mobility];
+    }
+    for (u64 bb{pieces[4]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(bishop_attacks(occupied, sq) & ~black_pieces);
+        mg -= mg_bishop_mobility[mobility];
+        eg -= eg_bishop_mobility[mobility];
+    }
+    for (u64 bb{pieces[5]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(bishop_attacks(occupied, sq) & ~white_pieces);
+        mg += mg_bishop_mobility[mobility];
+        eg += eg_bishop_mobility[mobility];
+    }
+    for (u64 bb{pieces[6]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(rook_attacks(occupied, sq) & ~black_pieces);
+        mg -= mg_rook_mobility[mobility];
+        eg -= eg_rook_mobility[mobility];
+    }
+    for (u64 bb{pieces[7]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(rook_attacks(occupied, sq) & ~white_pieces);
+        mg += mg_rook_mobility[mobility];
+        eg += eg_rook_mobility[mobility];
+    }
+    for (u64 bb{pieces[8]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(queen_attacks(occupied, sq) & ~black_pieces);
+        mg -= mg_queen_mobility[mobility];
+        eg -= eg_queen_mobility[mobility];
+    }
+    for (u64 bb{pieces[9]}; bb;) {
+        int sq = pop_lsb(bb);
+        int mobility = popcount(queen_attacks(occupied, sq) & ~white_pieces);
+        mg += mg_queen_mobility[mobility];
+        eg += eg_queen_mobility[mobility];
     }
     eval_stack[ply] = ((2 * side_to_move - 1) * (mg * phase + eg * (24 - phase)) / 24) + phase / 2;
     return eval_stack[ply];
