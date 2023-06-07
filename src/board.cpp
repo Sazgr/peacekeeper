@@ -836,11 +836,11 @@ int Position::static_eval() {
         int sq = pop_lsb(bb);
         if (!(passed[0][sq] & pieces[1]) && !(doubled[0][sq] & pieces[0])) {
             if (!(doubled[0][sq] & white_pieces)) {
-                mg -= mg_passed_free[sq ^ 56];
-                eg -= eg_passed_free[sq ^ 56];
+                mg -= mg_passed_free[(sq >> 3) ^ 7];
+                eg -= eg_passed_free[(sq >> 3) ^ 7];
             } else {
-                mg -= mg_passed[sq ^ 56];
-                eg -= eg_passed[sq ^ 56];
+                mg -= mg_passed[(sq >> 3) ^ 7];
+                eg -= eg_passed[(sq >> 3) ^ 7];
             }
         }
     }
@@ -848,11 +848,11 @@ int Position::static_eval() {
         int sq = pop_lsb(bb);
         if (!(passed[1][sq] & pieces[0]) && !(doubled[1][sq] & pieces[1])) {
             if (!(doubled[1][sq] & black_pieces)) {
-                mg += mg_passed_free[sq];
-                eg += eg_passed_free[sq];
+                mg += mg_passed_free[sq >> 3];
+                eg += eg_passed_free[sq >> 3];
             } else {
-                mg += mg_passed[sq];
-                eg += eg_passed[sq];
+                mg += mg_passed[sq >> 3];
+                eg += eg_passed[sq >> 3];
             }
         }
     }
