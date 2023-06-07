@@ -834,7 +834,8 @@ int Position::static_eval() {
     u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
     for (u64 bb{pieces[0]}; bb;) {
         int sq = pop_lsb(bb);
-        if (!(passed[0][sq] & pieces[1]) && !(doubled[0][sq] & pieces[0])) {
+        bool is_doubled = (doubled[0][sq] & pieces[0]);
+        if (!(passed[0][sq] & pieces[1]) && !is_doubled) {
             if (!(doubled[0][sq] & white_pieces)) {
                 mg -= mg_passed_free[(sq >> 3) ^ 7];
                 eg -= eg_passed_free[(sq >> 3) ^ 7];
@@ -843,10 +844,19 @@ int Position::static_eval() {
                 eg -= eg_passed[(sq >> 3) ^ 7];
             }
         }
+        if (is_doubled) {
+            mg -= mg_doubled[(sq >> 3) ^ 7];
+            eg -= eg_doubled[(sq >> 3) ^ 7];
+        }
+        if (!(isolated[sq & 7] & pieces[0])) {
+            mg -= mg_isolated[(sq >> 3) ^ 7];
+            eg -= eg_isolated[(sq >> 3) ^ 7];
+        }
     }
     for (u64 bb{pieces[1]}; bb;) {
         int sq = pop_lsb(bb);
-        if (!(passed[1][sq] & pieces[0]) && !(doubled[1][sq] & pieces[1])) {
+        bool is_doubled = (doubled[1][sq] & pieces[1]);
+        if (!(passed[1][sq] & pieces[0]) && !is_doubled) {
             if (!(doubled[1][sq] & black_pieces)) {
                 mg += mg_passed_free[sq >> 3];
                 eg += eg_passed_free[sq >> 3];
@@ -854,6 +864,14 @@ int Position::static_eval() {
                 mg += mg_passed[sq >> 3];
                 eg += eg_passed[sq >> 3];
             }
+        }
+        if (is_doubled) {
+            mg += mg_doubled[sq >> 3];
+            eg += eg_doubled[sq >> 3];
+        }
+        if (!(isolated[sq & 7] & pieces[1])) {
+            mg += mg_isolated[sq >> 3];
+            eg += eg_isolated[sq >> 3];
         }
     }
     for (u64 bb{pieces[2]}; bb;) {
