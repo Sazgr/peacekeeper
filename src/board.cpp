@@ -852,6 +852,14 @@ int Position::static_eval() {
             mg -= mg_isolated[(sq >> 3) ^ 7];
             eg -= eg_isolated[(sq >> 3) ^ 7];
         }
+        if (pawn_attacks[1][sq] & pieces[0]) {
+            mg -= mg_supported[(sq >> 3) ^ 7];
+            eg -= eg_supported[(sq >> 3) ^ 7];
+        }
+        if ((sq & 7) != 7 && board[sq + 1] == 0) {
+            mg -= mg_phalanx[(sq >> 3) ^ 7];
+            eg -= eg_phalanx[(sq >> 3) ^ 7];
+        }
     }
     for (u64 bb{pieces[1]}; bb;) {
         int sq = pop_lsb(bb);
@@ -872,6 +880,14 @@ int Position::static_eval() {
         if (!(isolated[sq & 7] & pieces[1])) {
             mg += mg_isolated[sq >> 3];
             eg += eg_isolated[sq >> 3];
+        }
+        if (pawn_attacks[0][sq] & pieces[1]) {
+            mg += mg_supported[sq >> 3];
+            eg += eg_supported[sq >> 3];
+        }
+        if ((sq & 7) != 7 && board[sq + 1] == 1) {
+            mg += mg_phalanx[sq >> 3];
+            eg += eg_phalanx[sq >> 3];
         }
     }
     for (u64 bb{pieces[2]}; bb;) {
