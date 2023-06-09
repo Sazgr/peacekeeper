@@ -826,14 +826,17 @@ int Position::eval_phase() {
 int Position::static_eval() {
     int phase{std::min(eval_phase(), 24)};
     int mg{}, eg{};
-    for (int sq{}; sq<64; ++sq) {
+    /*for (int sq{}; sq<64; ++sq) {
         mg += middlegame[board[sq]][sq];
         eg += endgame[board[sq]][sq];
-    }
+    }*/
     u64 black_pieces = pieces[0] | pieces[2] | pieces[4] | pieces[6] | pieces[8] | pieces[10];
     u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
+    int bk = get_lsb(pieces[10]), wk = get_lsb(pieces[11]);
     for (u64 bb{pieces[0]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][0][sq] + middlegame[1][wk][0][sq];
+        eg += endgame[0][bk][0][sq] + endgame[1][wk][0][sq];
         bool is_doubled = (doubled[0][sq] & pieces[0]);
         if (!(passed[0][sq] & pieces[1]) && !is_doubled) {
             if (!(doubled[0][sq] & white_pieces)) {
@@ -863,6 +866,8 @@ int Position::static_eval() {
     }
     for (u64 bb{pieces[1]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][1][sq] + middlegame[1][wk][1][sq];
+        eg += endgame[0][bk][1][sq] + endgame[1][wk][1][sq];
         bool is_doubled = (doubled[1][sq] & pieces[1]);
         if (!(passed[1][sq] & pieces[0]) && !is_doubled) {
             if (!(doubled[1][sq] & black_pieces)) {
@@ -892,48 +897,64 @@ int Position::static_eval() {
     }
     for (u64 bb{pieces[2]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][2][sq] + middlegame[1][wk][2][sq];
+        eg += endgame[0][bk][2][sq] + endgame[1][wk][2][sq];
         int mobility = popcount(knight_attacks[sq] & ~black_pieces);
         mg -= mg_knight_mobility[mobility];
         eg -= eg_knight_mobility[mobility];
     }
     for (u64 bb{pieces[3]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][3][sq] + middlegame[1][wk][3][sq];
+        eg += endgame[0][bk][3][sq] + endgame[1][wk][3][sq];
         int mobility = popcount(knight_attacks[sq] & ~white_pieces);
         mg += mg_knight_mobility[mobility];
         eg += eg_knight_mobility[mobility];
     }
     for (u64 bb{pieces[4]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][4][sq] + middlegame[1][wk][4][sq];
+        eg += endgame[0][bk][4][sq] + endgame[1][wk][4][sq];
         int mobility = popcount(bishop_attacks(occupied & ~pieces[8], sq) & ~black_pieces);
         mg -= mg_bishop_mobility[mobility];
         eg -= eg_bishop_mobility[mobility];
     }
     for (u64 bb{pieces[5]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][5][sq] + middlegame[1][wk][5][sq];
+        eg += endgame[0][bk][5][sq] + endgame[1][wk][5][sq];
         int mobility = popcount(bishop_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
         mg += mg_bishop_mobility[mobility];
         eg += eg_bishop_mobility[mobility];
     }
     for (u64 bb{pieces[6]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][6][sq] + middlegame[1][wk][6][sq];
+        eg += endgame[0][bk][6][sq] + endgame[1][wk][6][sq];
         int mobility = popcount(rook_attacks(occupied & ~pieces[8], sq) & ~black_pieces);
         mg -= mg_rook_mobility[mobility];
         eg -= eg_rook_mobility[mobility];
     }
     for (u64 bb{pieces[7]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][7][sq] + middlegame[1][wk][7][sq];
+        eg += endgame[0][bk][7][sq] + endgame[1][wk][7][sq];
         int mobility = popcount(rook_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
         mg += mg_rook_mobility[mobility];
         eg += eg_rook_mobility[mobility];
     }
     for (u64 bb{pieces[8]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][8][sq] + middlegame[1][wk][8][sq];
+        eg += endgame[0][bk][8][sq] + endgame[1][wk][8][sq];
         int mobility = popcount(queen_attacks(occupied, sq) & ~black_pieces);
         mg -= mg_queen_mobility[mobility];
         eg -= eg_queen_mobility[mobility];
     }
     for (u64 bb{pieces[9]}; bb;) {
         int sq = pop_lsb(bb);
+        mg += middlegame[0][bk][9][sq] + middlegame[1][wk][9][sq];
+        eg += endgame[0][bk][9][sq] + endgame[1][wk][9][sq];
         int mobility = popcount(queen_attacks(occupied, sq) & ~white_pieces);
         mg += mg_queen_mobility[mobility];
         eg += eg_queen_mobility[mobility];
