@@ -901,6 +901,9 @@ int Position::static_eval() {
         int mobility = popcount(bishop_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
         eval += bishop_mobility[mobility];
     }
+    //bishop pair eval
+    if (popcount(pieces[4]) >= 2) eval -= bishop_pair;
+    if (popcount(pieces[5]) >= 2) eval += bishop_pair;
     for (u64 bb{pieces[6]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][6][sq] + full_king[1][wk][6][sq];
