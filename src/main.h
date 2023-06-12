@@ -8,6 +8,12 @@
 #include <array>
 #include <cmath>
 
+#ifdef SPSA
+#define spsa
+#else
+#define spsa constexpr
+#endif
+
 enum Features : bool {
     null_move_pruning    = true,
     static_null_move     = true,
@@ -22,8 +28,11 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
-constexpr std::array<int, 6> futile_margins{103, 171, 230, 283, 334, 381};
+spsa std::array<int, 24> futile_margins{47, 55, 62, 69, 75, 82, 88, 93, 99, 104, 110, 115, 120, 125, 130, 135, 139, 144, 148, 153, 157, 162, 166, 170};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
+
+spsa double futility_multiplier = 19.0;
+spsa double futility_power = 0.666;
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);

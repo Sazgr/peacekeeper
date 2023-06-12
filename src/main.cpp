@@ -238,6 +238,16 @@ int main(int argc, char *argv[]) {
         if (tokens[0] == "setoption" && tokens[1] == "name") {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
+#ifdef SPSA
+            if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
+                futility_multiplier = 0.1 * stoi(tokens[4]);
+                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(depth + 4, futility_power);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
+                futility_power = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(depth + 4, futility_power);
+            }
+#endif
         }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
@@ -397,9 +407,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && ply >= 2 && position.eval_stack[position.ply - 2] != -20001 && position.eval_stack[position.ply] > position.eval_stack[position.ply - 2];
-    if constexpr (static_null_move) if ((depth / 4) < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[(depth / 4) - improving] >= beta)) {
+    if constexpr (static_null_move) if ((depth / 4) < 6 && can_null && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth - 4 * improving] >= beta)) {
         ++pruned;
-        return static_eval - futile_margins[(depth / 4) - improving];
+        return static_eval - futile_margins[depth - 4 * improving];
     }
     Element entry = table.query(position.hashkey());
     ++tt_queries;
@@ -510,7 +520,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[(depth / 4)] - late_move_margin((depth / 4), move_num) < alpha) && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin((depth / 4), move_num) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
             ++pruned;
             continue;
