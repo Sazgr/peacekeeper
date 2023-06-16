@@ -880,26 +880,26 @@ int Position::static_eval() {
     for (u64 bb{pieces[2]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][2][sq] + full_king[1][wk][2][sq];
-        int mobility = popcount(knight_attacks[sq] & ~black_pieces);
-        eval -= knight_mobility[mobility];
+        u64 moves = knight_attacks[sq] & ~black_pieces;
+        eval -= knight_mobility[popcount(moves)] + knight_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[3]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][3][sq] + full_king[1][wk][3][sq];
-        int mobility = popcount(knight_attacks[sq] & ~white_pieces);
-        eval += knight_mobility[mobility];
+        u64 moves = knight_attacks[sq] & ~white_pieces;
+        eval += knight_mobility[popcount(moves)] + knight_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
     }
     for (u64 bb{pieces[4]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][4][sq] + full_king[1][wk][4][sq];
-        int mobility = popcount(bishop_attacks(occupied & ~pieces[8], sq) & ~black_pieces);
-        eval -= bishop_mobility[mobility];
+        u64 moves = bishop_attacks(occupied & ~pieces[8], sq) & ~black_pieces;
+        eval -= bishop_mobility[popcount(moves)] + bishop_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[5]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][5][sq] + full_king[1][wk][5][sq];
-        int mobility = popcount(bishop_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
-        eval += bishop_mobility[mobility];
+        u64 moves = bishop_attacks(occupied & ~pieces[9], sq) & ~white_pieces;
+        eval += bishop_mobility[popcount(moves)] + bishop_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
     }
     //bishop pair eval
     if (popcount(pieces[4]) >= 2) eval -= bishop_pair;
@@ -907,26 +907,26 @@ int Position::static_eval() {
     for (u64 bb{pieces[6]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][6][sq] + full_king[1][wk][6][sq];
-        int mobility = popcount(rook_attacks(occupied & ~pieces[8], sq) & ~black_pieces);
-        eval -= rook_mobility[mobility];
+        u64 moves = rook_attacks(occupied & ~pieces[8], sq) & ~black_pieces;
+        eval -= rook_mobility[popcount(moves)] + rook_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[7]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][7][sq] + full_king[1][wk][7][sq];
-        int mobility = popcount(rook_attacks(occupied & ~pieces[9], sq) & ~white_pieces);
-        eval += rook_mobility[mobility];
+        u64 moves = rook_attacks(occupied & ~pieces[9], sq) & ~white_pieces;
+        eval += rook_mobility[popcount(moves)] + rook_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
     }
     for (u64 bb{pieces[8]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][8][sq] + full_king[1][wk][8][sq];
-        int mobility = popcount(queen_attacks(occupied, sq) & ~black_pieces);
-        eval -= queen_mobility[mobility];
+        u64 moves = queen_attacks(occupied, sq) & ~black_pieces;
+        eval -= queen_mobility[popcount(moves)] + queen_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[9]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][9][sq] + full_king[1][wk][9][sq];
-        int mobility = popcount(queen_attacks(occupied, sq) & ~white_pieces);
-        eval += queen_mobility[mobility];
+        u64 moves = queen_attacks(occupied, sq) & ~white_pieces;
+        eval += queen_mobility[popcount(moves)] + queen_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
     }
     eval_stack[ply] = ((2 * side_to_move - 1) * (static_cast<s16>(eval >> 16) * phase + static_cast<s16>(eval & 0xFFFF) * (24 - phase)) / 24) + phase / 2;
     return eval_stack[ply];
