@@ -6,6 +6,12 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
+    int* continuation_successes;
+    int* continuation_all;
+    Move_order_tables() {
+        continuation_successes = new int[12 * 64 * 12 * 64];
+        continuation_all = new int[12 * 64 * 12 * 64];
+    }
     void reset() {
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
@@ -33,6 +39,18 @@ struct Move_order_tables {
     int history_value(int piece, int to_square) {
         if (!history_all[piece][to_square]) return (1 << 10);
         return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
+    }
+    void continuation_edit(Move previous, Move current, int change, bool success) {
+        continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
+        if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
+        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
+            continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+            continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+        }
+    }
+    int continuation_value(Move previous, Move current) {
+        if (!continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) return (1 << 8);
+        return continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] / continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]; //ranges from 0 to 4095
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {

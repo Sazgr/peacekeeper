@@ -720,6 +720,7 @@ std::ostream& operator<<(std::ostream& out, Position& position) {
 }
 
 void Position::make_move(Move move) {
+    move_stack[ply] = move;
     ++ply;
     eval_stack[ply] = -20001;
     hash[ply] = hash[ply - 1];

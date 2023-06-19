@@ -455,7 +455,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                if constexpr (history_heuristic) if (bestmove.captured() == 12) move_order.history_edit(bestmove.piece(), bestmove.end(), (depth / 4) * (depth / 4), true);
+                if constexpr (history_heuristic) if (bestmove.captured() == 12) {
+                    move_order.history_edit(bestmove.piece(), bestmove.end(), (depth / 4) * (depth / 4), true);
+                    move_order.continuation_edit(position.move_stack[position.ply - 2], bestmove, (depth / 4) * (depth / 4), true);
+                    move_order.continuation_edit(position.move_stack[position.ply - 1], bestmove, (depth / 4) * (depth / 4), true);  
+                }
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, (depth / 4));
                 ++beta_cuts;
                 cut_num += move_num;
@@ -504,6 +508,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         int score{};
         if constexpr (history_heuristic) {
             score += move_order.history_value(movelist[i].piece(), movelist[i].end());
+            score += move_order.continuation_value(position.move_stack[position.ply - 2], movelist[i]);
+            score += move_order.continuation_value(position.move_stack[position.ply - 1], movelist[i]);
         }
         if constexpr (killer_heuristic) {
             if (movelist[i] == move_order.killer_move(ply, 0)) score += 1600;
@@ -560,8 +566,16 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 memcpy(&pv_table[ply][1], &pv_table[ply+1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                if constexpr (history_heuristic) for (int j{0}; j<i; ++j) move_order.history_edit(movelist[j].piece(), movelist[j].end(), (depth / 4) * (depth / 4), false);
-                if constexpr (history_heuristic) move_order.history_edit(bestmove.piece(), bestmove.end(), (depth / 4) * (depth / 4), true);
+                if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
+                    move_order.history_edit(movelist[j].piece(), movelist[j].end(), (depth / 4) * (depth / 4), false);
+                    move_order.continuation_edit(position.move_stack[position.ply - 2], movelist[j], (depth / 4) * (depth / 4), false);
+                    move_order.continuation_edit(position.move_stack[position.ply - 1], movelist[j], (depth / 4) * (depth / 4), false);   
+                }
+                if constexpr (history_heuristic) {
+                    move_order.history_edit(bestmove.piece(), bestmove.end(), (depth / 4) * (depth / 4), true);
+                    move_order.continuation_edit(position.move_stack[position.ply - 2], bestmove, (depth / 4) * (depth / 4), true);
+                    move_order.continuation_edit(position.move_stack[position.ply - 1], bestmove, (depth / 4) * (depth / 4), true);  
+                }
                 table.insert(position.hashkey(), alpha, tt_beta, bestmove, (depth / 4));
                 if constexpr (killer_heuristic) move_order.killer_add(bestmove, ply);
                 ++beta_cuts;
