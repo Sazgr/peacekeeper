@@ -312,6 +312,58 @@ template <bool side> u64 perft_f(Position& position, int depth) {
     return total;
 }
 
+bool see(Position& position, Move move, const int threshold) {
+    int to = move.end();
+    int from = move.start();
+    int target = position.board[to];
+    //making the move and not losing it must beat the threshold
+    int value = mg_value[target] - threshold;
+    if (move.flag() > none && move.flag() < q_castling) return true;
+    if (value < 0) return false;
+    int attacker = position.board[from];
+    //trivial if we still beat the threshold after losing the piece
+    value -= see_value[attacker];
+    if (value >= 0)
+        return true;
+    //it doesn't matter if the to square is occupied or not
+    u64 occupied = position.occupied ^ (1ull << from) ^ (1ull << to);
+    u64 attackers = position.attacks_to_square(occupied, to);
+    u64 bishops = position.pieces[4] | position.pieces[5] | position.pieces[8] | position.pieces[9];
+    u64 rooks = position.pieces[6] | position.pieces[7] | position.pieces[8] | position.pieces[9];
+    int side = (attacker & 1) ^ 1;
+    u64 side_pieces[2] = {position.pieces[0] | position.pieces[2] | position.pieces[4] | position.pieces[6] | position.pieces[8] | position.pieces[10],
+                          position.pieces[1] | position.pieces[3] | position.pieces[5] | position.pieces[7] | position.pieces[9] | position.pieces[11]};
+    //make captures until one side runs out, or fail to beat threshold
+    while (true) {
+        //remove used pieces from attackers
+        attackers &= occupied;
+        u64 my_attackers = attackers & side_pieces[side];
+        if (!my_attackers) {
+            break;
+        }
+        //pick next least valuable piece to capture with
+        int piece_type;
+        for (piece_type = 0; piece_type < 6; ++piece_type) {
+            if (my_attackers & position.pieces[2 * piece_type + side]) break;
+        }
+        side = !side;
+        value = -value - 1 - see_value[piece_type];
+        //value beats threshold, or can't beat threshold (negamaxed)
+        if (value >= 0) {
+            if (piece_type == 5 && (attackers & side_pieces[side]))
+                side = !side;
+            break;
+        }
+        //remove the used piece from occupied
+        occupied ^= (1ull << (get_lsb(my_attackers & (position.pieces[2 * piece_type] | position.pieces[2 * piece_type + 1]))));
+        if (piece_type == 0 || piece_type == 2 || piece_type == 4)
+            attackers |= position.bishop_attacks(occupied, to) & bishops;
+        if (piece_type == 3 || piece_type == 4)
+            attackers |= position.rook_attacks(occupied, to) & rooks;
+    }
+    return side != (attacker & 1);
+}
+
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply, int alpha, int beta) {
     if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
     if (position.check()) {
@@ -469,7 +521,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     Movelist movelist;
     position.legal_noisy(movelist);
-    for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
+    for (int i = 0; i < movelist.size(); ++i) {
+        if (see(position, movelist[i], -107)) movelist[i].add_sortkey(7000 + movelist[i].mvv_lva());
+        else movelist[i].add_sortkey(6000 + movelist[i].mvv_lva());
+    }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && (depth / 4) < 6;
     //Stage 2 - Captures

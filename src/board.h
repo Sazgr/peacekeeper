@@ -99,6 +99,7 @@ public:
     u64 bishop_attacks(u64 occupied, int square);
     u64 queen_attacks(u64 occupied, int square);
     bool square_attacked(u64 occupied, int square, bool side);
+    u64 attacks_to_square(u64 occ, int square);
     bool check(u64 occupied);
     bool draw(int num_reps);
     u64 checkers(u64 occupied);

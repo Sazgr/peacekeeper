@@ -102,6 +102,15 @@ bool Position::square_attacked(u64 occ, int square, bool side) {
     || (rook_attacks(occ, square) & (pieces[black_queen + side] | pieces[black_rook + side]));
 }
 
+u64 Position::attacks_to_square(u64 occ, int square) {
+    return (pawn_attacks[0][square] & pieces[white_pawn])
+    | (pawn_attacks[1][square] & pieces[black_pawn]) 
+    | (knight_attacks[square] & (pieces[black_knight] | pieces[white_knight]))
+    | (king_attacks[square] & (pieces[black_king] | pieces[white_king]))
+    | (bishop_attacks(occ, square) & (pieces[black_queen] | pieces[black_bishop] | pieces[white_queen] | pieces[white_bishop]))
+    | (rook_attacks(occ, square) & (pieces[black_queen] | pieces[black_rook] | pieces[white_queen] | pieces[white_rook]));
+}
+
 bool Position::check(u64 occ) {
     return square_attacked(occ, get_lsb(pieces[black_king + side_to_move]), !side_to_move);
 }

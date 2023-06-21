@@ -5,6 +5,7 @@
 
 const int flag_priority[7] = {  0, 254, 282, 394, 939, 38, 85};
 
+const int see_value[7] = {100, 300, 335, 500, 950, 20000, 0};
 const int mg_value[7] = {100, 335, 369, 485, 1051, 20000, 0};
 const int eg_value[7] = {123, 270, 300, 529, 993, 20000, 0};
 
