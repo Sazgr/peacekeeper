@@ -249,6 +249,10 @@ int main(int argc, char *argv[]) {
             }
 #endif
         }
+        if (tokens[0] == "see") {
+            position.parse_move(move, tokens[1]);
+            std::cout << see(position, move, -107);
+        }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
         if (tokens[0] == "ucinewgame") {
@@ -317,12 +321,12 @@ bool see(Position& position, Move move, const int threshold) {
     int from = move.start();
     int target = position.board[to];
     //making the move and not losing it must beat the threshold
-    int value = mg_value[target] - threshold;
+    int value = see_value[target >> 1] - threshold;
     if (move.flag() > none && move.flag() < q_castling) return true;
     if (value < 0) return false;
     int attacker = position.board[from];
     //trivial if we still beat the threshold after losing the piece
-    value -= see_value[attacker];
+    value -= see_value[attacker >> 1];
     if (value >= 0)
         return true;
     //it doesn't matter if the to square is occupied or not
@@ -345,7 +349,7 @@ bool see(Position& position, Move move, const int threshold) {
         int piece_type;
         for (piece_type = 0; piece_type < 6; ++piece_type) {
             if (my_attackers & position.pieces[2 * piece_type + side]) break;
-        }
+        } 
         side = !side;
         value = -value - 1 - see_value[piece_type];
         //value beats threshold, or can't beat threshold (negamaxed)

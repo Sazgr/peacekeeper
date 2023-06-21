@@ -37,6 +37,7 @@ spsa double futility_power = 0.666;
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
 u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
+bool see(Position& position, Move move, const int threshold);
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply, int alpha, int beta);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null);
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, bool output);
