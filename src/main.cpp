@@ -426,6 +426,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply,
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
+            if (!see(position, movelist[i], -107)) break;
             position.make_move(movelist[i]);
             ++nodes;
             result = -quiescence(position, timer, table, ply + 1, -beta, -alpha);
@@ -526,8 +527,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        if (see(position, movelist[i], -107)) movelist[i].add_sortkey(7000 + movelist[i].mvv_lva());
-        else movelist[i].add_sortkey(6000 + movelist[i].mvv_lva());
+        movelist[i].add_sortkey(movelist[i].mvv_lva());
     }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && (depth / 4) < 6;
