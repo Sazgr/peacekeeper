@@ -426,7 +426,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply,
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
-            if (!see(position, movelist[i], -107)) break;
+            if (!see(position, movelist[i], -107)) continue;
             position.make_move(movelist[i]);
             ++nodes;
             result = -quiescence(position, timer, table, ply + 1, -beta, -alpha);
