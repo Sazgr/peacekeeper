@@ -34,6 +34,9 @@ inline void print_info(std::ostream& out) {
 #ifdef SPSA
         << "option name futility_multiplier type spin default 400 min 0 max 1000" << '\n'
         << "option name futility_power type spin default 70 min 0 max 1000" << '\n'
+        << "option name see_noisy_constant type spin default 1050 min 0 max 1000" << '\n'
+        << "option name see_noisy_linear type spin default 85 min 0 max 1000" << '\n'
+        << "option name see_noisy_quadratic type spin default 50 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }

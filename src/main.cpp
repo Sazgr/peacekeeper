@@ -241,11 +241,20 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(depth + 4, futility_power);
+                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(depth + 4, futility_power);
+                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
+                see_noisy_constant = 0.1 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "see_noisy_linear" && tokens[3] == "value") {
+                see_noisy_linear = 0.1 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "see_noisy_quadratic" && tokens[3] == "value") {
+                see_noisy_quadratic = 0.01 * stoi(tokens[4]);
             }
 #endif
         }
@@ -534,6 +543,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
+        if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;

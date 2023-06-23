@@ -33,6 +33,9 @@ constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 
 spsa double futility_multiplier = 19.0;
 spsa double futility_power = 0.666;
+spsa double see_noisy_constant = 105.0;
+spsa double see_noisy_linear = 8.5;
+spsa double see_noisy_quadratic = 0.5;
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
