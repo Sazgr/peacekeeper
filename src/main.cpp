@@ -543,7 +543,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
-        if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear - see_noisy_quadratic * depth * depth)) continue;
+        if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
         ++nodes;
         ++move_num;
