@@ -36,6 +36,9 @@ spsa double futility_power = 0.666;
 spsa double see_noisy_constant = 113.5;
 spsa double see_noisy_linear = 0.0;
 spsa double see_noisy_quadratic = 0.5;
+spsa double see_quiet_constant = 90.0;
+spsa double see_quiet_linear = 2.5;
+spsa double see_quiet_quadratic = 0.55;
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);

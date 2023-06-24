@@ -256,6 +256,15 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_quadratic" && tokens[3] == "value") {
                 see_noisy_quadratic = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "see_quiet_constant" && tokens[3] == "value") {
+                see_quiet_constant = 0.1 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "see_quiet_linear" && tokens[3] == "value") {
+                see_quiet_linear = 0.1 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "see_quiet_quadratic" && tokens[3] == "value") {
+                see_quiet_quadratic = 0.01 * stoi(tokens[4]);
+            }
 #endif
         }
         if (tokens[0] == "see") {
@@ -592,6 +601,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
+        if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
         bool gives_check = position.check();
         //Futility Pruning

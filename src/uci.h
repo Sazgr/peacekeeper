@@ -37,6 +37,9 @@ inline void print_info(std::ostream& out) {
         << "option name see_noisy_constant type spin default 1135 min 0 max 10000" << '\n'
         << "option name see_noisy_linear type spin default 0 min 0 max 1000" << '\n'
         << "option name see_noisy_quadratic type spin default 50 min 0 max 1000" << '\n'
+        << "option name see_quiet_constant type spin default 900 min 0 max 10000" << '\n'
+        << "option name see_quiet_linear type spin default 25 min 0 max 1000" << '\n'
+        << "option name see_quiet_quadratic type spin default 55 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
