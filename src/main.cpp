@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
         position.load_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-", "0", "1");
         timer.reset(0, 0, 17);
         iterative_deepening(position, timer, hash, move_order, move, false);
-        out << nodes << " nodes " << static_cast<int>(1.4 * nodes / timer.elapsed()) << " nps" << std::endl;
+        out << static_cast<int>(1.4 * nodes) << " nodes " << static_cast<int>(1.4 * nodes / timer.elapsed()) << " nps" << std::endl;
         return 0;
     }
     std::cout << "peacekeeper by sazgr" << std::endl;
