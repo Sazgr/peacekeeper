@@ -728,7 +728,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
                 ++depth;
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
-                time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (nodes)) / node_timescale_div;
+                //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (nodes)) / node_timescale_div;
                 //nodes_before = nodes;
                 if (timer.check(nodes, depth)) {break;}
                 if (!bestmove.is_null() && timer.check(nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
