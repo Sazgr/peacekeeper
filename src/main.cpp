@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     std::vector<std::string> tokens;
     if (argc > 1) {
         position.load_fen("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R", "w", "KQkq", "-", "0", "1");
-        timer.reset(0, 0, 17);
+        timer.reset(0, 0, 0, 17);
         iterative_deepening(position, timer, hash, move_order, move, false);
         out << static_cast<int>(1.6 * nodes) << " nodes " << static_cast<int>(1.6 * nodes / timer.elapsed()) << " nps" << std::endl;
         return 0;
@@ -123,7 +123,7 @@ int main(int argc, char *argv[]) {
                         result_string = " c9 \"1/2-1/2\";";
                         break;
                     } 
-                    timer.reset(100, 0, 0);
+                    timer.reset(200, 50, 0, 0);
                     int score = iterative_deepening(position, timer, hash, move_order, move, false);
                     if (abs(score) > 18000) {
                         if ((score > 18000) == (position.side_to_move)) result_string = " c9 \"1-0\";";
@@ -174,16 +174,16 @@ int main(int argc, char *argv[]) {
             if (std::find(tokens.begin(), tokens.end(), "winc") != tokens.end()) {winc = stoi(*(++std::find(tokens.begin(), tokens.end(), "winc")));}
             if (std::find(tokens.begin(), tokens.end(), "binc") != tokens.end()) {binc = stoi(*(++std::find(tokens.begin(), tokens.end(), "binc")));}
             if (std::find(tokens.begin(), tokens.end(), "movestogo") != tokens.end()) {movestogo = stoi(*(++std::find(tokens.begin(), tokens.end(), "movestogo"))) + 1;}
+            int mytime;
             if (movetime == 0 && calculate == true) {
-                int mytime{position.side_to_move ? wtime : btime};
+                mytime = position.side_to_move ? wtime : btime;
                 int myinc{position.side_to_move ? winc : binc};
                 if (movestogo == 0 || movestogo > std::max(30, (50 - position.ply / 5))) {movestogo = std::max(30, (50 - position.ply / 5));} //estimated number of moves until fresh time or end of game
                 movetime = mytime / movestogo + winc; //time usable in terms of time remaining and increment
-                movetime = std::min(movetime, mytime); //in case time is low, do not run out of time on this move
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
-            timer.reset(movetime, nodes, depth);
+            timer.reset(calculate ? std::min(mytime, 4 * movetime) : movetime, calculate ? movetime : 0, nodes, depth);
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), true};
             search.detach();
         }
@@ -264,6 +264,15 @@ int main(int argc, char *argv[]) {
             }
             if (tokens.size() >= 5 && tokens[2] == "see_quiet_quadratic" && tokens[3] == "value") {
                 see_quiet_quadratic = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "node_timescale_base" && tokens[3] == "value") {
+                node_timescale_base = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "node_timescale_div" && tokens[3] == "value") {
+                node_timescale_div = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "aspiration_beta_timescale" && tokens[3] == "value") {
+                aspiration_beta_timescale = 0.01 * stoi(tokens[4]);
             }
 #endif
         }
@@ -387,7 +396,7 @@ bool see(Position& position, Move move, const int threshold) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply, int alpha, int beta) {
-    if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
+    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
     if (position.check()) {
         int result = -20000;
         Movelist movelist;
@@ -465,7 +474,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int ply,
 
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int ply, int alpha, int beta, bool is_pv, bool can_null)
 {
-    if (timer.stopped() || (!(nodes & 8191) && timer.percent_time(123))) return 0;
+    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes, 0))) return 0;
     if ((depth / 4) <= 0) return quiescence(position, timer, table, ply + 1, alpha, beta);
     if ((depth / 4) == 1 && is_pv) pv_table[ply + 1][0] = Move{};
     if (position.draw(ply > 2 ? 1 : 2)) {
@@ -478,6 +487,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int move_num{0};
     int result{};
     int old_alpha{alpha};
+    int nodes_before; //used for node time management
     int reduce_all{4};
     int reduce_this{};
     Move bestmove{};
@@ -516,12 +526,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
         position.make_move(entry.bestmove);
+        if (ply == 0) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
         ++tt_moves;
         result = -pvs(position, timer, table, move_order, depth - reduce_all, ply + 1, -beta, -alpha, is_pv, true);
         position.undo_move(entry.bestmove);
+        if (ply == 0) nodes_used[entry.bestmove.start()][entry.bestmove.end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = entry.bestmove;
@@ -554,6 +566,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
+        if (ply == 0) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
@@ -566,6 +579,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move(movelist[i]);
+        if (ply == 0) nodes_used[movelist[i].start()][movelist[i].end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = movelist[i];
@@ -610,6 +624,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ++pruned;
             continue;
         }
+        if (ply == 0) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
@@ -637,6 +652,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move(movelist[i]);
+        if (ply == 0) nodes_used[movelist[i].start()][movelist[i].end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = movelist[i];
@@ -681,6 +697,8 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
     else {
         int alpha = -20000;
         int beta = 20000;
+        double time_scale = 1;
+        int nodes_before = 0;
         nodes = 0;
         beta_cuts = 0;
         cut_num = 0;
@@ -698,6 +716,11 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         int depth{1};
         int last_score, result;
         bestmove = movelist[0];
+        for (int i{}; i<64; ++i) {
+            for (int j{}; j<64; ++j) {
+                nodes_used[i][j] == 0;
+            }
+        }
         for (; depth <= 64;) {
             result = pvs(position, timer, table, move_order, 4 * depth, 0, alpha, beta, true, true);
             if (alpha < result && result < beta) {
@@ -705,9 +728,10 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
                 ++depth;
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
+                time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (nodes)) / node_timescale_div;
+                //nodes_before = nodes;
                 if (timer.check(nodes, depth)) {break;}
-                if (!bestmove.is_null() && timer.percent_time(72)) {break;}
-                if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;}
+                if (!bestmove.is_null() && timer.check(nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                 alpha = last_score - aspiration_bounds[0];
                 beta = last_score + aspiration_bounds[0];
                 continue;
@@ -719,8 +743,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 else alpha = -20000;
             } 
             if (result >= beta) {
-                if (!bestmove.is_null() && timer.percent_time(72)) {break;}
-                if (!bestmove.is_null() && movelist.size() == 1 && timer.percent_time(40)) {break;}
+                if (!bestmove.is_null() && timer.check(nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
                 if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
                 else beta = 20000;

@@ -22,43 +22,34 @@ public:
 
 class Stop_timer {
 private:
-	Timer timer;
+    Timer timer;
 public:
     std::atomic<bool> stop;
-    int time_limit;
-    bool time_limit_active;
+    int hard_time_limit;
+    int soft_time_limit;
     u64 nodes_limit;
-    bool nodes_limit_active;
     int depth_limit;
-    bool depth_limit_active;
-    Stop_timer(int t=0, u64 n=0, int d=0) {
-        this->reset(t, n, d);
+    Stop_timer(int ht=0, int st=0, u64 n=0, int d=0) {
+        reset(ht, st, n, d);
     }
-    inline void reset(int t=0, u64 n=0, int d=0) {
+    inline void reset(int ht=0, int st = 0, u64 n=0, int d=0) {
         stop = false;
-        time_limit_active = (t != 0);
-        time_limit = t;
-        nodes_limit_active = (n != 0);
+        hard_time_limit = ht;
+        soft_time_limit = st;
         nodes_limit = n;
-        depth_limit_active = (d != 0);
         depth_limit = d;
         timer.reset();
     }
     inline bool stopped() {
         return stop;
     }
-    inline bool check(u64 nodes = 0, int depth = 0) {
+    inline bool check(u64 nodes = 0, int depth = 0, bool use_soft_limit = false, double scale = 1.0) {
         if (stop) return true;
-        if (time_limit_active) stop = stop || (static_cast<int>(elapsed() * 1000) >= time_limit);
-        if (nodes_limit_active) stop = stop || (nodes >= nodes_limit);
-        if (depth_limit_active) stop = stop || (depth > depth_limit);
+        if (hard_time_limit) stop = stop || (static_cast<int>(elapsed() * 1000) >= hard_time_limit);
+        if (soft_time_limit && use_soft_limit) stop = stop || (static_cast<int>(elapsed() * 1000 / scale) >= soft_time_limit);
+        if (nodes_limit) stop = stop || (nodes >= nodes_limit);
+        if (depth_limit) stop = stop || (depth > depth_limit);
         return stop;
-    }
-    inline int percent_time(int percent) {
-        if (stop) return true;
-        if (time_limit_active) stop = stop || (static_cast<int>(elapsed() * 100000) >= percent * time_limit);
-        return stop;
-        //return (time_limit_active ? static_cast<int>(elapsed() * 100000 / time_limit) : 0);
     }
     inline double elapsed() {
         return timer.elapsed();

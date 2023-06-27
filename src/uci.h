@@ -40,6 +40,9 @@ inline void print_info(std::ostream& out) {
         << "option name see_quiet_constant type spin default 900 min 0 max 10000" << '\n'
         << "option name see_quiet_linear type spin default 25 min 0 max 1000" << '\n'
         << "option name see_quiet_quadratic type spin default 55 min 0 max 1000" << '\n'
+        << "option name node_timescale_base type spin default 180 min 0 max 10000" << '\n'
+        << "option name node_timescale_div type spin default 135 min 0 max 1000" << '\n'
+        << "option name aspiration_beta_timescale type spin default 135 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
