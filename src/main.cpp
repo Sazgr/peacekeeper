@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
                 mytime = position.side_to_move ? wtime : btime;
                 int myinc{position.side_to_move ? winc : binc};
                 if (movestogo == 0 || movestogo > std::max(30, (50 - position.ply / 5))) {movestogo = std::max(30, (50 - position.ply / 5));} //estimated number of moves until fresh time or end of game
-                movetime = mytime / movestogo + winc; //time usable in terms of time remaining and increment
+                movetime = 0.75 * (mytime / movestogo + winc); //time usable in terms of time remaining and increment
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
