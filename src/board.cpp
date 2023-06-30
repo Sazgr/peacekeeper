@@ -914,17 +914,26 @@ int Position::static_eval() {
     //bishop pair eval
     if (popcount(pieces[4]) >= 2) eval -= bishop_pair;
     if (popcount(pieces[5]) >= 2) eval += bishop_pair;
+    int file_status[8] = {3, 3, 3, 3, 3, 3, 3, 3}; // 0=open, 1=black pawn, 2=white pawn, 3=closed
+    for (int i{}; i<7; ++i) {
+        if (!(between[i][56 + i] & pieces[0])) file_status[i] &= ~1;
+        if (!(between[i][56 + i] & pieces[1])) file_status[i] &= ~2;
+    }
     for (u64 bb{pieces[6]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][6][sq] + full_king[1][wk][6][sq];
         u64 moves = rook_attacks(occupied & ~pieces[8], sq) & ~black_pieces;
         eval -= rook_mobility[popcount(moves)] + rook_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
+        if (file_status[sq & 7] == 0) eval -= rook_open[sq & 7];
+        if (file_status[sq & 7] == 2) eval -= rook_semiopen[sq & 7];
     }
     for (u64 bb{pieces[7]}; bb;) {
         int sq = pop_lsb(bb);
         eval += full_king[0][bk][7][sq] + full_king[1][wk][7][sq];
         u64 moves = rook_attacks(occupied & ~pieces[9], sq) & ~white_pieces;
         eval += rook_mobility[popcount(moves)] + rook_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
+        if (file_status[sq & 7] == 0) eval += rook_open[sq & 7];
+        if (file_status[sq & 7] == 1) eval += rook_semiopen[sq & 7];
     }
     for (u64 bb{pieces[8]}; bb;) {
         int sq = pop_lsb(bb);
