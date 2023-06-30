@@ -747,6 +747,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
                 else beta = 20000;
+                if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
             } 
         }
         if (debug_mode) {
