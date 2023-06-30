@@ -716,6 +716,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         int depth{1};
         int last_score, result;
         bestmove = movelist[0];
+        pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
             for (int j{}; j<64; ++j) {
                 nodes_used[i][j] == 0;
