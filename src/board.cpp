@@ -952,9 +952,9 @@ int Position::static_eval() {
         if (file_status[sq & 7] == 1) eval += queen_semiopen[sq & 7];
     }
     if (file_status[bk & 7] == 0) eval -= king_open[bk & 7];
-    if (file_status[bk & 7] == 2) eval -= queen_semiopen[bk & 7];
+    if (file_status[bk & 7] == 2) eval -= king_semiopen[bk & 7];
     if (file_status[wk & 7] == 0) eval += king_open[wk & 7];
-    if (file_status[wk & 7] == 1) eval += queen_semiopen[wk & 7];
+    if (file_status[wk & 7] == 1) eval += king_semiopen[wk & 7];
     eval_stack[ply] = ((2 * side_to_move - 1) * (static_cast<s16>(eval >> 16) * phase + static_cast<s16>(eval & 0xFFFF) * (24 - phase)) / 24) + phase / 2;
     return eval_stack[ply];
 }
