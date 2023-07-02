@@ -951,13 +951,6 @@ int Position::static_eval() {
     return eval_stack[ply];
 }
 
-void Position::load(std::vector<int> position, bool stm) {
-    ply = 0;
-    for (int sq{0}; sq<position.size(); ++sq) fill_sq<false>(sq, position[sq]);
-    side_to_move = stm;
-    zobrist_update();
-}
-
 std::string Position::export_fen() {
     static std::vector<std::string> pieces{"p", "P", "n", "N", "b", "B", "r", "R", "q", "Q", "k", "K", ".", "."};
     std::string fen{};
