@@ -840,7 +840,7 @@ int Position::static_eval() {
     u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
     int bk = get_lsb(pieces[10]), wk = get_lsb(pieces[11]);
     for (u64 bb{pieces[0]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][0][sq] + full_king[1][wk][0][sq];
         bool is_doubled = (doubled[0][sq] & pieces[0]);
         if (!(passed[0][sq] & pieces[1]) && !is_doubled) {
@@ -864,7 +864,7 @@ int Position::static_eval() {
         }
     }
     for (u64 bb{pieces[1]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][1][sq] + full_king[1][wk][1][sq];
         bool is_doubled = (doubled[1][sq] & pieces[1]);
         if (!(passed[1][sq] & pieces[0]) && !is_doubled) {
@@ -888,25 +888,25 @@ int Position::static_eval() {
         }
     }
     for (u64 bb{pieces[2]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][2][sq] + full_king[1][wk][2][sq];
         u64 moves = knight_attacks[sq] & ~black_pieces;
         eval -= knight_mobility[popcount(moves)] + knight_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[3]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][3][sq] + full_king[1][wk][3][sq];
         u64 moves = knight_attacks[sq] & ~white_pieces;
         eval += knight_mobility[popcount(moves)] + knight_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
     }
     for (u64 bb{pieces[4]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][4][sq] + full_king[1][wk][4][sq];
         u64 moves = bishop_attacks(occupied & ~pieces[8], sq) & ~black_pieces;
         eval -= bishop_mobility[popcount(moves)] + bishop_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[5]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][5][sq] + full_king[1][wk][5][sq];
         u64 moves = bishop_attacks(occupied & ~pieces[9], sq) & ~white_pieces;
         eval += bishop_mobility[popcount(moves)] + bishop_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
@@ -920,7 +920,7 @@ int Position::static_eval() {
         if (!(between[i][56 + i] & pieces[1])) file_status[i] &= ~2;
     }
     for (u64 bb{pieces[6]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][6][sq] + full_king[1][wk][6][sq];
         u64 moves = rook_attacks(occupied & ~pieces[8], sq) & ~black_pieces;
         eval -= rook_mobility[popcount(moves)] + rook_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
@@ -928,7 +928,7 @@ int Position::static_eval() {
         if (file_status[sq & 7] == 2) eval -= rook_semiopen[sq & 7];
     }
     for (u64 bb{pieces[7]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][7][sq] + full_king[1][wk][7][sq];
         u64 moves = rook_attacks(occupied & ~pieces[9], sq) & ~white_pieces;
         eval += rook_mobility[popcount(moves)] + rook_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
@@ -936,13 +936,13 @@ int Position::static_eval() {
         if (file_status[sq & 7] == 1) eval += rook_semiopen[sq & 7];
     }
     for (u64 bb{pieces[8]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][8][sq] + full_king[1][wk][8][sq];
         u64 moves = queen_attacks(occupied, sq) & ~black_pieces;
         eval -= queen_mobility[popcount(moves)] + queen_forward_mobility[popcount(moves & forward_mask[0][sq >> 3])];
     }
     for (u64 bb{pieces[9]}; bb;) {
-        int sq = pop_lsb(bb);
+        const int sq = pop_lsb(bb);
         eval += full_king[0][bk][9][sq] + full_king[1][wk][9][sq];
         u64 moves = queen_attacks(occupied, sq) & ~white_pieces;
         eval += queen_mobility[popcount(moves)] + queen_forward_mobility[popcount(moves & forward_mask[1][sq >> 3])];
