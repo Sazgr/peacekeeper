@@ -139,8 +139,6 @@ public:
     int castling_rights[1024] {15};
     int halfmove_clock[1024] {0};
     u64 hash[1024] {};
-    int eval_stack[1024] {};
-    Move move_stack[1024] {};
     int eval_phase();
     int mg_static_eval{};
     int eg_static_eval{};

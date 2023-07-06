@@ -729,9 +729,7 @@ std::ostream& operator<<(std::ostream& out, Position& position) {
 }
 
 void Position::make_move(Move move) {
-    move_stack[ply] = move;
     ++ply;
-    eval_stack[ply] = -20001;
     hash[ply] = hash[ply - 1];
     hash[ply] ^= zobrist_black;
     side_to_move = !side_to_move;
@@ -955,8 +953,7 @@ int Position::static_eval() {
     if (file_status[bk & 7] == 2) eval -= king_semiopen[bk & 7];
     if (file_status[wk & 7] == 0) eval += king_open[wk & 7];
     if (file_status[wk & 7] == 1) eval += king_semiopen[wk & 7];
-    eval_stack[ply] = ((2 * side_to_move - 1) * (static_cast<s16>(eval >> 16) * phase + static_cast<s16>(eval & 0xFFFF) * (24 - phase)) / 24) + phase / 2;
-    return eval_stack[ply];
+    return ((2 * side_to_move - 1) * (static_cast<s16>(eval >> 16) * phase + static_cast<s16>(eval & 0xFFFF) * (24 - phase)) / 24) + phase / 2;
 }
 
 std::string Position::export_fen() {
