@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
             int btime = 0;
             int winc = 0;
             int binc = 0;
-            int movestogo = 0;
+            int movestogo = -1;
             if (std::find(tokens.begin(), tokens.end(), "movetime") != tokens.end()) {movetime = stoi(*(++std::find(tokens.begin(), tokens.end(), "movetime")));}
             if (std::find(tokens.begin(), tokens.end(), "depth") != tokens.end()) {depth = stoi(*(++std::find(tokens.begin(), tokens.end(), "depth")));}
             if (std::find(tokens.begin(), tokens.end(), "nodes") != tokens.end()) {nodes = stoi(*(++std::find(tokens.begin(), tokens.end(), "nodes")));}
@@ -173,13 +173,13 @@ int main(int argc, char *argv[]) {
             }
             if (std::find(tokens.begin(), tokens.end(), "winc") != tokens.end()) {winc = stoi(*(++std::find(tokens.begin(), tokens.end(), "winc")));}
             if (std::find(tokens.begin(), tokens.end(), "binc") != tokens.end()) {binc = stoi(*(++std::find(tokens.begin(), tokens.end(), "binc")));}
-            if (std::find(tokens.begin(), tokens.end(), "movestogo") != tokens.end()) {movestogo = stoi(*(++std::find(tokens.begin(), tokens.end(), "movestogo"))) + 1;}
+            if (std::find(tokens.begin(), tokens.end(), "movestogo") != tokens.end()) {movestogo = stoi(*(++std::find(tokens.begin(), tokens.end(), "movestogo")));}
             int mytime;
             if (movetime == 0 && calculate == true) {
                 mytime = position.side_to_move ? wtime : btime;
                 int myinc{position.side_to_move ? winc : binc};
-                if (movestogo == 0 || movestogo > std::max(30, (50 - position.ply / 5))) {movestogo = std::max(30, (50 - position.ply / 5));} //estimated number of moves until fresh time or end of game
-                movetime = 0.75 * (mytime / movestogo + winc); //time usable in terms of time remaining and increment
+                if (movestogo == -1 || movestogo > std::max(30, (50 - position.ply / 5))) {movestogo = std::max(30, (50 - position.ply / 5));} //estimated number of moves until fresh time or end of game
+                movetime = 0.75 * (mytime / movestogo + myinc); //time usable in terms of time remaining and increment
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
