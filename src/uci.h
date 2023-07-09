@@ -43,6 +43,10 @@ inline void print_info(std::ostream& out) {
         << "option name node_timescale_base type spin default 180 min 0 max 10000" << '\n'
         << "option name node_timescale_div type spin default 135 min 0 max 1000" << '\n'
         << "option name aspiration_beta_timescale type spin default 135 min 0 max 1000" << '\n'
+        << "option name tc_stability_0 type spin default 205 min 0 max 1000" << '\n'
+        << "option name tc_stability_1 type spin default 120 min 0 max 1000" << '\n'
+        << "option name tc_stability_2 type spin default 90 min 0 max 1000" << '\n'
+        << "option name tc_stability_3 type spin default 85 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }

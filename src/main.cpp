@@ -269,6 +269,18 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "aspiration_beta_timescale" && tokens[3] == "value") {
                 aspiration_beta_timescale = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_0" && tokens[3] == "value") {
+                tc_stability[0] = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_1" && tokens[3] == "value") {
+                tc_stability[1] = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_2" && tokens[3] == "value") {
+                tc_stability[2] = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_3" && tokens[3] == "value") {
+                tc_stability[3] = 0.01 * stoi(tokens[4]);
+            }
 #endif
         }
         if (tokens[0] == "see") {
@@ -730,6 +742,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         nulled = 0;
         int depth{1};
         int last_score, result;
+        int stability = 0;
         bestmove = movelist[0];
         pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
@@ -743,9 +756,15 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
                 ++depth;
+                if (pv_table[0][0] == bestmove) {
+                    stability = std::min(stability + 1, 3);
+                } else {
+                    stability = 0;
+                }
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
                 //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (nodes)) / node_timescale_div;
                 //nodes_before = nodes;
+                time_scale = tc_stability[stability];
                 if (timer.check(nodes, depth)) {break;}
                 if (!bestmove.is_null() && timer.check(nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                 alpha = last_score - aspiration_bounds[0];

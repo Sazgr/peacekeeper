@@ -31,6 +31,7 @@ enum Features : bool {
 
 spsa std::array<int, 24> futile_margins{47, 55, 62, 69, 75, 82, 88, 93, 99, 104, 110, 115, 120, 125, 130, 135, 139, 144, 148, 153, 157, 162, 166, 170};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
+spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 spsa double futility_multiplier = 19.0;
 spsa double futility_power = 0.666;
