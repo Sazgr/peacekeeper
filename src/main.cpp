@@ -508,19 +508,19 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_all{4};
     int reduce_this{};
     Move bestmove{};
-    bool improving = !in_check && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
-    if constexpr (static_null_move) if ((depth / 4) < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth - 4 * improving] >= beta)) {
+    bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
+    if constexpr (static_null_move) if ((depth / 4) < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futile_margins[depth - 4 * improving] >= beta)) {
         ++pruned;
         return static_eval - futile_margins[depth - 4 * improving];
     }
     Element entry = table.query(position.hashkey());
     ++tt_queries;
     if (entry.type != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
-    if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= (depth / 4) && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+    if (!is_pv && ss->excluded.is_null() && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= (depth / 4) && no_mate(entry.score, entry.score) && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         ++tt_cutoffs;
         return entry.score;
     }
-    if constexpr (null_move_pruning) if ((depth / 4) > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
+    if constexpr (null_move_pruning) if ((depth / 4) > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
         ++nodes;
@@ -543,7 +543,18 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (internal_iterative_reduction) if ((depth / 4) >= 6 && !hash_move_usable) reduce_all += 4;
     //Stage 1 - Hash Move
-    if (hash_move_usable) {//searching best move from hashtable
+    if (hash_move_usable && entry.bestmove != ss->excluded) {//searching best move from hashtable
+        int extend_this = 0;
+        if (ss->ply != 0 && (depth / 4) >= 7 && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= (depth / 4) - 3) {
+            int singular_beta = entry.score - (depth / 2);
+            int singular_depth = (depth - 4) / 2;
+            ss->excluded = entry.bestmove;
+            int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss);
+            ss->excluded = Move{};
+            if (singular_score < singular_beta) {
+                extend_this = 4;
+            }
+        }
         position.make_move(entry.bestmove);
         ss->move = entry.bestmove;
         if (ss->ply == 0) nodes_before = nodes;
@@ -552,7 +563,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ++main_nodes;
         ++tt_moves;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
+        result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1);
         position.undo_move(entry.bestmove);
         if (ss->ply == 0) nodes_used[entry.bestmove.start()][entry.bestmove.end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
@@ -584,6 +595,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && (depth / 4) < 6;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
+        if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
@@ -637,6 +649,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
+        if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
@@ -709,7 +722,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (in_check) return -20000 + ss->ply;
         else return 0;
     }
-    if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, (depth / 4));
+    if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, (depth / 4));
     return timer.stopped() ? 0 : alpha;
 }
 
