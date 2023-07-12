@@ -536,11 +536,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (check_extensions) if (in_check) {++extended; reduce_all -= static_cast<int>(4.27 / cbrt(depth / 4.0 + 1.0) + 1.14);} //check extension
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
-    if constexpr (internal_iterative_deepening) if (is_pv && (depth / 4) >= 6 && !hash_move_usable) {
-        -pvs(position, timer, table, move_order, depth - 8, alpha, beta, ss);
-        entry = table.query(position.hashkey());
-        hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && entry.bestmove.not_null() && position.board[entry.bestmove.start()] == entry.bestmove.piece() && position.board[entry.bestmove.end()] == entry.bestmove.captured();
-    }
     if constexpr (internal_iterative_reduction) if ((depth / 4) >= 6 && !hash_move_usable) reduce_all += 4;
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable

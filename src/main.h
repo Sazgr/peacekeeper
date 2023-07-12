@@ -25,7 +25,6 @@ enum Features : bool {
     late_move_pruning    = true,
     late_move_reductions = true,
     check_extensions     = true,
-    internal_iterative_deepening = true,
     internal_iterative_reduction = true,
 };
 
