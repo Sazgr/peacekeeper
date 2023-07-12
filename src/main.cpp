@@ -410,8 +410,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         position.legal_moves(movelist);
         if (movelist.size() == 0) return -20000 + ss->ply;
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].evade_order());
-        movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
+            movelist.pick(i);
             position.make_move(movelist[i]);
             ss->move = movelist[i];
             ++nodes;
@@ -461,8 +461,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         Movelist movelist;
         position.legal_noisy(movelist);
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
-        movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
+            movelist.pick(i);
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
             if (!see(position, movelist[i], -107)) continue;
             position.make_move(movelist[i]);
@@ -580,10 +580,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i = 0; i < movelist.size(); ++i) {
         movelist[i].add_sortkey(movelist[i].mvv_lva());
     }
-    movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && (depth / 4) < 6;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
+        movelist.pick(i);
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
@@ -634,9 +634,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
         movelist[i].add_sortkey(score);
     }
-    movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
+        movelist.pick(i);
         if (hash_move_usable && movelist[i] == entry.bestmove) continue; //continuing if we already searched the hash move
         if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
