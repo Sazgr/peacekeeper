@@ -45,6 +45,8 @@ spsa double node_timescale_div = 1.35;
 spsa double aspiration_beta_timescale = 1.35;
 
 u64 nodes_used[64][64];
+bool has_expectation = false;
+u64 expected_hash = 0;
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);

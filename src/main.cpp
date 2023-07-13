@@ -290,6 +290,7 @@ int main(int argc, char *argv[]) {
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
         if (tokens[0] == "ucinewgame") {
+            has_expectation = false; //we aren't expecting anything
             hash.clear();
             move_order.reset();
         }
@@ -745,6 +746,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 nodes_used[i][j] == 0;
             }
         }
+        bool was_unexpected = has_expectation && expected_hash != position.hashkey();
         for (; depth <= 64;) {
             result = pvs(position, timer, table, move_order, 4 * depth, alpha, beta, &search_stack[2]);
             if (alpha < result && result < beta) {
@@ -759,7 +761,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
                 //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (nodes)) / node_timescale_div;
                 //nodes_before = nodes;
-                time_scale = tc_stability[stability];
+                time_scale = (was_unexpected ? 1.4 : 1.0) * tc_stability[stability];
                 if (timer.check(nodes, depth)) {break;}
                 if (!bestmove.is_null() && timer.check(nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                 alpha = last_score - aspiration_bounds[0];
@@ -789,6 +791,14 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             std::cout << "info string null move\ninfo string null move attempts " << null_attempts << " successes " << nulled << " null% " << 100.0 * nulled / null_attempts << std::endl;
         }
         if (output) print_bestmove(out, bestmove);
+        if (!pv_table[0][1].is_null()) {
+            has_expectation = true;
+            position.make_move(pv_table[0][0]);
+            position.make_move(pv_table[0][1]);
+            expected_hash = position.hashkey();
+            position.undo_move(pv_table[0][1]);
+            position.undo_move(pv_table[0][0]);
+        }
         return last_score;
     }
 }
