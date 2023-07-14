@@ -5,6 +5,8 @@
 
 typedef std::uint64_t u64;
 typedef std::uint32_t u32;
-typedef std::int16_t s16;
+typedef std::uint32_t u16;
+typedef std::uint32_t u8;
+typedef std::int16_t i16;
 
 #endif

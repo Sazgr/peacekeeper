@@ -27,28 +27,30 @@ enum Flags {
     k_castling,
     enpassant,
 };
-//25 bits
-//PPPPSSSSSSSCCCCEEEEEEEFFF
-//4321098765432109876543210
-//1842184218421842184218421
+//24 bits
+//PPPPSSSSSSCCCCEEEEEEEFFF
+//321098765432109876543210
+//842184218421842184218421
 
 struct Move {
     Move() {
-        data = (12 << 21) ^ (64 << 14) ^ (12 << 10) ^ (65 << 3) ^ none;
+        data = (12 << 20) ^ (0 << 14) ^ (12 << 10) ^ (64 << 3) ^ none;
     }
     Move(int piece, int start_square, int captured_piece, int end_square, int flag = none) {
-        data = (piece << 21) ^ (start_square << 14) ^ (captured_piece << 10) ^ (end_square << 3) ^ flag;
+        data = (piece << 20) ^ (start_square << 14) ^ (captured_piece << 10) ^ (end_square << 3) ^ flag;
     }
     Move(const Move& rhs) {
         data = rhs.data;
     }
+    Move (const u64 move_data) {
+        data = move_data;
+    }
     inline int flag() const {return data & 0x7;}
-    inline int piece() const {return (data >> 21) & 0xF;}
-    inline int start() const {return (data >> 14) & 0x7F;}
+    inline int piece() const {return (data >> 20) & 0xF;}
+    inline int start() const {return (data >> 14) & 0x3F;}
     inline int captured() const {return (data >> 10) & 0xF;}
     inline int end() const {return (data >> 3) & 0x7F;}
-    inline bool is_null() const {return (data & 0x100200);}
-    inline bool not_null() const {return !(data & 0x100200);}
+    inline bool is_null() const {return (data & 0x200);}
     inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key+0x1FFFFFFF) << 32);}
     inline int gain() const {
         return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
