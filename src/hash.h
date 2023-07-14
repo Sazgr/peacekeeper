@@ -61,11 +61,11 @@ struct Element {
 class Hashtable {
 public:
     explicit Hashtable(u64 sz) {
-        size = 1ull << get_msb((sz * 1048576) / 24); //converting mb to size
+        size = 1ull << get_msb((sz * 1048576) / 16); //converting mb to size
         table.resize(size);
     }
     void resize(u64 sz) {
-        size = 1ull << get_msb((sz * 1048576) / 24); //converting mb to size
+        size = 1ull << get_msb((sz * 1048576) / 16); //converting mb to size
         table.resize(size);
     }
     void prefetch(const u64 hash) const {
