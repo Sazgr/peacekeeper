@@ -27,7 +27,7 @@ struct Element {
         data = (static_cast<u64>(ag) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(sc))) << 24) | (move.data & 0xFFFFFF);
     }
     Element() {
-        data = static_cast<u64>(tt_none) << 40;
+        data = (static_cast<u64>(tt_none) << 40) | (Move{}.data & 0xFFFFFF);
     }
     Element& operator=(const Element& rhs) {
         if (!rhs.bestmove().is_null() || full_hash != rhs.full_hash) {
@@ -35,6 +35,7 @@ struct Element {
         } else {
             data = (data & 0x0000000000FFFFFF) | (rhs.data & 0xFFFFFFFFFF000000);
         }
+        full_hash = rhs.full_hash;
         return *this;
     }
     inline void set_age(u8 new_age) {
