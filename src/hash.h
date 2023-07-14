@@ -24,7 +24,12 @@ struct Element {
     u64 data;
     Element(u64 hash, Move move, int sc, u8 tp, u8 dp, u8 ag) {
         full_hash = hash;
-        data = (static_cast<u64>(ag) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u32>(sc)) << 24) | (move.data & 0xFFFFFF);
+        data = (static_cast<u64>(ag) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(sc))) << 24) | (move.data & 0xFFFFFF);
+        if (bestmove() != move) std::cout << "move bad\n";
+        if (score() != sc) std::cout << "score bad\n";
+        if (type() != tp) std::cout << "type bad" << tp << " " << type() << "\n";
+        if (depth() != dp) std::cout << "depth bad" << dp << " " << depth() << "\n";
+        if (age() != ag) std::cout << "age bad\n";
     }
     Element() {
         data = static_cast<u64>(tt_none) << 40;
@@ -37,23 +42,23 @@ struct Element {
         }
         return *this;
     }
-    inline void set_age(int new_age) {
+    inline void set_age(u8 new_age) {
         data = (data & 0x00FFFFFFFFFFFFFF) | (static_cast<u64>(new_age) << 56);
     }
     inline const Move bestmove() const {
         return Move{data & 0x0000000000FFFFFF};
     }
     inline constexpr int score() const {
-        return (data & 0x000000FFFF000000) >> 24;
+        return static_cast<i16>(static_cast<u16>((data >> 24) & 0xFFFF));
     }
     inline constexpr int type() const {
-        return (data & 0x0000FF0000000000) >> 40;
+        return (data >> 40) & 0xFF;
     }
     inline constexpr int depth() const {
-        return (data & 0x00FF000000000000) >> 48;
+        return (data >> 48) & 0xFF;
     }
-    inline constexpr int age() const {
-        return data >> 56;
+    inline constexpr u8 age() const {
+        return (data >> 56) & 0xFF;
     }
 };
 
@@ -86,7 +91,7 @@ public:
     void age() {
         ++table_age;
     }
-    int index(const u64 hash, int score, std::uint8_t type, Move bestmove, std::uint8_t dp) {
+    int index(const u64 hash, int score, u8 type, Move bestmove, u8 dp) {
         if (table[(hash & (size - 2))].full_hash == hash) return 0; //first test hashes to prevent storing any duplicate positions
         if (table[(hash & (size - 2)) + 1].full_hash == hash) return 1;
         if (table[(hash & (size - 2))].type() == tt_none) return 0; //then check if a slot is empty
@@ -94,14 +99,14 @@ public:
         if (table[(hash & (size - 2))].depth() < dp || table[(hash & (size - 2))].age() != table_age) return 0; //now if we have a deeper search or an aged search in the first slot, we replace it
         return 1;
     }
-    void insert(const u64 hash, int score, std::uint8_t type, Move bestmove, std::uint8_t dp) {
+    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp) {
         int offset = index(hash, score, type, bestmove, dp);
         table[(hash & (size - 2)) + offset] = Element{hash, bestmove, score, type, dp, table_age};
     }
 private:
     std::vector<Element> table;
     u64 size;
-    std::uint8_t table_age;
+    u8 table_age;
 };
 
 #endif
