@@ -25,11 +25,6 @@ struct Element {
     Element(u64 hash, Move move, int sc, u8 tp, u8 dp, u8 ag) {
         full_hash = hash;
         data = (static_cast<u64>(ag) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(sc))) << 24) | (move.data & 0xFFFFFF);
-        if (bestmove() != move) std::cout << "move bad\n";
-        if (score() != sc) std::cout << "score bad\n";
-        if (type() != tp) std::cout << "type bad" << tp << " " << type() << "\n";
-        if (depth() != dp) std::cout << "depth bad" << dp << " " << depth() << "\n";
-        if (age() != ag) std::cout << "age bad\n";
     }
     Element() {
         data = static_cast<u64>(tt_none) << 40;
