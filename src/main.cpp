@@ -281,6 +281,21 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "tc_stability_3" && tokens[3] == "value") {
                 tc_stability[3] = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_base" && tokens[3] == "value") {
+                nmp_base = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_depth_div" && tokens[3] == "value") {
+                nmp_depth_div = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_improving" && tokens[3] == "value") {
+                nmp_improving = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_eval_pow" && tokens[3] == "value") {
+                nmp_eval_pow = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_eval_div" && tokens[3] == "value") {
+                nmp_eval_div = 0.1 * stoi(tokens[4]);
+            }
 #endif
         }
         if (tokens[0] == "see") {
@@ -527,7 +542,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ++nodes;
         ++null_attempts;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(4, depth - reduce_all - 4 * static_cast<int>(2.19999999 + (depth / 4) / 4.0 + improving + std::sqrt(static_eval - beta) / 12.0)), -beta, -beta + 1, ss + 1);
+        result = -pvs(position, timer, table, move_order, std::max(4, depth - reduce_all - 4 * static_cast<int>(nmp_base + (depth / 4) / nmp_depth_div + improving * nmp_improving + std::pow(static_eval - beta, nmp_eval_pow) / nmp_eval_div)), -beta, -beta + 1, ss + 1);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, (depth / 4));

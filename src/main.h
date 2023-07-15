@@ -43,6 +43,11 @@ spsa double see_quiet_quadratic = 0.55;
 spsa double node_timescale_base = 1.8;
 spsa double node_timescale_div = 1.35;
 spsa double aspiration_beta_timescale = 1.35;
+spsa double nmp_base = 2.3;
+spsa double nmp_depth_div = 3.6;
+spsa double nmp_improving = 1.0;
+spsa double nmp_eval_pow = 0.3;
+spsa double nmp_eval_div = 8.8;
 
 u64 nodes_used[64][64];
 

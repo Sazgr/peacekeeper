@@ -32,8 +32,8 @@ inline void print_info(std::ostream& out) {
         << "option name Threads type spin default 1 min 1 max 1" << '\n'
         << "option name Move Overhead type spin default 5 min 0 max 1000" << '\n'
 #ifdef SPSA
-        << "option name futility_multiplier type spin default 400 min 0 max 1000" << '\n'
-        << "option name futility_power type spin default 70 min 0 max 1000" << '\n'
+        << "option name futility_multiplier type spin default 190 min 0 max 1000" << '\n'
+        << "option name futility_power type spin default 67 min 0 max 1000" << '\n'
         << "option name see_noisy_constant type spin default 1135 min 0 max 10000" << '\n'
         << "option name see_noisy_linear type spin default 0 min 0 max 1000" << '\n'
         << "option name see_noisy_quadratic type spin default 50 min 0 max 1000" << '\n'
@@ -47,6 +47,11 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_1 type spin default 120 min 0 max 1000" << '\n'
         << "option name tc_stability_2 type spin default 90 min 0 max 1000" << '\n'
         << "option name tc_stability_3 type spin default 85 min 0 max 1000" << '\n'
+        << "option name nmp_base type spin default 220 min 0 max 1000" << '\n'
+        << "option name nmp_depth_div type spin default 360 min 0 max 1000" << '\n'
+        << "option name nmp_improving type spin default 100 min 0 max 1000" << '\n'
+        << "option name nmp_eval_pow type spin default 30 min 0 max 1000" << '\n'
+        << "option name nmp_eval_div type spin default 88 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
