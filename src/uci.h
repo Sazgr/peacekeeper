@@ -48,10 +48,9 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_2 type spin default 90 min 0 max 1000" << '\n'
         << "option name tc_stability_3 type spin default 85 min 0 max 1000" << '\n'
         << "option name nmp_base type spin default 220 min 0 max 1000" << '\n'
-        << "option name nmp_depth_div type spin default 360 min 0 max 1000" << '\n'
+        << "option name nmp_depth_div type spin default 400 min 0 max 1000" << '\n'
         << "option name nmp_improving type spin default 100 min 0 max 1000" << '\n'
-        << "option name nmp_eval_pow type spin default 30 min 0 max 1000" << '\n'
-        << "option name nmp_eval_div type spin default 88 min 0 max 1000" << '\n'
+        << "option name nmp_eval_div type spin default 90 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
