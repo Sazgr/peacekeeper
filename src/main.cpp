@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
         }
         out << total_nodes << " nodes " << static_cast<int>(total_nodes / total_time) << " nps" << std::endl;
         return 0;
-    } else {
+    } else if (argc > 1) {
         std::cout << "unsupported command-line argument \"" << argv[1] << "\"" << std::endl;
     }
     while (true) {
