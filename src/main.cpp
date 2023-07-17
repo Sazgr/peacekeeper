@@ -519,8 +519,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
     }
 }
 
-int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss)
-{
+int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss) {
+    bool is_root = (ss->ply == 0);
     bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes, 0))) return 0;
     if (depth <= 0) {
@@ -576,7 +576,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (hash_move_usable) {//searching best move from hashtable
         position.make_move(hash_move);
         ss->move = hash_move;
-        if (ss->ply == 0) nodes_before = nodes;
+        if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
@@ -584,7 +584,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         (ss + 1)->ply = ss->ply + 1;
         result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
         position.undo_move(hash_move);
-        if (ss->ply == 0) nodes_used[hash_move.start()][hash_move.end()] += nodes - nodes_before;
+        if (is_root) nodes_used[hash_move.start()][hash_move.end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = hash_move;
@@ -618,7 +618,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
         ss->move = movelist[i];
-        if (ss->ply == 0) nodes_before = nodes;
+        if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
@@ -632,7 +632,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move(movelist[i]);
-        if (ss->ply == 0) nodes_used[movelist[i].start()][movelist[i].end()] += nodes - nodes_before;
+        if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = movelist[i];
@@ -678,7 +678,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ++pruned;
             continue;
         }
-        if (ss->ply == 0) nodes_before = nodes;
+        if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
@@ -707,7 +707,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move(movelist[i]);
-        if (ss->ply == 0) nodes_used[movelist[i].start()][movelist[i].end()] += nodes - nodes_before;
+        if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += nodes - nodes_before;
         if (!timer.stopped() && result > alpha) {
             alpha = result;
             bestmove = movelist[i];
