@@ -28,12 +28,12 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
-spsa std::array<int, 8> futile_margins{47, 75, 98, 119, 138, 156, 173, 189};
+spsa std::array<int, 8> futile_margins{50, 84, 113, 141, 167, 191, 215, 237};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-spsa double futility_multiplier = 47.5;
-spsa double futility_power = 0.666;
+spsa double futility_multiplier = 50.0;
+spsa double futility_power = 0.75;
 spsa double see_noisy_constant = 113.5;
 spsa double see_noisy_linear = 0.0;
 spsa double see_noisy_quadratic = 8.0;
