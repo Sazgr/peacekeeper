@@ -269,11 +269,11 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<8; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<8; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
@@ -543,7 +543,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
-    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
+    if constexpr (static_null_move) if (depth < 8 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
         ++pruned;
         return static_eval - futile_margins[depth - improving];
     }
