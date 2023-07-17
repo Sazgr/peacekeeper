@@ -3,6 +3,7 @@
 
 #include "eval.h"
 #include "typedefs.h"
+#include <cassert>
 #include <iostream>
 #include <string>
 
@@ -52,7 +53,11 @@ struct Move {
     inline int end() const {return (data >> 3) & 0x7F;}
     inline bool is_null() const {return (data & 0x200);}
     inline bool not_null() const {return !(data & 0x200);}
-    inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key+0x1FFFFFFF) << 32);}
+    inline void add_sortkey(int key) {
+        assert(key >= 0);
+        data = (data & 0xFFFFFFFF) | (static_cast<u64>(key) << 32);
+    }
+    inline int sortkey() {return data >> 32;}
     inline int gain() const {
         return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
     }

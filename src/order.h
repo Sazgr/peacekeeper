@@ -2,6 +2,8 @@
 #define PEACEKEEPER_HISTORY
 
 #include "move.h"
+
+constexpr int good_capture_bonus = 5000;
 struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};

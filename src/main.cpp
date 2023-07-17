@@ -608,7 +608,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        movelist[i].add_sortkey(movelist[i].mvv_lva());
+        movelist[i].add_sortkey(good_capture_bonus * see(position, movelist[i], -107) + movelist[i].mvv_lva());
     }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
@@ -618,17 +618,32 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move(movelist[i]);
         ss->move = movelist[i];
+        bool gives_check = position.check();
         if (ss->ply == 0) nodes_before = nodes;
         ++nodes;
         ++move_num;
         ++main_nodes;
-        (ss + 1)->ply = ss->ply + 1;
-        if (depth == 1 || !is_pv || move_num == 1) {
+        //Late Move Reductions
+        reduce_this = 0;
+        if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && !gives_check && movelist[i].sortkey() < good_capture_bonus) {
+            reduce_this = lmr_reduction(is_pv, depth, move_num);
+        }
+        if (move_num == 1) {
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
         } else {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha-1, -alpha, ss + 1);
-            if (alpha < result && result < beta) {
-                result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
+            if (reduce_this) { //try a reduced search
+                ++red_attempts;
+            }
+            result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1);
+            if (reduce_this) {
+                if (alpha < result) {
+                    result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1);
+                } else {
+                    ++reduced;
+                }
+            }
+            if (alpha < result && result < beta && is_pv) {
+                result = -pvs(position, timer, table, move_order, depth - reduce_all,  -beta, -alpha, ss + 1);
             }
         }
         position.undo_move(movelist[i]);
