@@ -275,23 +275,20 @@ int main(int argc, char *argv[]) {
                 futility_power = 0.01 * stoi(tokens[4]);
                 for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
             }
-            if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
-                see_noisy_constant = 0.1 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "see_losing" && tokens[3] == "value") {
+                see_losing = -stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "see_noisy_linear" && tokens[3] == "value") {
-                see_noisy_linear = 0.1 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "see_noisy_multiplier" && tokens[3] == "value") {
+                see_noisy_multiplier = 0.01 * stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "see_noisy_quadratic" && tokens[3] == "value") {
-                see_noisy_quadratic = 0.01 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "see_noisy_power" && tokens[3] == "value") {
+                see_noisy_power = 0.01 * stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "see_quiet_constant" && tokens[3] == "value") {
-                see_quiet_constant = 0.1 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "see_quiet_multiplier" && tokens[3] == "value") {
+                see_quiet_multiplier = 0.01 * stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "see_quiet_linear" && tokens[3] == "value") {
-                see_quiet_linear = 0.1 * stoi(tokens[4]);
-            }
-            if (tokens.size() >= 5 && tokens[2] == "see_quiet_quadratic" && tokens[3] == "value") {
-                see_quiet_quadratic = 0.01 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "see_quiet_power" && tokens[3] == "value") {
+                see_quiet_power = 0.01 * stoi(tokens[4]);
             }
             if (tokens.size() >= 5 && tokens[2] == "node_timescale_base" && tokens[3] == "value") {
                 node_timescale_base = 0.01 * stoi(tokens[4]);
@@ -498,7 +495,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
             if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
-            if (!see(position, movelist[i], -107)) continue;
+            if (!see(position, movelist[i], see_losing)) continue;
             position.make_move(movelist[i]);
             ss->move = movelist[i];
             ++nodes;
@@ -615,7 +612,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
+        if (!see(position, movelist[i], see_losing - see_noisy_multiplier * std::pow(depth, see_noisy_power))) continue;
         position.make_move(movelist[i]);
         ss->move = movelist[i];
         if (is_root) nodes_before = nodes;
@@ -668,7 +665,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 3 - Quiet Moves
     for (int i{}; i < movelist.size(); ++i) {
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
+        if (!see(position, movelist[i], see_losing - see_quiet_multiplier * std::pow(depth, see_quiet_power))) continue;
         position.make_move(movelist[i]);
         ss->move = movelist[i];
         bool gives_check = position.check();
