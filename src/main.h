@@ -54,8 +54,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss);
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, bool output);
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {
-    if (is_pv) return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 4.3 + 0.5);
-    else return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 1.85 + 0.5);
+    if (is_pv) return static_cast<int>((std::log(move_num) * std::log(depth)) / 4.4 + 0.5);
+    else return static_cast<int>((std::log(move_num) * std::log(depth)) / 1.9 + 0.5);
 }
 inline int late_move_margin(int depth, int move_num) {
     if constexpr (late_move_pruning) return (move_num * move_num) / (depth * depth);

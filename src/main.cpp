@@ -685,7 +685,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         (ss + 1)->ply = ss->ply + 1;
         //Late Move Reductions
         reduce_this = 0;
-        if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && !gives_check) {
+        if constexpr (late_move_reductions) if (depth > 2 && !in_check && !gives_check) {
             reduce_this = lmr_reduction(is_pv, depth, move_num);
         }
         if (move_num == 1) {
