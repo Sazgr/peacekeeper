@@ -269,11 +269,11 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
@@ -313,6 +313,14 @@ int main(int argc, char *argv[]) {
             }
             if (tokens.size() >= 5 && tokens[2] == "tc_stability_3" && tokens[3] == "value") {
                 tc_stability[3] = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "hist_prune_base" && tokens[3] == "value") {
+                hist_prune_base = stoi(tokens[4]);
+                for (int i{}; i<6; ++i) hist_prune_margins[i] = hist_prune_base * std::pow(i + 1, hist_prune_power);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "hist_prune_power" && tokens[3] == "value") {
+                hist_prune_power = -0.01 * stoi(tokens[4]);
+                for (int i{}; i<6; ++i) hist_prune_margins[i] = hist_prune_base * std::pow(i + 1, hist_prune_power);
             }
 #endif
         }
@@ -674,6 +682,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         bool gives_check = position.check();
         //Futility Pruning
         if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num) < alpha) && move_num != 0 && !gives_check) {
+            position.undo_move(movelist[i]);
+            ++pruned;
+            continue;
+        }
+        //History Pruning
+        if constexpr (history_pruning) if (depth < 6 && move_num != 0 && !in_check && !gives_check && movelist[i].sortkey() < hist_prune_margins[depth]) {
             position.undo_move(movelist[i]);
             ++pruned;
             continue;

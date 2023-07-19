@@ -47,6 +47,8 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_1 type spin default 120 min 0 max 1000" << '\n'
         << "option name tc_stability_2 type spin default 90 min 0 max 1000" << '\n'
         << "option name tc_stability_3 type spin default 85 min 0 max 1000" << '\n'
+        << "option name hist_prune_base type spin default 1350 min 0 max 10000" << '\n'
+        << "option name hist_prune_power type spin default 47 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
