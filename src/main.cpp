@@ -15,6 +15,7 @@ Peacekeeper Chess Engine
 
 #include "main.h"
 #include "movelist.h"
+#include "spsa.h"
 #include "uci.h"
 #include <algorithm>
 #include <atomic>
@@ -269,11 +270,11 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
@@ -650,17 +651,17 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        int score{};
+        int score{200000};
         if constexpr (history_heuristic) {
-            score += move_order.history_value(movelist[i].piece(), movelist[i].end());
+            score += 4 * move_order.history_value(movelist[i].piece(), movelist[i].end());
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
             score += move_order.continuation_value((ss - 1)->move, movelist[i]);
         }
         if constexpr (killer_heuristic) {
-            if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 1600;
-            if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 800;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
+            if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 102400;
+            if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 51200;
+            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 25600;
+            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 12800;
         }
         movelist[i].add_sortkey(score);
     }
