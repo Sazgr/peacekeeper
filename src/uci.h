@@ -7,6 +7,10 @@
 #include <vector>
 #include <fstream>
 
+#ifndef VERSION
+#define VERSION 0
+#endif
+
 inline void print_score(std::ostream& out, int score) {
     if (abs(score) <= 18000) out << "cp " << score;
     else if (score < 0) out << "mate -" << (20001 + score) / 2;
@@ -26,8 +30,14 @@ inline void print_uci(std::ostream& out, int score, int depth, u64 nodes, int np
 }
 
 inline void print_info(std::ostream& out) {
-    out << "id name Peacekeeper v" << std::fixed << std::setprecision(2) << VERSION << std::defaultfloat << std::setprecision(6) << '\n'
-        << "id author Kyle Zhang" << '\n'
+    if (VERSION == 0) {
+        out << "id name Peacekeeper vDEV\n";
+    } else if (VERSION - (std::round(VERSION * 100) / 100.0) < 0.00000001) { //release version
+        out << "id name Peacekeeper v" << std::fixed << std::setprecision(2) << VERSION << std::defaultfloat << std::setprecision(6) << '\n';
+    } else { //intermediate version
+        out << "id name Peacekeeper v" << std::fixed << std::setprecision(4) << VERSION << std::defaultfloat << std::setprecision(6) << '\n';
+    }
+    out << "id author Kyle Zhang" << '\n'
         << "option name Hash type spin default 1 min 1 max 1024" << '\n'
         << "option name Threads type spin default 1 min 1 max 1" << '\n'
         << "option name Move Overhead type spin default 5 min 0 max 1000" << '\n'
