@@ -42,8 +42,8 @@ inline int pop_lsb(u64& bits) {
 #include <bit>
 
 inline int popcount(u64 bits) {return std::popcount(bits);}
-inline int get_lsb(u64 bits) {return countr_zero(bits);}
-inline int get_msb(u64 bits) {return countl_zero(bits) ^ 63;}
+inline int get_lsb(u64 bits) {return std::countr_zero(bits);}
+inline int get_msb(u64 bits) {return std::countl_zero(bits) ^ 63;}
 inline int bitscan(u64 bits, bool reverse) {
     u64 rmask;
     rmask = -u64(reverse);
