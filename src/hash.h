@@ -22,8 +22,10 @@ enum Transposition_entry_types {
 struct Element {
     u64 full_hash;
     u64 data;
-    Element(u64 hash, Move move, int sc, u8 tp, u8 dp, u8 ag) {
+    Element(u64 hash, Move move, int sc, u8 tp, u8 dp, u8 ag, int ply) {
         full_hash = hash;
+	if (sc < -18000) sc += ply;
+	if (sc > 18000) sc -= ply;
         data = (static_cast<u64>(ag) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(sc))) << 24) | (move.data & 0xFFFFFF);
     }
     Element() {
@@ -43,6 +45,10 @@ struct Element {
     }
     inline const Move bestmove() const {
         return Move{data & 0x0000000000FFFFFF};
+    }
+    inline void adjust_score(int ply) {
+        if (score() < -18000) data = (data & 0xFFFFFF0000FFFFFF) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(score() - ply))) << 24);
+        if (score() > 18000) data = (data & 0xFFFFFF0000FFFFFF) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(score() + ply))) << 24);
     }
     inline constexpr int score() const {
         return static_cast<i16>(static_cast<u16>((data >> 24) & 0xFFFF));
@@ -95,9 +101,9 @@ public:
         if (table[(hash & (size - 2))].depth() < dp || table[(hash & (size - 2))].age() != table_age) return 0; //now if we have a deeper search or an aged search in the first slot, we replace it
         return 1;
     }
-    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp) {
+    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply) {
         int offset = index(hash, score, type, bestmove, dp);
-        table[(hash & (size - 2)) + offset] = Element{hash, bestmove, score, type, dp, table_age};
+        table[(hash & (size - 2)) + offset] = Element{hash, bestmove, score, type, dp, table_age, ply};
     }
 private:
     std::vector<Element> table;

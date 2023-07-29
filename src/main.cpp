@@ -465,9 +465,10 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         int old_alpha{alpha};
         Move bestmove{};
         Element entry = table.query(position.hashkey());
+        entry.adjust_score(ss->ply);
         ++tt_queries;
         if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
-        if (entry.type() != tt_none && entry.full_hash == position.hashkey() && no_mate(entry.score(), entry.score()) && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
+        if (entry.type() != tt_none && entry.full_hash == position.hashkey() && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
             ++tt_cutoffs;
             return entry.score();
         }
@@ -486,7 +487,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                     alpha = result;
                     bestmove = hash_move;
                     if (alpha >= beta) {
-                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0);
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
                         return alpha;
                     }
                 }
@@ -509,12 +510,12 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                 alpha = result;
                 bestmove = movelist[i];
                 if (alpha >= beta) {
-                    if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0);
+                    if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
                     return alpha;
                 }
             }
         }
-        if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0);
+        if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0, ss->ply);
         return alpha;
     }
 }
@@ -548,9 +549,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return static_eval - futile_margins[depth - improving];
     }
     Element entry = table.query(position.hashkey());
+    entry.adjust_score(ss->ply);
     ++tt_queries;
     if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
-    if (!is_pv && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && no_mate(entry.score(), entry.score()) && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
+    if (!is_pv && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
         ++tt_cutoffs;
         return entry.score();
     }
@@ -563,7 +565,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(2.19999999 + depth / 4.0 + improving + std::sqrt(static_eval - beta) / 12.0)), -beta, -beta + 1, ss + 1);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
-            //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth);
+            //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth, ss->ply);
             ++nulled;
             return result;
         }
@@ -598,7 +600,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                     move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                 }
-                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                 ++beta_cuts;
                 cut_num += move_num;
                 return alpha;
@@ -641,7 +643,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 memcpy(&pv_table[ss->ply][1], &pv_table[ss->ply + 1][0], sizeof(Move) * 127);
             }
             if (alpha >= beta) {
-                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                 ++beta_cuts;
                 cut_num += move_num;
                 return alpha;
@@ -726,7 +728,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                     move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                 }
-                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth);
+                table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                 if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
                 ++beta_cuts;
                 cut_num += move_num;
@@ -739,7 +741,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (in_check) return -20000 + ss->ply;
         else return 0;
     }
-    if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, depth);
+    if (!timer.stopped()) table.insert(position.hashkey(), alpha, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, depth, ss->ply);
     return timer.stopped() ? 0 : alpha;
 }
 
