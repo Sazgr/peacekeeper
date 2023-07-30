@@ -46,9 +46,10 @@ struct Element {
     inline const Move bestmove() const {
         return Move{data & 0x0000000000FFFFFF};
     }
-    inline void adjust_score(int ply) {
+    inline Element& adjust_score(int ply) {
         if (score() < -18000) data = (data & 0xFFFFFF0000FFFFFF) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(score() - ply))) << 24);
         if (score() > 18000) data = (data & 0xFFFFFF0000FFFFFF) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(score() + ply))) << 24);
+        return *this;
     }
     inline constexpr int score() const {
         return static_cast<i16>(static_cast<u16>((data >> 24) & 0xFFFF));
@@ -78,7 +79,7 @@ public:
         __builtin_prefetch(&table[hash & (size - 2)]);
         __builtin_prefetch(&table[(hash & (size - 2)) + 1]);
     }
-    Element& query(const u64 hash) {
+    Element query(const u64 hash) {
         if (table[(hash & (size - 2))].full_hash == hash) {
             table[(hash & (size - 2))].set_age(table_age);
             return table[(hash & (size - 2))];

@@ -464,8 +464,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         if (alpha < static_eval) alpha = static_eval;
         int old_alpha{alpha};
         Move bestmove{};
-        Element entry = table.query(position.hashkey());
-        entry.adjust_score(ss->ply);
+        Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
         ++tt_queries;
         if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
         if (entry.type() != tt_none && entry.full_hash == position.hashkey() && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
@@ -548,8 +547,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ++pruned;
         return static_eval - futile_margins[depth - improving];
     }
-    Element entry = table.query(position.hashkey());
-    entry.adjust_score(ss->ply);
+    Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     ++tt_queries;
     if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
     if (!is_pv && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
