@@ -623,11 +623,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ++move_num;
         ++main_nodes;
         (ss + 1)->ply = ss->ply + 1;
-        if (depth == 1 || !is_pv || move_num == 1) {
+        if (move_num == 1) {
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
         } else {
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha-1, -alpha, ss + 1);
-            if (alpha < result && result < beta) {
+            if (is_pv && alpha < result && result < beta) {
                 result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
             }
         }
