@@ -207,16 +207,22 @@ int main(int argc, char *argv[]) {
             if (std::find(tokens.begin(), tokens.end(), "winc") != tokens.end()) {winc = stoi(*(++std::find(tokens.begin(), tokens.end(), "winc")));}
             if (std::find(tokens.begin(), tokens.end(), "binc") != tokens.end()) {binc = stoi(*(++std::find(tokens.begin(), tokens.end(), "binc")));}
             if (std::find(tokens.begin(), tokens.end(), "movestogo") != tokens.end()) {movestogo = stoi(*(++std::find(tokens.begin(), tokens.end(), "movestogo"))) + 1;}
-            int mytime;
+            int mytime, soft_limit, hard_limit;
             if (movetime == 0 && calculate == true) {
                 mytime = position.side_to_move ? wtime : btime;
                 int myinc{position.side_to_move ? winc : binc};
                 if (movestogo == 0 || movestogo > std::max(20, (40 - position.ply / 5))) {movestogo = std::max(20, (40 - position.ply / 5));} //estimated number of moves until fresh time or end of game
-                movetime = (mytime / movestogo + winc * 3 / 4); //time usable in terms of time remaining and increment
-                movetime -= move_overhead; //accounting for lag, network delay, etc
-                movetime = std::max(1, movetime); //no negative movetime
+                movetime = mytime / movestogo; //time usable in terms of time remaining and increment
+                soft_limit = movetime + myinc * 3 / 4;
+                hard_limit = 4 * movetime + myinc * 3 / 4;
+                soft_limit = std::min<int>(0.8 * mytime, soft_limit);
+                hard_limit = std::min(mytime, hard_limit);
+                soft_limit -= move_overhead;
+                hard_limit -= move_overhead;
+                soft_limit = std::max(1, soft_limit);
+                hard_limit = std::max(1, hard_limit);
             }
-            timer.reset(calculate ? std::max(1, std::min(mytime - move_overhead, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes, depth);
+            timer.reset(calculate ? hard_limit : movetime, calculate ? soft_limit : 0, nodes, depth);
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), true};
             search.detach();
         }
