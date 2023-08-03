@@ -826,7 +826,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 continue;
             }
             if (result <= alpha) {
-                //no time checks here because we failed low, we allow for some extra time
+                if (!bestmove.is_null() && timer.check(nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_alpha_timescale)) {break;}
                 if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
                 else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
                 else alpha = -20000;
