@@ -578,7 +578,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (!timer.stopped() && result >= beta) {
             //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth, ss->ply);
             ++nulled;
-            return result;
+            return (abs(result) > 18000 ? beta : result);
         }
     }
     if constexpr (check_extensions) if (in_check) {++extended; reduce_all -= 1;} //check extension
