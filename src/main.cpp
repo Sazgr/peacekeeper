@@ -437,88 +437,37 @@ bool see(Position& position, Move move, const int threshold) {
 
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss) {
     if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
-    if (position.check()) {
-        int result = -20000;
-        int best_value = -20000;
-        Movelist movelist;
-        position.legal_moves(movelist);
-        if (movelist.size() == 0) return -20000 + ss->ply;
-        for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].evade_order());
-        movelist.sort(0, movelist.size());
-        for (int i = 0; i < movelist.size(); ++i) {
-            position.make_move(movelist[i]);
-            ss->move = movelist[i];
+    table.prefetch(position.hashkey());
+    int static_eval = position.static_eval();
+    int best_value = -20000;
+    if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
+    if (best_value < static_eval) best_value = static_eval;
+    if (alpha < static_eval) alpha = static_eval;
+    int old_alpha{alpha};
+    Move bestmove{};
+    Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
+    ++tt_queries;
+    if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
+    if (entry.type() != tt_none && entry.full_hash == position.hashkey() && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
+        ++tt_cutoffs;
+        return entry.score();
+    }
+    int result = -20000;
+    Move hash_move = entry.bestmove();
+    bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
+    if (hash_move_usable) {//searching best move from hashtable
+        if (!(delta_pruning && static_eval + hash_move.gain() + futile_margins[0] < alpha)) { //delta pruning
+            position.make_move(hash_move);
+            ss->move = hash_move;
             ++nodes;
             (ss + 1)->ply = ss->ply + 1;
             result = -quiescence(position, timer, table, -beta, -alpha, ss + 1);
-            position.undo_move(movelist[i]);
+            position.undo_move(hash_move);
             if (result > best_value) {
                 best_value = result;
                 if (result > alpha) {
                     alpha = result;
-                    if (alpha >= beta) return alpha;
-                }
-            }
-        }
-        return best_value;
-    } else {
-        table.prefetch(position.hashkey());
-        int static_eval = position.static_eval();
-        int best_value = -20000;
-        if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
-        if (best_value < static_eval) best_value = static_eval;
-        if (alpha < static_eval) alpha = static_eval;
-        int old_alpha{alpha};
-        Move bestmove{};
-        Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-        ++tt_queries;
-        if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
-        if (entry.type() != tt_none && entry.full_hash == position.hashkey() && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
-            ++tt_cutoffs;
-            return entry.score();
-        }
-        int result = -20000;
-        Move hash_move = entry.bestmove();
-        bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
-        if (hash_move_usable) {//searching best move from hashtable
-            if (!(delta_pruning && static_eval + hash_move.gain() + futile_margins[0] < alpha)) { //delta pruning
-                position.make_move(hash_move);
-                ss->move = hash_move;
-                ++nodes;
-                (ss + 1)->ply = ss->ply + 1;
-                result = -quiescence(position, timer, table, -beta, -alpha, ss + 1);
-                position.undo_move(hash_move);
-                if (result > best_value) {
-                    best_value = result;
-                    if (result > alpha) {
-                        alpha = result;
-                        bestmove = hash_move;
-                        if (alpha >= beta) {
-                            if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
-                            return alpha;
-                        }
-                    }
-                }
-            }
-        }
-        Movelist movelist;
-        position.legal_noisy(movelist);
-        for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
-        movelist.sort(0, movelist.size());
-        for (int i = 0; i < movelist.size(); ++i) {
-            if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
-            if (!see(position, movelist[i], -107)) continue;
-            position.make_move(movelist[i]);
-            ss->move = movelist[i];
-            ++nodes;
-            (ss + 1)->ply = ss->ply + 1;
-            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1);
-            position.undo_move(movelist[i]);
-            if (result > best_value) {
-                best_value = result;
-                if (result > alpha) {
-                    alpha = result;
-                    bestmove = movelist[i];
+                    bestmove = hash_move;
                     if (alpha >= beta) {
                         if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
                         return alpha;
@@ -526,9 +475,34 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                 }
             }
         }
-        if (!timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0, ss->ply);
-        return best_value;
     }
+    Movelist movelist;
+    position.legal_noisy(movelist);
+    for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
+    movelist.sort(0, movelist.size());
+    for (int i = 0; i < movelist.size(); ++i) {
+        if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
+        if (!see(position, movelist[i], -107)) continue;
+        position.make_move(movelist[i]);
+        ss->move = movelist[i];
+        ++nodes;
+        (ss + 1)->ply = ss->ply + 1;
+        result = -quiescence(position, timer, table, -beta, -alpha, ss + 1);
+        position.undo_move(movelist[i]);
+        if (result > best_value) {
+            best_value = result;
+            if (result > alpha) {
+                alpha = result;
+                bestmove = movelist[i];
+                if (alpha >= beta) {
+                    if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
+                    return alpha;
+                }
+            }
+        }
+    }
+    if (!timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0, ss->ply);
+    return best_value;
 }
 
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss) {
