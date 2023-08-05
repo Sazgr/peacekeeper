@@ -83,9 +83,11 @@ public:
         if (table[(hash & (size - 2))].full_hash == hash) {
             table[(hash & (size - 2))].set_age(table_age);
             return table[(hash & (size - 2))];
-        } else {
+        } else if (table[(hash & (size - 2)) + 1].full_hash == hash) {
             table[(hash & (size - 2)) + 1].set_age(table_age);
             return table[(hash & (size - 2)) + 1];
+        } else {
+            return Element();
         }
     }
     void clear() {
