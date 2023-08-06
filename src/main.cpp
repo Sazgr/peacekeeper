@@ -567,6 +567,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ++tt_cutoffs;
         return entry.score();
     }
+    if (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= static_eval) || (entry.type() == tt_beta && entry.score() >= static_eval)) {
+        static_eval = entry.score();
+    }
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
