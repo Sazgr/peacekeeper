@@ -32,9 +32,9 @@ struct Move_order_tables {
         }
     }
     void history_edit(int piece, int to_square, int change, bool success) {
-	history[piece][to_square] -= (history[piece][to_square] * change) / 256;
+	history[piece][to_square] -= (history[piece][to_square] * change) / 1024;
         if (!success) change = -change;
-	history[piece][to_square] += change * 32;
+	history[piece][to_square] += change * 8;
     }
     int history_value(int piece, int to_square) {
         return history[piece][to_square];
