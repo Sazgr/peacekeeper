@@ -609,9 +609,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) if (bestmove.captured() == 12) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), depth * depth, true);
-                        move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
-                        move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
+                    move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus[depth], true);
+                    move_order.continuation_edit((ss - 2)->move, bestmove, continuation_bonus[depth], true);
+                    move_order.continuation_edit((ss - 1)->move, bestmove, continuation_bonus[depth], true); 
                     }
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     ++beta_cuts;
@@ -669,17 +669,17 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        int score{};
+        int score{20000}; //to prevent history and continuation scores from making overall score negative
         if constexpr (history_heuristic) {
             score += move_order.history_value(movelist[i].piece(), movelist[i].end());
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
             score += move_order.continuation_value((ss - 1)->move, movelist[i]);
         }
         if constexpr (killer_heuristic) {
-            if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 1600;
-            if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 800;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
+            if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 6400;
+            if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 3200;
+            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 1600;
+            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 800;
         }
         movelist[i].add_sortkey(score);
     }
@@ -706,7 +706,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 4 && !in_check && !gives_check) {
             reduce_this = lmr_reduction(is_pv, depth, move_num);
-            if (movelist[i].sortkey() < 1500) ++reduce_this;
+            if (movelist[i].sortkey() < 14000) ++reduce_this;
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
@@ -740,14 +740,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
-                        move_order.history_edit(movelist[j].piece(), movelist[j].end(), depth * depth, false);
-                        move_order.continuation_edit((ss - 2)->move, movelist[j], depth * depth, false);
-                        move_order.continuation_edit((ss - 1)->move, movelist[j], depth * depth, false);   
+                        move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus[depth], false);
+                        move_order.continuation_edit((ss - 2)->move, movelist[j], continuation_bonus[depth], false);
+                        move_order.continuation_edit((ss - 1)->move, movelist[j], continuation_bonus[depth], false);    
                     }
                     if constexpr (history_heuristic) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), depth * depth, true);
-                        move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
-                        move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
+                        move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus[depth], true);
+                        move_order.continuation_edit((ss - 2)->move, bestmove, continuation_bonus[depth], true);
+                        move_order.continuation_edit((ss - 1)->move, bestmove, continuation_bonus[depth], true);
                     }
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
