@@ -697,6 +697,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ++pruned;
             continue;
         }
+        if constexpr (history_pruning) if (depth < 5 && move_num != 0 && !in_check && !gives_check && movelist[i].sortkey() < 1500 - 300 * depth) {
+            position.undo_move(movelist[i]);
+            ++pruned;
+            continue;
+        }
         if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
