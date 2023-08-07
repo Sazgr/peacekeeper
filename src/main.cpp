@@ -139,7 +139,8 @@ int main(int argc, char *argv[]) {
                 hash.clear();
                 move_order.reset();
                 while (true) {
-                    if (!position.count_legal_moves()) {
+                    position.legal_moves(movelist);
+                    if (!movelist.size()) {
                         if (position.check()) {
                             if (position.side_to_move) result_string = " c9 \"0-1\";";
                             else result_string = " c9 \"1-0\";";
@@ -226,7 +227,7 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 2) {depth = stoi(tokens[1]);}
             Timer timer;
             timer.reset();
-            u64 result = (position.side_to_move ? perft_f<true>(position, depth) : perft_f<false>(position, depth));
+            u64 result = perft(position, depth);
             double end = timer.elapsed();
             out << "info nodes " << result << " time " << static_cast<int>(end * 1000) << " nps " << static_cast<int>(result / end) << std::endl;
         }
@@ -331,12 +332,12 @@ int main(int argc, char *argv[]) {
 }
 
 u64 perft(Position& position, int depth) {
-    if (depth == 1) {
-        return position.count_legal_moves();
-    }
     u64 total{};
     Movelist movelist;
     position.legal_moves(movelist);
+    if (depth == 1) {
+        return movelist.size();
+    }
     for (int i{}; i<movelist.size(); ++i) {
         position.make_move(movelist[i]);
         total += perft(position, depth - 1);
@@ -366,21 +367,6 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
         }
         return total;
     }
-}
-
-template <bool side> u64 perft_f(Position& position, int depth) {
-    if (depth == 1) {
-        return position.count_legal<all, side>();
-    }
-    u64 total{};
-    Movelist movelist;
-    position.gen_legal<all, side>(movelist);
-    for (int i{}; i<movelist.size(); ++i) {
-        position.make_move(movelist[i]);
-        total += perft_f<!side>(position, depth - 1);
-        position.undo_move(movelist[i]);
-    }
-    return total;
 }
 
 bool see(Position& position, Move move, const int threshold) {
