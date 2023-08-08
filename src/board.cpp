@@ -885,8 +885,26 @@ bool Position::parse_move(Move& out, std::string move) {
             case 'q': flag = queen_pr; break;
         }
     } else {
-        if (piece == black_king + side_to_move && end - start == 2) flag = k_castling;
-        if (piece == black_king + side_to_move && end - start == -2) flag = q_castling;
+        if (!chess960 && piece == black_king + side_to_move && end - start == 2) {
+            flag = k_castling;
+            end = start + 3;
+            captured = empty_square;
+        }
+        if (!chess960 && piece == black_king + side_to_move && end - start == -2) {
+            flag = q_castling;
+            end = start - 4;
+            captured = empty_square;
+        }
+        if (chess960 && piece == black_king + side_to_move && captured == black_rook + side_to_move && end > start) {
+            flag = k_castling;
+            end = start + 3;
+            captured = empty_square;
+        }
+        if (chess960 && piece == black_king + side_to_move && captured == black_rook + side_to_move && end < start) {
+            flag = q_castling;
+            end = start - 4;
+            captured = empty_square;
+        }
         if (piece == black_pawn + side_to_move && (abs(end - start) == 7 || abs(end - start) == 9) && captured == empty_square) {
             flag = enpassant;
             captured = piece ^ 1;
