@@ -60,11 +60,9 @@ public:
     template <bool side_to_attack> u64 attack_map(u64 occupied);
     bool check();
     template <Move_types types, bool side> void gen_legal(Movelist& movelist);
-    template <Move_types types, bool side> u64 count_legal();
     void legal_moves(Movelist& movelist);
     void legal_noisy(Movelist& movelist);
     void legal_quiet(Movelist& movelist);
-    u64 count_legal_moves();
     void print_bitboard(u64 bits);
     void print(std::ostream& out);
     void make_move(Move move);

@@ -503,10 +503,6 @@ void Position::legal_quiet(Movelist& movelist) {
     else gen_legal<quiet, false>(movelist);
 }
 
-u64 Position::count_legal_moves() {
-    if (side_to_move) return count_legal<all, true>();
-    else return count_legal<all, false>();
-}
 void Position::print(std::ostream& out) {
     std::vector<std::string> pieces{"p", "P", "n", "N", "b", "B", "r", "R", "q", "Q", "k", "K", ".", "."};
     out << "8 ";
