@@ -422,7 +422,7 @@ bool see(Position& position, Move move, const int threshold) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss) {
-    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
+    if (timer.stopped() || (!(nodes & 4095) && timer.check(nodes))) return 0;
     if (position.check()) {
         int result = -20000;
         int best_value = -20000;
@@ -520,7 +520,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss) {
     bool is_root = (ss->ply == 0);
     bool is_pv = (beta - alpha) != 1;
-    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes, 0))) return 0;
+    if (timer.stopped() || (!(nodes & 4095) && timer.check(nodes, 0))) return 0;
     if (depth <= 0) {
         return quiescence(position, timer, table, alpha, beta, ss);
     }
