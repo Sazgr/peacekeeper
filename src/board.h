@@ -6,6 +6,7 @@
 #include "magics.h"
 #include "move.h"
 #include "movelist.h"
+#include "options.h"
 #include "typedefs.h"
 #include <cstdint>
 #include <string>
@@ -80,7 +81,7 @@ public:
     void zobrist_update();
     u64 zobrist_pieces[13][64];
     u64 zobrist_black;
-    u64 zobrist_castling[16];
+    u64 zobrist_castling[65];
     u64 zobrist_enpassant[65];
 //private:
     u64 positive_ray_attacks(u64 occupied, int direction, int square);
@@ -134,7 +135,7 @@ public:
     bool side_to_move{true};
     int ply{};
     int enpassant_square[1024] {64};
-    int castling_rights[1024] {15};
+    int castling_rights[1024][4] {0, 7, 56, 63};
     int halfmove_clock[1024] {0};
     u64 hash[1024] {};
     int eval_phase();
@@ -203,7 +204,7 @@ inline void Position::make_null() {
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]];
     hash[ply] ^= zobrist_black;
     side_to_move = !side_to_move;
-    castling_rights[ply] = castling_rights[ply - 1];
+    memcpy(castling_rights[ply], castling_rights[ply - 1], sizeof(int) * 4);
     enpassant_square[ply] = 64;
     hash[ply] ^= zobrist_enpassant[64];
 }

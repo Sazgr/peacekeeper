@@ -1,5 +1,6 @@
 #include "bit_operations.h"
 #include "board.h"
+#include <cstring>
 #include <iostream>
 
 u64 Position::positive_ray_attacks(u64 occ, int direction, int square) {
@@ -184,12 +185,12 @@ template <Move_types types, bool side> void Position::gen_legal(Movelist& moveli
     bool king_castle, queen_castle;
     int shift;
     if constexpr (side) {
-        king_castle = castling_rights[ply] & 8;
-        queen_castle = castling_rights[ply] & 4;
+        king_castle = castling_rights[ply][3] != 64;
+        queen_castle = castling_rights[ply][2] != 64;
         shift = 56;
     } else {
-        king_castle = castling_rights[ply] & 2;
-        queen_castle = castling_rights[ply] & 1;
+        king_castle = castling_rights[ply][1] != 64;
+        queen_castle = castling_rights[ply][0] != 64;
         shift = 0;
     }
     //generating pinned pieces
@@ -466,18 +467,18 @@ template <Move_types types, bool side> void Position::gen_legal(Movelist& moveli
                     }
                 }
             }
-            if constexpr (gen_quiet) {
+            if constexpr (gen_quiet) { //castling
                 if (king_castle && (((occupied >> shift) & 0xF0ull) == 0x90ull) && !(opp_attacks & (0x70ull << shift))) { //kingside
-                    movelist.add(Move{black_king+side, shift+4, empty_square, shift+6, k_castling});
+                    movelist.add(Move{black_king + side, king_location, empty_square, castling_rights[ply][side * 2 + 1], k_castling});
                 }
                 if (queen_castle && (((occupied >> shift) & 0x1Full) == 0x11ull) && !(opp_attacks & (0x1Cull << shift))) { //queenside
-                    movelist.add(Move{black_king+side, shift+4, empty_square, shift+2, q_castling});
+                    movelist.add(Move{black_king + side, king_location, empty_square, castling_rights[ply][side * 2], q_castling});
                 }
             }
             return;
     }
 }
-
+//[kpos][rpos];
 void Position::print_bitboard(u64 bits) {
     for (int rank{0}; rank < 8; ++rank) {
         for (int file{0}; file < 8; ++file) {
@@ -545,14 +546,14 @@ void Position::make_move(Move move) {
             fill_sq<true>(end, piece + 8);
             break;
         case k_castling:
-            fill_sq<true>(start + 3, empty_square);
-            fill_sq<true>(end, piece);
-            fill_sq<true>(start + 1, piece - 4);
+            fill_sq<true>(end, empty_square);
+            fill_sq<true>((start & 56) + 6, piece);
+            fill_sq<true>((start & 56) + 5, piece - 4);
             break;
         case q_castling:
-            fill_sq<true>(start - 4, empty_square);
-            fill_sq<true>(end, piece);
-            fill_sq<true>(start - 1, piece - 4);
+            fill_sq<true>(end, empty_square);
+            fill_sq<true>((start & 56) + 2, piece);
+            fill_sq<true>((start & 56) + 3, piece - 4);
             break;
         case enpassant:
             fill_sq<true>(end ^ 8, empty_square);//ep square
@@ -560,9 +561,23 @@ void Position::make_move(Move move) {
             break;
     }
     enpassant_square[ply] = (!(piece & ~1) && end == (start ^ 16)) ? (end ^ 8) : 64;
-    castling_rights[ply] = castling_rights[ply - 1] & castling_disable[start] & castling_disable[end];
+    memcpy(castling_rights[ply], castling_rights[ply - 1], sizeof(int) * 4);
+    if (castling_rights[ply][0] != 64 && board[castling_rights[ply][0]] != black_rook) castling_rights[ply][0] = 64;
+    if (castling_rights[ply][1] != 64 && board[castling_rights[ply][1]] != black_rook) castling_rights[ply][1] = 64;
+    if (castling_rights[ply][2] != 64 && board[castling_rights[ply][2]] != white_rook) castling_rights[ply][2] = 64;
+    if (castling_rights[ply][3] != 64 && board[castling_rights[ply][3]] != white_rook) castling_rights[ply][3] = 64;
+    if (piece == black_king) {
+        castling_rights[ply][0] = 64;
+        castling_rights[ply][1] = 64;
+    }
+    if (piece == white_king) {
+        castling_rights[ply][2] = 64;
+        castling_rights[ply][3] = 64;
+    }
     halfmove_clock[ply] = ((!(piece & ~1) || captured != 12) ? 0 : halfmove_clock[ply - 1] + 1);
-    hash[ply] ^= zobrist_castling[castling_rights[ply - 1]] ^ zobrist_castling[castling_rights[ply]];
+    for (int i{}; i<4; ++i) {
+        hash[ply] ^= zobrist_castling[castling_rights[ply - 1][i]] ^ zobrist_castling[castling_rights[ply][i]];
+    }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
 }
 
@@ -590,14 +605,14 @@ void Position::undo_move(Move move) {
             fill_sq<false>(end, captured);
             break;
         case k_castling:
-            fill_sq<false>(end, empty_square);
-            fill_sq<false>(start + 1, empty_square);
-            fill_sq<false>(start + 3, piece - 4);
+            fill_sq<false>((start & 56) + 6, empty_square);
+            fill_sq<false>((start & 56) + 5, empty_square);
+            fill_sq<false>(end, piece - 4);
             break;
         case q_castling:
-            fill_sq<false>(end, empty_square);
-            fill_sq<false>(start - 1, empty_square);
-            fill_sq<false>(start - 4, piece - 4);
+            fill_sq<false>((start & 56) + 2, empty_square);
+            fill_sq<false>((start & 56) + 3, empty_square);
+            fill_sq<false>(end, piece - 4);
             break;
         case enpassant:
             fill_sq<false>(end, empty_square);
@@ -768,11 +783,11 @@ std::string Position::export_fen() {
     }
     if (side_to_move) fen += " w ";
     else fen += " b ";
-    if (castling_rights[ply] & 8) fen += "K";
-    if (castling_rights[ply] & 4) fen += "Q";
-    if (castling_rights[ply] & 2) fen += "k";
-    if (castling_rights[ply] & 1) fen += "q";
-    if (castling_rights[ply] == 0) fen += "-";
+    if (castling_rights[ply][3] != 64) fen += chess960 ? static_cast<char>((castling_rights[ply][3] - 56) + 65) : 'K';
+    if (castling_rights[ply][2] != 64) fen += chess960 ? static_cast<char>((castling_rights[ply][2] - 56) + 65) : 'Q';
+    if (castling_rights[ply][1] != 64) fen += chess960 ? static_cast<char>(castling_rights[ply][1] + 97) : 'k';
+    if (castling_rights[ply][0] != 64) fen += chess960 ? static_cast<char>(castling_rights[ply][1] + 97) : 'q';
+    if (castling_rights[ply][0] == 64 && castling_rights[ply][1] == 64 && castling_rights[ply][2] == 64 && castling_rights[ply][3] == 64) fen += "-";
     if (enpassant_square[ply] == 64) fen += " -";
     else fen += " " + square_names[enpassant_square[ply]];
     fen += " 0 1";
@@ -813,15 +828,37 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
     if (fen_stm == "w") side_to_move = true;
     else if (fen_stm == "b") side_to_move = false;
     else return false;
-    castling_rights[0] = 0;
-    for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
-        switch (*pos) {
-            case '-': break;
-            case 'q': castling_rights[0] |= 1; break;
-            case 'k': castling_rights[0] |= 2; break;
-            case 'Q': castling_rights[0] |= 4; break;
-            case 'K': castling_rights[0] |= 8; break;
-            default: return false;
+    castling_rights[0][0] = castling_rights[0][1] = castling_rights[0][2] = castling_rights[0][3] = 64;
+    if (chess960) {
+        for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
+            if ((*pos) >= 97) { //lowercase means black castling rights
+                int king_location = get_lsb(pieces[10]);
+                int rook_location = (static_cast<int>(*pos) - 97);
+                if (rook_location > king_location) {
+                    castling_rights[0][1] = rook_location;
+                } else {
+                    castling_rights[0][0] = rook_location;
+                }
+            } else { //upper case means white castling rights
+                int king_location = get_lsb(pieces[11]);
+                int rook_location = (static_cast<int>(*pos) - 65) + 56;
+                if (rook_location > king_location) {
+                    castling_rights[0][3] = rook_location;
+                } else {
+                    castling_rights[0][2] = rook_location;
+                }
+            }
+        }
+    } else {
+        for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
+            switch (*pos) {
+                case '-': break;
+                case 'q': castling_rights[0][0] = 0; break;
+                case 'k': castling_rights[0][1] = 7; break;
+                case 'Q': castling_rights[0][2] = 56; break;
+                case 'K': castling_rights[0][3] = 63; break;
+                default: return false;
+            }
         }
     }
     if (fen_ep == "-") enpassant_square[0] = 64;
@@ -874,15 +911,20 @@ void Position::zobrist_init() {
     for (int i{0}; i<64; ++i) zobrist_pieces[12][i] = 0;
     zobrist_black = rand64();
     for (int i{0}; i<64; ++i) zobrist_enpassant[i] = rand64();
-    for (int i{0}; i<16; ++i) zobrist_castling[i] = rand64();
+    for (int i{0}; i<8; ++i) zobrist_castling[i] = rand64();
+    for (int i{8}; i<56; ++i) zobrist_castling[i] = 0;
+    for (int i{56}; i<64; ++i) zobrist_castling[i] = rand64();
+    zobrist_castling[64] = 0;
     zobrist_enpassant[64] = 0;
     zobrist_update();
 }
 
 void Position::zobrist_update() {
     hash[ply] = 0;
-    for (int i{0}; i<64; ++i) hash[ply] ^= zobrist_pieces[board[i]][i];
+    for (int i{0}; i < 64; ++i) hash[ply] ^= zobrist_pieces[board[i]][i];
     if (!side_to_move) hash[ply] ^= zobrist_black;
-    hash[ply] ^= zobrist_castling[castling_rights[ply]];
+    for (int i{}; i < 4; ++i) {
+        hash[ply] ^= zobrist_castling[castling_rights[ply][i]];
+    }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply]];
 }

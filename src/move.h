@@ -2,6 +2,7 @@
 #define PEACEKEEPER_MOVE
 
 #include "eval.h"
+#include "options.h"
 #include "typedefs.h"
 #include <iostream>
 #include <string>
@@ -91,7 +92,9 @@ inline bool operator<(const Move& move1, const Move& move2) {
 }
 
 inline std::ostream& operator<<(std::ostream& out, const Move move) {
-    out << square_names[move.start()] << square_names[move.end()];
+    if (!chess960 && move.flag() == q_castling) out << square_names[move.start()] << square_names[move.end() + 2];
+    else if (!chess960 && move.flag() == k_castling) out << square_names[move.start()] << square_names[move.end() - 1];
+    else out << square_names[move.start()] << square_names[move.end()];
     if (move.flag() == knight_pr) out << "n";
     if (move.flag() == bishop_pr) out << "b";
     if (move.flag() == rook_pr) out << "r";
