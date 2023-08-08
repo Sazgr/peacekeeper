@@ -267,6 +267,10 @@ int main(int argc, char *argv[]) {
         if (tokens[0] == "setoption" && tokens[1] == "name") {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
+            if (tokens.size() >= 5 && tokens[2] == "UCI_Chess960" && tokens[3] == "value") {
+                if (tokens[4] == "false") position.chess960 = false;
+                if (tokens[4] == "true") position.chess960 = true;
+            }
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
@@ -569,7 +573,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (check_extensions) if (in_check) {++extended; reduce_all -= 1;} //check extension
     Move hash_move = entry.bestmove();
-    bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
+    bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable

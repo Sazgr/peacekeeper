@@ -467,11 +467,11 @@ template <Move_types types, bool side> void Position::gen_legal(Movelist& moveli
                 }
             }
             if constexpr (gen_quiet) {
-                if (king_castle && (((occupied >> shift) & 0xF0ull) == 0x90ull) && !(opp_attacks & (0x70ull << shift))) { //kingside
-                    movelist.add(Move{black_king+side, shift+4, empty_square, shift+6, k_castling});
+                if (queen_castle && !(((occupied & ~castling_places[side][1] & ~castling_places[side][0]) >> shift) & castling_empty_mask[side][0]) && !(opp_attacks & (castling_safe_mask[side][0] << shift))) { //queenside
+                    movelist.add(Move{black_king + side, shift + castling_places[side][1], empty_square, chess960 ? shift + castling_places[side][0] : shift + 2, q_castling});
                 }
-                if (queen_castle && (((occupied >> shift) & 0x1Full) == 0x11ull) && !(opp_attacks & (0x1Cull << shift))) { //queenside
-                    movelist.add(Move{black_king+side, shift+4, empty_square, shift+2, q_castling});
+                if (king_castle && !(((occupied & ~castling_places[side][1] & ~castling_places[side][2]) >> shift) & castling_empty_mask[side][1]) && !(opp_attacks & (castling_safe_mask[side][1] << shift))) { //kingside
+                    movelist.add(Move{black_king + side, shift + castling_places[side][1], empty_square, chess960 ? shift + castling_places[side][2] : shift + 6, k_castling});
                 }
             }
             return;
@@ -526,7 +526,6 @@ void Position::make_move(Move move) {
     ++ply;
     hash[ply] = hash[ply - 1];
     hash[ply] ^= zobrist_black;
-    side_to_move = !side_to_move;
     int start = move.start();
     int end = move.end();
     int piece = move.piece();
@@ -549,14 +548,14 @@ void Position::make_move(Move move) {
             fill_sq<true>(end, piece + 8);
             break;
         case k_castling:
-            fill_sq<true>(start + 3, empty_square);
-            fill_sq<true>(end, piece);
-            fill_sq<true>(start + 1, piece - 4);
+            fill_sq<true>(start - castling_places[side_to_move][1] + castling_places[side_to_move][2], empty_square);
+            fill_sq<true>(start - castling_places[side_to_move][1] + 6, piece);
+            fill_sq<true>(start - castling_places[side_to_move][1] + 5, piece - 4);
             break;
         case q_castling:
-            fill_sq<true>(start - 4, empty_square);
-            fill_sq<true>(end, piece);
-            fill_sq<true>(start - 1, piece - 4);
+            fill_sq<true>(start - castling_places[side_to_move][1] + castling_places[side_to_move][0], empty_square);
+            fill_sq<true>(start - castling_places[side_to_move][1] + 2, piece);
+            fill_sq<true>(start - castling_places[side_to_move][1] + 3, piece - 4);
             break;
         case enpassant:
             fill_sq<true>(end ^ 8, empty_square);//ep square
@@ -568,6 +567,7 @@ void Position::make_move(Move move) {
     halfmove_clock[ply] = ((!(piece & ~1) || captured != 12) ? 0 : halfmove_clock[ply - 1] + 1);
     hash[ply] ^= zobrist_castling[castling_rights[ply - 1]] ^ zobrist_castling[castling_rights[ply]];
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
+    side_to_move = !side_to_move;
 }
 
 void Position::undo_move(Move move) {
@@ -594,14 +594,14 @@ void Position::undo_move(Move move) {
             fill_sq<false>(end, captured);
             break;
         case k_castling:
-            fill_sq<false>(end, empty_square);
-            fill_sq<false>(start + 1, empty_square);
-            fill_sq<false>(start + 3, piece - 4);
+            fill_sq<false>(start - castling_places[side_to_move][1] + 6, empty_square);
+            fill_sq<false>(start - castling_places[side_to_move][1] + 5, empty_square);
+            fill_sq<false>(start - castling_places[side_to_move][1] + castling_places[side_to_move][2], piece - 4);
             break;
         case q_castling:
-            fill_sq<false>(end, empty_square);
-            fill_sq<false>(start - 1, empty_square);
-            fill_sq<false>(start - 4, piece - 4);
+            fill_sq<false>(start - castling_places[side_to_move][1] + 2, empty_square);
+            fill_sq<false>(start - castling_places[side_to_move][1] + 3, empty_square);
+            fill_sq<false>(start - castling_places[side_to_move][1] + castling_places[side_to_move][0], piece - 4);
             break;
         case enpassant:
             fill_sq<false>(end, empty_square);
@@ -817,19 +817,49 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
     if (fen_stm == "w") side_to_move = true;
     else if (fen_stm == "b") side_to_move = false;
     else return false;
-    castling_rights[0] = 0;
     for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
-        switch (*pos) {
-            case '-': break;
-            case 'q': castling_rights[0] |= 1; break;
-            case 'k': castling_rights[0] |= 2; break;
-            case 'Q': castling_rights[0] |= 4; break;
-            case 'K': castling_rights[0] |= 8; break;
-            default: return false;
+        if (!chess960) {
+            switch (*pos) {
+                case '-': break;
+                case 'q': castling_rights[0] |= 1; break;
+                case 'k': castling_rights[0] |= 2; break;
+                case 'Q': castling_rights[0] |= 4; break;
+                case 'K': castling_rights[0] |= 8; break;
+                default: return false;
+            }
+        } else {
+            if ((*pos) == '-') continue;
+            if ((*pos) >= 97) { //lowercase means black castling rights
+                castling_places[0][1] = get_lsb(pieces[10]);
+                int rook_file = (static_cast<int>(*pos) - 97);
+                if (rook_file > castling_places[0][1]) {
+                    castling_places[0][2] = rook_file;
+                    castling_rights[0] |= 2;
+                } else {
+                    castling_places[0][0] = rook_file;
+                    castling_rights[0] |= 1;
+                }
+            } else { //upper case means white castling rights
+                castling_places[1][1] = get_lsb(pieces[11]) - 56;
+                int rook_file = (static_cast<int>(*pos) - 65);
+                if (rook_file > castling_places[1][1]) {
+                    castling_places[1][2] = rook_file;
+                    castling_rights[0] |= 8;
+                } else {
+                    castling_places[1][0] = rook_file;
+                    castling_rights[0] |= 4;
+                }
+            }
         }
     }
+    for (int side{}; side < 2; ++side) {
+        castling_safe_mask[side][0] = (1ull << 2) | between[castling_places[side][1]][2];
+        castling_safe_mask[side][1] = (1ull << 6) | between[castling_places[side][1]][6];
+        castling_empty_mask[side][0] = castling_safe_mask[side][0] | (1ull << 3) | between[castling_places[side][0]][3];
+        castling_empty_mask[side][1] = castling_safe_mask[side][1] | (1ull << 5) | between[castling_places[side][2]][5];
+    }
     if (fen_ep == "-") enpassant_square[0] = 64;
-    else if (fen_ep.size() == 2) enpassant_square[0] = (static_cast<int>(fen_ep[0]) - 97) + 8 * (56 - static_cast<int>(fen_ep[1]));//ascii 'a' = 97 '8' = 56
+    else if (fen_ep.size() == 2) enpassant_square[0] = (static_cast<int>(fen_ep[0]) - 97) + 8 * (56 - static_cast<int>(fen_ep[1])); //ascii 'a' = 97 '8' = 56
     else return false;
     halfmove_clock[0] = stoi(fen_hmove_clock);
     zobrist_update();

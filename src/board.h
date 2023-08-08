@@ -142,6 +142,10 @@ public:
     int eval_phase();
     int mg_static_eval{};
     int eg_static_eval{};
+    bool chess960 = false;
+    int castling_places[2][3] = {0, 4, 7, 0, 4, 7};
+    u64 castling_safe_mask[2][2] {0x1Cull, 0x70ull, 0x1Cull, 0x70ull};
+    u64 castling_empty_mask[2][2] {0x1Full, 0xF0ull, 0x1Full, 0xF0ull};
     Position() {
         pst_init();
         slider_attacks_init();
