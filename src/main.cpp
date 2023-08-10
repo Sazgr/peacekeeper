@@ -29,8 +29,7 @@ Peacekeeper Chess Engine
 #include <thread>
 #include <vector>
 
-u64 nodes{0};
-Move pv_table[128][128];
+std::atomic<u64> nodes{0};
 
 std::ifstream infile ("peacekeeper/logs/input.txt");
 std::ofstream debug ("logs/debug.txt");
@@ -38,22 +37,6 @@ std::ostream& out = std::cout;
 std::istream& in = std::cin;
 
 bool debug_mode{false};
-
-u64 beta_cuts;
-u64 cut_num;
-
-u64 tt_queries;
-u64 tt_hits;
-u64 tt_moves;
-u64 tt_cutoffs;
-
-u64 main_nodes;
-u64 extended;
-u64 red_attempts;
-u64 reduced;
-u64 pruned;
-u64 null_attempts;
-u64 nulled;
 
 int main(int argc, char *argv[]) {
     Move move{};
@@ -97,7 +80,7 @@ int main(int argc, char *argv[]) {
             tokens.clear();
             std::istringstream parser(fen);
             while (parser >> token) {tokens.push_back(token);}
-            timer.reset(0, 0, 0, 11);
+            timer.reset(0, 0, 0, 0, 11);
             position.load_fen(tokens[0], tokens[1], tokens[2], tokens[3], tokens[4], tokens[5]);
             iterative_deepening(position, timer, hash, move_order, move, false);
             total_nodes += nodes;
@@ -119,60 +102,24 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
         }
         if (tokens[0] == "datagen") {
+            chess960 = true;
+            int num_threads = stoi(tokens[1]);
+            u64 soft_nodes_limit = stoi(tokens[2]);
             std::cout << "indexing openings..." << std::endl;
             srand(time(0));
-            std::ifstream fin (tokens[1]);
-            std::ofstream fout (tokens[2], std::ios_base::app);
+            std::ifstream fin (tokens[3]);
             std::vector<std::array<std::string, 6>> openings{};
             std::array<std::string, 6> opening;
             while (fin) {
                 fin >> opening[0] >> opening[1] >> opening[2] >> opening[3] >> opening[4] >> opening[5];
                 if (fin) openings.push_back(opening);
             }
-            std::cout << "playing games..." << std::endl;
-            std::string result_string;
-            std::vector<std::string> buffer{};
-            while (true) {
-                buffer.clear();
-                int id = rand() % openings.size();
-                position.load_fen(openings[id][0], openings[id][1], openings[id][2], openings[id][3], openings[id][4], openings[id][5]);
-                hash.clear();
-                move_order.reset();
-                while (true) {
-                    position.legal_moves(movelist);
-                    if (!movelist.size()) {
-                        if (position.check()) {
-                            if (position.side_to_move) result_string = " c9 \"0-1\";";
-                            else result_string = " c9 \"1-0\";";
-                        }
-                        else result_string = " c9 \"1/2-1/2\";";
-                        break;
-                    }
-                    if (position.draw(2)) {
-                        result_string = " c9 \"1/2-1/2\";";
-                        if (position.halfmove_clock[position.ply] >= 100) for (int i{}; i<20; ++i) buffer.pop_back();
-                        break;
-                    }
-                    if (position.eval_phase() <= 1 && !position.board[0] && !position.board[1]) {
-                        result_string = " c9 \"1/2-1/2\";";
-                        break;
-                    } 
-                    timer.reset(200, 50, 0, 0);
-                    int score = iterative_deepening(position, timer, hash, move_order, move, false);
-                    if (abs(score) > 18000) {
-                        if ((score > 18000) == (position.side_to_move)) result_string = " c9 \"1-0\";";
-                        else result_string = " c9 \"0-1\";";
-                        break;
-                    }
-                    if (move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling) && !position.draw(1)) buffer.push_back(position.export_fen());
-                    position.make_move(move);
-                }
-                if (result_string == " c9 \"0-1\";") std::cout << "0";
-                if (result_string == " c9 \"1/2-1/2\";") std::cout << "=";
-                if (result_string == " c9 \"1-0\";") std::cout << "1";
-                for (std::string fen : buffer) {
-                    fout << fen << result_string << std::endl;
-                }
+            std::vector<std::thread> thread_pool;
+            for (int thread_id = 1; thread_id <= num_threads; ++thread_id) {
+                thread_pool.emplace_back(datagen_thread, thread_id, tokens[4], std::ref(openings), soft_nodes_limit);
+            }
+            for (auto& thread : thread_pool) {
+                thread.join();
             }
         }
         if (tokens[0] == "eval") {
@@ -217,7 +164,7 @@ int main(int argc, char *argv[]) {
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
-            timer.reset(calculate ? std::max(1, std::min(mytime - move_overhead, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes, depth);
+            timer.reset(calculate ? std::max(1, std::min(mytime - move_overhead, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes, 0, depth);
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), true};
             search.detach();
         }
@@ -369,6 +316,72 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
     }
 }
 
+void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<std::string, 6>>& openings, int soft_nodes_limit) {
+    std::ofstream opening_out (out_base + "//openings//" + std::to_string(thread_id) + ".txt");
+    std::ofstream position_out (out_base + "//data//" + std::to_string(thread_id) + ".txt");
+    Move move{};
+    Movelist movelist;
+    Position position;
+    Hashtable hash{1};
+    Move_order_tables move_order{};
+    Stop_timer timer{0, 0, 0};
+    Timer datagen_timer;
+    int positions = 0, games = 0;
+    std::cout << "thread " << thread_id << " playing" << std::endl;
+    std::string result_string;
+    std::vector<std::pair<std::string, int>> buffer{};
+    while (true) {
+        buffer.clear();
+        int id = rand() % openings.size();
+        opening_out << openings[id][0] << ' ' << openings[id][1] << ' ' << openings[id][2] << ' ' << openings[id][3] << ' ' << openings[id][4] << ' ' << openings[id][5] << std::endl;
+        position.load_fen(openings[id][0], openings[id][1], openings[id][2], openings[id][3], openings[id][4], openings[id][5]);
+        hash.clear();
+        move_order.reset();
+        while (true) {
+            position.legal_moves(movelist);
+            if (!movelist.size()) {
+                if (position.check()) {
+                    if (position.side_to_move) result_string = " [0.0] ";
+                    else result_string = " [1.0] ";
+                }
+                else result_string = " [0.5] ";
+                break;
+            }
+            if (position.draw(2)) {
+                result_string = " [0.5] ";
+                break;
+            }
+            if (position.eval_phase() <= 1 && !position.board[0] && !position.board[1]) {
+                result_string = " [0.5] ";
+                break;
+            } 
+            timer.reset(0, 0, 4 * soft_nodes_limit, soft_nodes_limit, 10);
+            int score = iterative_deepening(position, timer, hash, move_order, move, false);
+            if (abs(score) > 18000) {
+                if ((score > 18000) == (position.side_to_move)) result_string = " [1.0] ";
+                else result_string = " [0.0] ";
+                break;
+            }
+            if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling) && !position.draw(1)) {
+                buffer.push_back({position.export_fen(), position.side_to_move ? score : -score});
+            } else {
+                buffer.push_back({position.export_fen(), 21000});
+            }
+            position.make_move(move);
+        }
+        for (std::pair<std::string, int> pos : buffer) {
+            position_out << pos.first << result_string << pos.second << std::endl;
+            ++positions;
+        }
+        ++games;
+        double time_used = datagen_timer.elapsed();
+        if (games % 100 == 0) {
+            std::cout << "thread " << thread_id << ": " << positions << " positions in " << time_used << " seconds, " << static_cast<int>(positions * 3600 / time_used) << " positions per hour" << std::endl;
+            std::cout << "thread " << thread_id << ": " << games << " games in " << time_used << " seconds, " << static_cast<int>(games * 3600 / time_used) << " games per hour" << std::endl;
+        }
+    }
+}
+
 bool see(Position& position, Move move, const int threshold) {
     int to = move.end();
     int from = move.start();
@@ -422,7 +435,7 @@ bool see(Position& position, Move move, const int threshold) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss) {
-    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes))) return 0;
+    if (timer.stopped() || (!(nodes & 4095) && timer.check(nodes))) return 0;
     if (position.check()) {
         int result = -20000;
         int best_value = -20000;
@@ -457,10 +470,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         int old_alpha{alpha};
         Move bestmove{};
         Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-        ++tt_queries;
-        if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
         if (entry.type() != tt_none && entry.full_hash == position.hashkey() && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
-            ++tt_cutoffs;
             return entry.score();
         }
         int result = -20000;
@@ -517,10 +527,10 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
     }
 }
 
-int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss) {
+int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Move (*pv_table)[128]) {
     bool is_root = (ss->ply == 0);
     bool is_pv = (beta - alpha) != 1;
-    if (timer.stopped() || (!(nodes & 8191) && timer.check(nodes, 0))) return 0;
+    if (timer.stopped() || (!(nodes & 4095) && timer.check(nodes, 0))) return 0;
     if (depth <= 0) {
         return quiescence(position, timer, table, alpha, beta, ss);
     }
@@ -543,31 +553,24 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Move bestmove{};
     bool improving = !in_check && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
-        ++pruned;
         return static_eval - futile_margins[depth - improving];
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-    ++tt_queries;
-    if (entry.type() != tt_none && entry.full_hash == position.hashkey()) ++tt_hits;
     if (!is_pv && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
-        ++tt_cutoffs;
         return entry.score();
     }
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
         ++nodes;
-        ++null_attempts;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(2.19999999 + depth / 4.0 + improving + std::sqrt(static_eval - beta) / 12.0)), -beta, -beta + 1, ss + 1);
+        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(2.19999999 + depth / 4.0 + improving + std::sqrt(static_eval - beta) / 12.0)), -beta, -beta + 1, ss + 1, pv_table);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
-            //if (!timer.stopped) table.insert(position.hashkey(), result, tt_beta, bestmove, depth, ss->ply);
-            ++nulled;
             return (abs(result) > 18000 ? beta : result);
         }
     }
-    if constexpr (check_extensions) if (in_check) {++extended; reduce_all -= 1;} //check extension
+    if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
     Move hash_move = entry.bestmove();
     bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
@@ -578,10 +581,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
-        ++main_nodes;
-        ++tt_moves;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
+        result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, pv_table);
         position.undo_move(hash_move);
         if (is_root) nodes_used[hash_move.start()][hash_move.end()] += nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
@@ -600,8 +601,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
-                    ++beta_cuts;
-                    cut_num += move_num;
                     return alpha;
                 }
             }
@@ -623,14 +622,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
-        ++main_nodes;
         (ss + 1)->ply = ss->ply + 1;
         if (move_num == 1) {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
+            result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, pv_table);
         } else {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha-1, -alpha, ss + 1);
+            result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha-1, -alpha, ss + 1, pv_table);
             if (is_pv && alpha < result && result < beta) {
-                result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
+                result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, pv_table);
             }
         }
         position.undo_move(movelist[i]);
@@ -646,8 +644,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 if (alpha >= beta) {
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
-                    ++beta_cuts;
-                    cut_num += move_num;
                     return alpha;
                 }
             }
@@ -680,13 +676,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         //Futility Pruning
         if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num, improving) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move(movelist[i]);
-            ++pruned;
             continue;
         }
         if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
-        ++main_nodes;
         (ss + 1)->ply = ss->ply + 1;
         //Late Move Reductions
         reduce_this = 0;
@@ -696,21 +690,16 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1);
+            result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, pv_table);
         } else {
-            if (reduce_this) { //try a reduced search
-                ++red_attempts;
-            }
-            result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1);
+            result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1, pv_table);
             if (reduce_this) {
                 if (alpha < result) {
-                    result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1);
-                } else {
-                    ++reduced;
+                    result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1, pv_table);
                 }
             }
             if (alpha < result && result < beta && is_pv) {
-                result = -pvs(position, timer, table, move_order, depth - reduce_all,  -beta, -alpha, ss + 1);
+                result = -pvs(position, timer, table, move_order, depth - reduce_all,  -beta, -alpha, ss + 1, pv_table);
             }
         }
         position.undo_move(movelist[i]);
@@ -737,8 +726,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     }
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
-                    ++beta_cuts;
-                    cut_num += move_num;
                     return alpha;
                 }
             }
@@ -757,6 +744,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
     if constexpr (history_heuristic) move_order.age();
     table.age();
     Movelist movelist;
+    Move pv_table[128][128];
     Search_stack search_stack[96];
     search_stack[2].ply = 0;
     position.legal_moves(movelist);
@@ -767,19 +755,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         double time_scale = 1;
         int nodes_before = 0;
         nodes = 0;
-        beta_cuts = 0;
-        cut_num = 0;
-        tt_queries = 0;
-        tt_hits = 0;
-        tt_moves = 0;
-        tt_cutoffs = 0;
-        main_nodes = 0;
-        extended = 0;
-        red_attempts = 0;
-        reduced = 0;
-        pruned = 0;
-        null_attempts = 0;
-        nulled = 0;
         int depth{1};
         int last_score, result;
         int stability = 0;
@@ -791,7 +766,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             }
         }
         for (; depth <= 64;) {
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2]);
+            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], pv_table);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, nodes, static_cast<int>(nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
@@ -824,14 +799,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
                 else beta = 20000;
             } 
-        }
-        if (debug_mode) {
-            std::cout << "info string move ordering\ninfo string attempts " << cut_num << " cuts " << beta_cuts << " ratio " << static_cast<double>(cut_num) / beta_cuts << std::endl;
-            std::cout << "info string tt\ninfo string queries " << tt_queries << " hits " << tt_hits << " moves " << tt_moves << " cutoffs " << tt_cutoffs << " hit% " << 100.0 * tt_hits / tt_queries << " move% " << 100.0 * tt_moves / tt_queries << " cutoff% " << 100.0 * tt_cutoffs / tt_queries << std::endl;
-            std::cout << "info string extensions\ninfo string total nodes " << main_nodes << " extensions " << extended << " ext% " << 100.0 * extended / main_nodes << std::endl;
-            std::cout << "info string reductions\ninfo string total nodes " << main_nodes << " reduction attempts " << red_attempts << " reductions " << reduced << " attd% " << 100.0 * red_attempts / main_nodes << " red% " << 100.0 * reduced / main_nodes << " succ% " << 100.0 * reduced / red_attempts << std::endl;
-            std::cout << "info string pruning\ninfo string total nodes " << main_nodes << " pruned " << pruned << " prune% " << 100.0 * pruned / (pruned + main_nodes) << std::endl;
-            std::cout << "info string null move\ninfo string null move attempts " << null_attempts << " successes " << nulled << " null% " << 100.0 * nulled / null_attempts << std::endl;
         }
         if (output) print_bestmove(out, bestmove);
         return last_score;

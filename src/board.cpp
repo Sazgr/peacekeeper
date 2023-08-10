@@ -786,11 +786,11 @@ std::string Position::export_fen() {
     if (castling_rights[ply][3] != 64) fen += chess960 ? static_cast<char>((castling_rights[ply][3] - 56) + 65) : 'K';
     if (castling_rights[ply][2] != 64) fen += chess960 ? static_cast<char>((castling_rights[ply][2] - 56) + 65) : 'Q';
     if (castling_rights[ply][1] != 64) fen += chess960 ? static_cast<char>(castling_rights[ply][1] + 97) : 'k';
-    if (castling_rights[ply][0] != 64) fen += chess960 ? static_cast<char>(castling_rights[ply][1] + 97) : 'q';
+    if (castling_rights[ply][0] != 64) fen += chess960 ? static_cast<char>(castling_rights[ply][0] + 97) : 'q';
     if (castling_rights[ply][0] == 64 && castling_rights[ply][1] == 64 && castling_rights[ply][2] == 64 && castling_rights[ply][3] == 64) fen += "-";
     if (enpassant_square[ply] == 64) fen += " -";
     else fen += " " + square_names[enpassant_square[ply]];
-    fen += " 0 1";
+    fen += " " + std::to_string(halfmove_clock[ply]) + " " + std::to_string(ply / 2 + 1);
     return fen;
 }
 
@@ -831,22 +831,30 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
     castling_rights[0][0] = castling_rights[0][1] = castling_rights[0][2] = castling_rights[0][3] = 64;
     if (chess960) {
         for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
-            if ((*pos) >= 97) { //lowercase means black castling rights
-                int king_location = get_lsb(pieces[10]);
-                int rook_location = (static_cast<int>(*pos) - 97);
-                if (rook_location > king_location) {
-                    castling_rights[0][1] = rook_location;
-                } else {
-                    castling_rights[0][0] = rook_location;
-                }
-            } else { //upper case means white castling rights
-                int king_location = get_lsb(pieces[11]);
-                int rook_location = (static_cast<int>(*pos) - 65) + 56;
-                if (rook_location > king_location) {
-                    castling_rights[0][3] = rook_location;
-                } else {
-                    castling_rights[0][2] = rook_location;
-                }
+            switch (*pos) {
+                case '-': break;
+                case 'q': castling_rights[0][0] = get_lsb(rays[west][get_lsb(pieces[10])]); break;
+                case 'k': castling_rights[0][1] = get_lsb(rays[east][get_lsb(pieces[10])]); break;
+                case 'Q': castling_rights[0][2] = get_lsb(rays[west][get_lsb(pieces[11])]); break;
+                case 'K': castling_rights[0][3] = get_lsb(rays[east][get_lsb(pieces[11])]); break;
+                default:
+                    if ((*pos) >= 97) { //lowercase means black castling rights
+                        int king_location = get_lsb(pieces[10]);
+                        int rook_location = (static_cast<int>(*pos) - 97);
+                        if (rook_location > king_location) {
+                            castling_rights[0][1] = rook_location;
+                        } else {
+                            castling_rights[0][0] = rook_location;
+                        }
+                    } else { //upper case means white castling rights
+                        int king_location = get_lsb(pieces[11]);
+                        int rook_location = (static_cast<int>(*pos) - 65) + 56;
+                        if (rook_location > king_location) {
+                            castling_rights[0][3] = rook_location;
+                        } else {
+                            castling_rights[0][2] = rook_location;
+                        }
+                    }
             }
         }
     } else {

@@ -27,16 +27,18 @@ public:
     std::atomic<bool> stop;
     int hard_time_limit;
     int soft_time_limit;
-    u64 nodes_limit;
+    u64 hard_nodes_limit;
+    u64 soft_nodes_limit;
     int depth_limit;
-    Stop_timer(int ht=0, int st=0, u64 n=0, int d=0) {
-        reset(ht, st, n, d);
+    Stop_timer(int ht = 0, int st = 0, u64 hn = 0, u64 sn = 0, int d = 0) {
+        reset(ht, st, hn, sn, d);
     }
-    inline void reset(int ht=0, int st = 0, u64 n=0, int d=0) {
+    inline void reset(int ht = 0, int st = 0, u64 hn = 0, u64 sn = 0, int d = 0) {
         stop = false;
         hard_time_limit = ht;
         soft_time_limit = st;
-        nodes_limit = n;
+        hard_nodes_limit = hn;
+        soft_nodes_limit = sn;
         depth_limit = d;
         timer.reset();
     }
@@ -47,7 +49,8 @@ public:
         if (stop) return true;
         if (hard_time_limit) stop = stop || (static_cast<int>(elapsed() * 1000) >= hard_time_limit);
         if (soft_time_limit && use_soft_limit) stop = stop || (static_cast<int>(elapsed() * 1000 / scale) >= soft_time_limit);
-        if (nodes_limit) stop = stop || (nodes >= nodes_limit);
+        if (hard_nodes_limit) stop = stop || (nodes >= hard_nodes_limit);
+        if (soft_nodes_limit && use_soft_limit) stop = stop || (nodes >= soft_nodes_limit);
         if (depth_limit) stop = stop || (depth > depth_limit);
         return stop;
     }
