@@ -353,7 +353,7 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
                 result_string = " [0.5] ";
                 break;
             }
-            if (position.eval_phase() <= 1 && !position.board[0] && !position.board[1]) {
+            if (position.eval_phase() <= 1 && !position.pieces[0] && !position.pieces[1]) {
                 result_string = " [0.5] ";
                 break;
             } 
