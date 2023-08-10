@@ -319,7 +319,7 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
 void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<std::string, 6>>& openings, int soft_nodes_limit) {
     std::ofstream opening_out (out_base + "//openings//" + std::to_string(thread_id) + ".txt");
     std::ofstream position_out (out_base + "//data//" + std::to_string(thread_id) + ".txt");
-    std::default_random_engine random(thread_id);
+    std::default_random_engine random(time(0) * thread_id);
     std::uniform_int_distribution<int> unint(0, openings.size() - 1);
     Move move{};
     Movelist movelist;
