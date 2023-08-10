@@ -6,6 +6,8 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
+    int capture_successes[12][64][13]{};
+    int capture_all[12][64][13]{};
     int* continuation_successes;
     int* continuation_all;
     Move_order_tables() {
@@ -25,6 +27,10 @@ struct Move_order_tables {
             for (int j{}; j<64; ++j) {
                 history_all[i][j] /= 2;
                 history_successes[i][j] /= 2;
+                for (int k{}; k<13; ++k) {
+                    capture_all[i][j][k] /= 2;
+                    capture_successes[i][j][k] /= 2;
+                }
             }
         }
         for (int i{}; i<12 * 64 * 12 * 64; ++i) {
@@ -43,6 +49,18 @@ struct Move_order_tables {
     int history_value(int piece, int to_square) {
         if (!history_all[piece][to_square]) return (1 << 10);
         return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
+    }
+    void capture_edit(int piece, int to_square, int captured, int change, bool success) {
+        capture_all[piece][to_square][captured] += change;
+        if (success) capture_successes[piece][to_square][captured] += change << 12;
+        if (capture_all[piece][to_square][captured] > 0x3FFFF) {
+            capture_all[piece][to_square][captured] /= 2;
+            capture_successes[piece][to_square][captured] /= 2;
+        }
+    }
+    int capture_value(int piece, int to_square, int captured) {
+        if (!capture_all[piece][to_square][captured]) return (1 << 10);
+        return capture_successes[piece][to_square][captured] / capture_all[piece][to_square][captured]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
