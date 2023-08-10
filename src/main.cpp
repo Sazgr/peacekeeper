@@ -326,7 +326,7 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
     Move_order_tables move_order{};
     Stop_timer timer{0, 0, 0};
     Timer datagen_timer;
-    int positions = 0, games = 0;
+    u64 positions = 0, games = 0;
     std::cout << "thread " << thread_id << " playing" << std::endl;
     std::string result_string;
     std::vector<std::pair<std::string, int>> buffer{};
