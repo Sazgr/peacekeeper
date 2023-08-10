@@ -833,10 +833,10 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
         for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
             switch (*pos) {
                 case '-': break;
-                case 'q': castling_rights[0][0] = get_lsb(rays[west][get_lsb(pieces[10])]); break;
-                case 'k': castling_rights[0][1] = get_lsb(rays[east][get_lsb(pieces[10])]); break;
-                case 'Q': castling_rights[0][2] = get_lsb(rays[west][get_lsb(pieces[11])]); break;
-                case 'K': castling_rights[0][3] = get_lsb(rays[east][get_lsb(pieces[11])]); break;
+                case 'q': castling_rights[0][0] = get_lsb(pieces[6] & rays[west][get_lsb(pieces[10])]); break;
+                case 'k': castling_rights[0][1] = get_lsb(pieces[6] & rays[east][get_lsb(pieces[10])]); break;
+                case 'Q': castling_rights[0][2] = get_lsb(pieces[7] & rays[west][get_lsb(pieces[11])]); break;
+                case 'K': castling_rights[0][3] = get_lsb(pieces[7] & rays[east][get_lsb(pieces[11])]); break;
                 default:
                     if ((*pos) >= 97) { //lowercase means black castling rights
                         int king_location = get_lsb(pieces[10]);
