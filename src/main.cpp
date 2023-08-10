@@ -24,6 +24,7 @@ Peacekeeper Chess Engine
 #include <iostream>
 #include <iomanip>
 #include <map>
+#include <random>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -106,7 +107,6 @@ int main(int argc, char *argv[]) {
             int num_threads = stoi(tokens[1]);
             u64 soft_nodes_limit = stoi(tokens[2]);
             std::cout << "indexing openings..." << std::endl;
-            srand(time(0));
             std::ifstream fin (tokens[3]);
             std::vector<std::array<std::string, 6>> openings{};
             std::array<std::string, 6> opening;
@@ -319,6 +319,8 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
 void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<std::string, 6>>& openings, int soft_nodes_limit) {
     std::ofstream opening_out (out_base + "//openings//" + std::to_string(thread_id) + ".txt");
     std::ofstream position_out (out_base + "//data//" + std::to_string(thread_id) + ".txt");
+    std::default_random_engine random(thread_id);
+    std::uniform_int_distribution<int> unint(0, openings.size() - 1);
     Move move{};
     Movelist movelist;
     Position position;
@@ -332,7 +334,7 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
     std::vector<std::pair<std::string, int>> buffer{};
     while (true) {
         buffer.clear();
-        int id = rand() % openings.size();
+        int id = unint(random);
         opening_out << openings[id][0] << ' ' << openings[id][1] << ' ' << openings[id][2] << ' ' << openings[id][3] << ' ' << openings[id][4] << ' ' << openings[id][5] << std::endl;
         position.load_fen(openings[id][0], openings[id][1], openings[id][2], openings[id][3], openings[id][4], openings[id][5]);
         hash.clear();
