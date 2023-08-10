@@ -364,7 +364,7 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
                 else result_string = " [0.0] ";
                 break;
             }
-            if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling) && !position.draw(1)) {
+            if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
                 buffer.push_back({position.export_fen(), position.side_to_move ? score : -score});
             } else {
                 buffer.push_back({position.export_fen(), 21000});
