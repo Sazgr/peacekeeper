@@ -680,6 +680,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             position.undo_move(movelist[i]);
             continue;
         }
+        //Standard Late Move Pruning
+        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1)) {
+            position.undo_move(movelist[i]);
+            continue;
+        }
         if (is_root) nodes_before = nodes;
         ++nodes;
         ++move_num;
