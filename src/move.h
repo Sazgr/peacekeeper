@@ -28,7 +28,7 @@ enum Flags {
     k_castling,
     enpassant,
 };
-//24 bits
+//24 bits for base move
 //PPPPSSSSSSCCCCEEEEEEEFFF
 //321098765432109876543210
 //842184218421842184218421
@@ -46,18 +46,21 @@ struct Move {
     Move (const u64 move_data) {
         data = move_data;
     }
-    inline constexpr int flag() const {return data & 0x7;}
-    inline constexpr int piece() const {return (data >> 20) & 0xF;}
-    inline constexpr int start() const {return (data >> 14) & 0x3F;}
-    inline constexpr int captured() const {return (data >> 10) & 0xF;}
-    inline constexpr int end() const {return (data >> 3) & 0x7F;}
-    inline constexpr bool is_null() const {return (data & 0x200);}
-    inline constexpr bool not_null() const {return !(data & 0x200);}
-    inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key) << 32);}
+    inline constexpr int flag() const {return data & 0x7ull;}
+    inline constexpr int piece() const {return (data >> 20) & 0xFull;}
+    inline constexpr int start() const {return (data >> 14) & 0x3Full;}
+    inline constexpr int captured() const {return (data >> 10) & 0xFull;}
+    inline constexpr int end() const {return (data >> 3) & 0x7Full;}
+    inline constexpr bool is_null() const {return (data & 0x200ull);}
+    inline constexpr bool not_null() const {return !(data & 0x200ull);}
+    inline void add_sortkey(int key) {data = (data & 0xFFFFFFFFull) | (static_cast<u64>(key) << 32);}
+    inline constexpr int sortkey() const{return data >> 32;}
+    inline void set_extra() {data |= 0x1000000ull;}
+    inline void clear_extra() {data &= ~0x1000000ull;}
+    inline bool extra() {return (data & 0x1000000ull);}
     inline int gain() const {
         return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
     }
-    inline constexpr int sortkey() const{return data >> 32;}
     inline constexpr int evade_order() const {
         return 0;
     }

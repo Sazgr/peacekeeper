@@ -576,6 +576,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Move hash_move = entry.bestmove();
     bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
+    if (hash_move.captured() != 12 && see(position, movelist[i], -107)) movelist[i].set_extra();
     //Stage 1 - Hash Move
     if (hash_move_usable) {//searching best move from hashtable
         position.make_move(hash_move);
@@ -603,7 +604,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                             move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                             move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                         } else {
-                            move_order.capture_edit(bestmove.piece(), bestmove.end(), bestmove.captured(), depth * depth, true);
+                            move_order.capture_edit(bestmove.piece(), bestmove.end(), bestmove.captured(), bestmove.captured(), bestmove.extra(), depth * depth, true);
                         }
                     }
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
@@ -616,9 +617,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
         int score{};
-        score += movelist[i].mvv_lva();
         if constexpr (history_heuristic) {
-            score += move_order.capture_value(movelist[i].piece(), movelist[i].end(), movelist[i].captured());
+            if (see(position, movelist[i], -107)) movelist[i].set_extra(); //to indicate that it is a good capture
+            score += move_order.capture_value(movelist[i].piece(), movelist[i].end(), movelist[i].captured(), movelist[i].extra());
         }
         movelist[i].add_sortkey(score);
     }
@@ -655,10 +656,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
-                        move_order.capture_edit(movelist[j].piece(), movelist[j].end(), movelist[j].captured(), depth * depth, false);
+                        move_order.capture_edit(movelist[j].piece(), movelist[j].end(), movelist[j].captured(), movelist[j].extra(), depth * depth, false);
                     }
                     if constexpr (history_heuristic) {
-                        move_order.capture_edit(bestmove.piece(), bestmove.end(), bestmove.captured(), depth * depth, true);
+                        move_order.capture_edit(bestmove.piece(), bestmove.end(), bestmove.captured(), bestmove.extra(), depth * depth, true);
                     }
                     table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     return alpha;
