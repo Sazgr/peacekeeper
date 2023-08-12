@@ -31,6 +31,7 @@ enum Features : bool {
 spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
+spsa std::array<std::array<int, 8>, 2> lmp_num {2, 3, 6, 10, 17, 25, 35, 46, 3, 4, 9, 16, 27, 40, 57, 76};
 
 spsa double futility_multiplier = 47.5;
 spsa double futility_power = 0.666;
@@ -43,6 +44,10 @@ spsa double see_quiet_quadratic = 8.8;
 spsa double node_timescale_base = 1.8;
 spsa double node_timescale_div = 1.35;
 spsa double aspiration_beta_timescale = 1.35;
+spsa double lmp_imp_constant = 3.4;
+spsa double lmp_imp_quadratic = 1.5;
+spsa double lmp_not_constant = 2.8;
+spsa double lmp_not_quadratic = 0.9;
 
 u64 nodes_used[64][64];
 

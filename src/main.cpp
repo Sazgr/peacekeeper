@@ -217,11 +217,11 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
@@ -261,6 +261,22 @@ int main(int argc, char *argv[]) {
             }
             if (tokens.size() >= 5 && tokens[2] == "tc_stability_3" && tokens[3] == "value") {
                 tc_stability[3] = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmp_imp_constant" && tokens[3] == "value") {
+                lmp_imp_constant = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<8; ++i) lmp_num[1][i] = lmp_imp_constant + lmp_imp_quadratic * i * i;
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmp_imp_quadratic" && tokens[3] == "value") {
+                lmp_imp_quadratic = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<8; ++i) lmp_num[1][i] = lmp_imp_constant + lmp_imp_quadratic * i * i;
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmp_not_constant" && tokens[3] == "value") {
+                lmp_not_constant = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<8; ++i) lmp_num[0][i] = lmp_not_constant + lmp_not_quadratic * i * i;
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmp_not_quadratic" && tokens[3] == "value") {
+                lmp_not_quadratic = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<8; ++i) lmp_num[0][i] = lmp_not_constant + lmp_not_quadratic * i * i;
             }
 #endif
         }
@@ -681,7 +697,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             continue;
         }
         //Standard Late Move Pruning
-        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1)) {
+        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= lmp_num[improving][depth]) {
             position.undo_move(movelist[i]);
             continue;
         }

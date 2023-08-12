@@ -65,6 +65,10 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_1 type spin default 120 min 0 max 1000" << '\n'
         << "option name tc_stability_2 type spin default 90 min 0 max 1000" << '\n'
         << "option name tc_stability_3 type spin default 85 min 0 max 1000" << '\n'
+        << "option name lmp_imp_constant type spin default 300 min 0 max 1000" << '\n'
+        << "option name lmp_imp_quadratic type spin default 200 min 0 max 1000" << '\n'
+        << "option name lmp_not_constant type spin default 300 min 0 max 1000" << '\n'
+        << "option name lmp_not_quadratic type spin default 100 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
