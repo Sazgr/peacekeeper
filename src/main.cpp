@@ -18,6 +18,7 @@ Peacekeeper Chess Engine
 #include "uci.h"
 #include <algorithm>
 #include <atomic>
+#include <cctype>
 #include <cmath>
 #include <cstring>
 #include <fstream>
@@ -106,17 +107,9 @@ int main(int argc, char *argv[]) {
             chess960 = true;
             int num_threads = stoi(tokens[1]);
             u64 soft_nodes_limit = stoi(tokens[2]);
-            std::cout << "indexing openings..." << std::endl;
-            std::ifstream fin (tokens[3]);
-            std::vector<std::array<std::string, 6>> openings{};
-            std::array<std::string, 6> opening;
-            while (fin) {
-                fin >> opening[0] >> opening[1] >> opening[2] >> opening[3] >> opening[4] >> opening[5];
-                if (fin) openings.push_back(opening);
-            }
             std::vector<std::thread> thread_pool;
             for (int thread_id = 1; thread_id <= num_threads; ++thread_id) {
-                thread_pool.emplace_back(datagen_thread, thread_id, tokens[4], std::ref(openings), soft_nodes_limit);
+                thread_pool.emplace_back(datagen_thread, thread_id, tokens[3], soft_nodes_limit);
             }
             for (auto& thread : thread_pool) {
                 thread.join();
@@ -316,15 +309,15 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
     }
 }
 
-void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<std::string, 6>>& openings, int soft_nodes_limit) {
-    std::ofstream opening_out (out_base + "//openings//" + std::to_string(thread_id) + ".txt");
-    std::ofstream position_out (out_base + "//data//" + std::to_string(thread_id) + ".txt");
+void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
+    std::ofstream out (out_base + "-" + std::to_string(thread_id) + ".txt");
     std::default_random_engine random(time(0) * thread_id);
-    std::uniform_int_distribution<int> unint(0, openings.size() - 1);
+    std::uniform_int_distribution<int> unint(0, 959);
+    int score{};
     Move move{};
     Movelist movelist;
     Position position;
-    Hashtable hash{1};
+    Hashtable hash{2};
     Move_order_tables move_order{};
     Stop_timer timer{0, 0, 0};
     Timer datagen_timer;
@@ -334,9 +327,10 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
     std::vector<std::pair<std::string, int>> buffer{};
     while (true) {
         buffer.clear();
-        int id = unint(random);
-        opening_out << openings[id][0] << ' ' << openings[id][1] << ' ' << openings[id][2] << ' ' << openings[id][3] << ' ' << openings[id][4] << ' ' << openings[id][5] << std::endl;
-        position.load_fen(openings[id][0], openings[id][1], openings[id][2], openings[id][3], openings[id][4], openings[id][5]);
+        std::string black_backrank = frc_backrank[unint(random)];
+        std::string white_backrank = frc_backrank[unint(random)];
+        for (int i{}; i<8; ++i) white_backrank[i] = std::toupper(white_backrank[i]);
+        position.load_fen(black_backrank + "/pppppppp/8/8/8/8/PPPPPPPP/" + white_backrank, "w", "KQkq", "-", "0", "1");
         hash.clear();
         move_order.reset();
         while (true) {
@@ -353,7 +347,7 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
                 result_string = " [0.5] ";
                 break;
             }
-            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 500) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
+            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
                 if ((score > 500) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
                 break;
@@ -377,7 +371,7 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
             position.make_move(move);
         }
         for (std::pair<std::string, int> pos : buffer) {
-            position_out << pos.first << result_string << pos.second << std::endl;
+            out << pos.first << result_string << pos.second << std::endl;
             ++positions;
         }
         ++games;

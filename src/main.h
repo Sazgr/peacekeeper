@@ -49,7 +49,7 @@ u64 nodes_used[64][64];
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
 u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
-void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<std::string, 6>>& openings, int soft_nodes_limit);
+void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit);
 bool see(Position& position, Move move, const int threshold);
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Move (*pv_table)[128]);
