@@ -353,6 +353,11 @@ void datagen_thread(int thread_id, std::string out_base, std::vector<std::array<
                 result_string = " [0.5] ";
                 break;
             }
+            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 500) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
+                if ((score > 500) == (position.side_to_move)) result_string = " [1.0] ";
+                else result_string = " [0.0] ";
+                break;
+            }
             if (position.eval_phase() <= 1 && !position.pieces[0] && !position.pieces[1]) {
                 result_string = " [0.5] ";
                 break;
