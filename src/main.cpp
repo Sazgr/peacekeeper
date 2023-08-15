@@ -310,7 +310,7 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
 }
 
 void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
-    std::ofstream out (out_base + "-" + std::to_string(thread_id) + ".txt");
+    std::ofstream out (out_base + "-" + std::to_string(thread_id) + ".txt", std::ios::app);
     std::default_random_engine random(time(0) * thread_id);
     std::uniform_int_distribution<int> unint(0, 959);
     int score{};
