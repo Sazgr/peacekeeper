@@ -528,7 +528,7 @@ std::ostream& operator<<(std::ostream& out, Position& position) {
 }
 
 int Position::static_eval(NNUE& nnue) {
-    return (side_to_move * 2 - 1) * nnue.evaluate(side_to_move);
+    return nnue.evaluate(side_to_move);
 }
 
 int Position::static_eval() {
