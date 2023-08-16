@@ -48,10 +48,10 @@ class Position;
 
 class NNUE {
     i32 current_accumulator = 0;
-    std::array<Accumulator, 1024> accumulator_stack;
+    std::array<Accumulator, 128> accumulator_stack;
 public:
     NNUE() {
-        for (int i{}; i < 1024; ++i) {
+        for (int i{}; i < 128; ++i) {
             accumulator_stack[i] = Accumulator();
         }
     }
