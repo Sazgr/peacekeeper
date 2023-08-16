@@ -536,7 +536,7 @@ int Position::static_eval() {
     u32 eval{};
     u64 black_pieces = pieces[0] | pieces[2] | pieces[4] | pieces[6] | pieces[8] | pieces[10];
     u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
-    int bk = get_lsb(pieces[10]), wk = get_lsb(pieces[11]);
+    int bk = king_square[0], wk = king_square[1];
     for (u64 bb{pieces[0]}; bb;) {
         const int sq = pop_lsb(bb);
         eval += full_king[0][bk][0][sq] + full_king[1][wk][0][sq];
@@ -720,6 +720,8 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
     if constexpr (update_nnue) if (piece == black_king + side_to_move && ((start ^ end) & 4)) nnue->refresh(*this);
+    king_square[0] = get_lsb(pieces[10]);
+    king_square[1] = get_lsb(pieces[11]);
     side_to_move = !side_to_move;
 }
 
@@ -765,6 +767,8 @@ template <bool update_nnue> void Position::undo_move(Move move, NNUE* nnue) {
             fill_sq<false, false>(end ^ 8, piece ^ 1, nnue);
             break;
     }
+    king_square[0] = get_lsb(pieces[10]);
+    king_square[1] = get_lsb(pieces[11]);
     --ply;
 }
 
@@ -773,8 +777,8 @@ template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int 
         hash[ply] ^= zobrist_pieces[board[sq]][sq] ^ zobrist_pieces[piece][sq];
     }
     if constexpr (update_nnue) {
-        nnue->update_accumulator<false>(board[sq], sq, get_lsb(pieces[10]), get_lsb(pieces[11]));
-        nnue->update_accumulator<true>(piece, sq, get_lsb(pieces[10]), get_lsb(pieces[11]));
+        nnue->update_accumulator<false>(board[sq], sq, king_square[0], king_square[1]);
+        nnue->update_accumulator<true>(piece, sq, king_square[0], king_square[1]);
     }
     pieces[board[sq]] ^= (1ull << sq);
     pieces[piece] ^= (1ull << sq);
@@ -817,6 +821,8 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
         }
         ++sq;
     }
+    king_square[0] = get_lsb(pieces[10]);
+    king_square[1] = get_lsb(pieces[11]);
     if (fen_stm == "w") side_to_move = true;
     else if (fen_stm == "b") side_to_move = false;
     else return false;
@@ -825,13 +831,13 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
         for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
             switch (*pos) {
                 case '-': break;
-                case 'q': castling_rights[0][0] = get_lsb(pieces[6] & rays[west][get_lsb(pieces[10])]); break;
-                case 'k': castling_rights[0][1] = get_lsb(pieces[6] & rays[east][get_lsb(pieces[10])]); break;
-                case 'Q': castling_rights[0][2] = get_lsb(pieces[7] & rays[west][get_lsb(pieces[11])]); break;
-                case 'K': castling_rights[0][3] = get_lsb(pieces[7] & rays[east][get_lsb(pieces[11])]); break;
+                case 'q': castling_rights[0][0] = get_lsb(pieces[6] & rays[west][king_square[0]]); break;
+                case 'k': castling_rights[0][1] = get_lsb(pieces[6] & rays[east][king_square[0]]); break;
+                case 'Q': castling_rights[0][2] = get_lsb(pieces[7] & rays[west][king_square[1]]); break;
+                case 'K': castling_rights[0][3] = get_lsb(pieces[7] & rays[east][king_square[1]]); break;
                 default:
                     if ((*pos) >= 97) { //lowercase means black castling rights
-                        int king_location = get_lsb(pieces[10]);
+                        int king_location = king_square[0];
                         int rook_location = (static_cast<int>(*pos) - 97);
                         if (rook_location > king_location) {
                             castling_rights[0][1] = rook_location;
@@ -839,7 +845,7 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
                             castling_rights[0][0] = rook_location;
                         }
                     } else { //upper case means white castling rights
-                        int king_location = get_lsb(pieces[11]);
+                        int king_location = king_square[1];
                         int rook_location = (static_cast<int>(*pos) - 65) + 56;
                         if (rook_location > king_location) {
                             castling_rights[0][3] = rook_location;

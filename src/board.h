@@ -135,6 +135,7 @@ public:
         1,  1,  1,  1,  1,  1,  1,  1,
         7,  3,  5,  9, 11,  5,  3,  7
     };
+    int king_square[2] {4, 60};
     bool side_to_move{true};
     int ply{};
     int enpassant_square[1024] {64};
