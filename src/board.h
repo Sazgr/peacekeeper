@@ -45,6 +45,8 @@ const int castling_disable[64] {
     11, 15, 15, 15,  3, 15, 15,  7
 };
 
+class NNUE;
+
 class Position {
 private: //simple templates
     template <bool side> inline u64 pawns_forward_one(u64 pawns);
@@ -66,16 +68,17 @@ public:
     void legal_quiet(Movelist& movelist);
     void print_bitboard(u64 bits);
     void print(std::ostream& out);
-    void make_move(Move move);
-    void undo_move(Move move);
+    template <bool update_nnue = false> void make_move(Move move, NNUE* nnue = nullptr);
+    template <bool update_nnue = false> void undo_move(Move move, NNUE* nnue = nullptr);
     inline void make_null();
     inline void undo_null();
-    template <bool update_hash> inline void fill_sq(int sq, int piece);
+    template <bool update_nnue, bool update_hash> inline void fill_sq(int sq, int piece, NNUE* nnue = nullptr);
     void load(std::vector<int> position, bool stm = true);
     std::string export_fen();
-    bool load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock, std::string fen_fmove_counter);
+    bool load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock = "0", std::string fen_fmove_counter = "1");
     bool parse_move(Move& out, std::string move);
     int static_eval();
+    int static_eval(NNUE& nnue);
     u64 rand64();
     void zobrist_init();
     void zobrist_update();
@@ -141,11 +144,7 @@ public:
     int eval_phase();
     int mg_static_eval{};
     int eg_static_eval{};
-    Position() {
-        pst_init();
-        slider_attacks_init();
-        zobrist_init();
-    }
+    Position();
 };
 
 template <bool side> inline u64 Position::pawns_forward_one(u64 pawns) {
