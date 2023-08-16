@@ -324,7 +324,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
     u64 positions = 0, games = 0;
     std::cout << "thread " << thread_id << " playing" << std::endl;
     std::string result_string;
-    std::vector<std::pair<std::string, int>> buffer{};
+    std::vector<std::pair<std::string, std::pair<int, Move>>> buffer{};
     while (true) {
         buffer.clear();
         std::string black_backrank = frc_backrank[unint(random)];
@@ -364,14 +364,14 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 break;
             }
             if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
-                buffer.push_back({position.export_fen(), position.side_to_move ? score : -score});
+                buffer.push_back({position.export_fen(), {position.side_to_move ? score : -score, move}});
             } else {
-                buffer.push_back({position.export_fen(), 21000});
+                buffer.push_back({position.export_fen(), {32002, move}});
             }
             position.make_move(move);
         }
-        for (std::pair<std::string, int> pos : buffer) {
-            out << pos.first << result_string << pos.second << std::endl;
+        for (std::pair<std::string, std::pair<int, Move>> pos : buffer) {
+            out << pos.first << result_string << pos.second.first << " " << pos.second.second << std::endl;
             ++positions;
         }
         ++games;
