@@ -333,6 +333,8 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
         position.load_fen(black_backrank + "/pppppppp/8/8/8/8/PPPPPPPP/" + white_backrank, "w", "KQkq", "-", "0", "1");
         hash.clear();
         move_order.reset();
+        int resign = 0;
+        int draw = 0;
         while (true) {
             position.legal_moves(movelist);
             if (!movelist.size()) {
@@ -348,7 +350,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 break;
             }
             if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
-                if ((score > 500) == (position.side_to_move)) result_string = " [1.0] ";
+                if ((score > 400) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
                 break;
             }
@@ -358,9 +360,17 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
             } 
             timer.reset(0, 0, 4 * soft_nodes_limit, soft_nodes_limit, 10);
             int score = iterative_deepening(position, timer, hash, move_order, move, false);
-            if (abs(score) > 18000) {
-                if ((score > 18000) == (position.side_to_move)) result_string = " [1.0] ";
+            if (abs(score) >= 1000) ++resign;
+            else resign = 0;
+            if (abs(score) <= 10) ++draw;
+            else draw = 0;
+            if (resign >= 4 || abs(score) > 18000) {
+                if ((score > 1000) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
+                break;
+            }
+            if (draw >= 10) {
+                result_string = " [0.5] ";
                 break;
             }
             if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
