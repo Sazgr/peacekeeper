@@ -355,17 +355,17 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 result_string = " [0.5] ";
                 break;
             }
-            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
-                if ((score > 400) == (position.side_to_move)) result_string = " [1.0] ";
-                else result_string = " [0.0] ";
-                break;
-            }
             if (position.eval_phase() <= 1 && !position.pieces[0] && !position.pieces[1]) {
                 result_string = " [0.5] ";
                 break;
             } 
             timer.reset(0, 0, 4 * soft_nodes_limit, soft_nodes_limit, 10);
             int score = iterative_deepening(position, timer, hash, move_order, move, false);
+            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
+                if ((score > 400) == (position.side_to_move)) result_string = " [1.0] ";
+                else result_string = " [0.0] ";
+                break;
+            }
             if (abs(score) >= 1000) ++resign;
             else resign = 0;
             if (abs(score) <= 10) ++draw;
