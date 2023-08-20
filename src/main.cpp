@@ -375,7 +375,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 else result_string = " [0.0] ";
                 break;
             }
-            if (draw >= 10) {
+            if (ply >= 100 && draw >= 10) {
                 result_string = " [0.5] ";
                 break;
             }
