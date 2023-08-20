@@ -19,13 +19,9 @@ extern std::array<i16, hidden_dsize> hidden_weights;
 extern std::array<i32, output_size> hidden_bias;
 
 static inline int index(int piece, int square, bool view, int king_square) {
-    const int piece_color = !(piece & 1);
-    const int piece_type = piece >> 1;
-    view = !view;
-    square ^= 56;
-    square ^= (56 * view);
-    square ^= (7 * !!(king_square & 0x4));
-    return square + (piece_type) * 64 + !(piece_color ^ view) * 64 * 6;
+    square = square ^ 56 ^ (56 * view);
+    square = square ^ (7 * !!(king_square & 0x4));
+    return square + (piece ^ view) * 64;
 }
 
 static inline i16 relu(i16 input) {
