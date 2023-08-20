@@ -104,7 +104,10 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
         }
         if (tokens[0] == "datagen") {
+#ifdef DATAGEN
             chess960 = true;
+            futility_multiplier *= 2;
+            for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             int num_threads = stoi(tokens[1]);
             u64 soft_nodes_limit = stoi(tokens[2]);
             std::vector<std::thread> thread_pool;
@@ -114,6 +117,9 @@ int main(int argc, char *argv[]) {
             for (auto& thread : thread_pool) {
                 thread.join();
             }
+#else
+            cout << "this executable does not support datagen"
+#endif
         }
         if (tokens[0] == "eval") {
             out << position << "PSQT: " << position.static_eval() << std::endl;
@@ -210,11 +216,11 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
