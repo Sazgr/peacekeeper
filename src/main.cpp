@@ -379,7 +379,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 result_string = " [0.5] ";
                 break;
             }
-            if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
+            if (position.ply >= 6 && !position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
                 buffer.push_back({position.export_fen(), {position.side_to_move ? score : -score, move}});
             } else {
                 buffer.push_back({position.export_fen(), {32002, move}});
