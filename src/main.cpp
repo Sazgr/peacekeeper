@@ -104,7 +104,10 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 2 && tokens[1] == "off") debug_mode = false;
         }
         if (tokens[0] == "datagen") {
+#ifdef DATAGEN
             chess960 = true;
+            futility_multiplier *= 2;
+            for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             int num_threads = stoi(tokens[1]);
             u64 soft_nodes_limit = stoi(tokens[2]);
             std::vector<std::thread> thread_pool;
@@ -114,6 +117,9 @@ int main(int argc, char *argv[]) {
             for (auto& thread : thread_pool) {
                 thread.join();
             }
+#else
+            cout << "this executable does not support datagen"
+#endif
         }
         if (tokens[0] == "eval") {
             out << position << "PSQT: " << position.static_eval() << std::endl;
@@ -213,11 +219,11 @@ int main(int argc, char *argv[]) {
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
                 futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "futility_power" && tokens[3] == "value") {
                 futility_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<24; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 4, futility_power);
+                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
@@ -327,7 +333,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
     u64 positions = 0, games = 0;
     std::cout << "thread " << thread_id << " playing" << std::endl;
     std::string result_string;
-    std::vector<std::pair<std::string, int>> buffer{};
+    std::vector<std::pair<std::string, std::pair<int, Move>>> buffer{};
     while (true) {
         buffer.clear();
         std::string black_backrank = frc_backrank[unint(random)];
@@ -336,6 +342,8 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
         position.load_fen(black_backrank + "/pppppppp/8/8/8/8/PPPPPPPP/" + white_backrank, "w", "KQkq", "-", "0", "1");
         hash.clear();
         move_order.reset();
+        int resign = 0;
+        int draw = 0;
         while (true) {
             position.legal_moves(movelist);
             if (!movelist.size()) {
@@ -350,31 +358,39 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 result_string = " [0.5] ";
                 break;
             }
-            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
-                if ((score > 500) == (position.side_to_move)) result_string = " [1.0] ";
-                else result_string = " [0.0] ";
-                break;
-            }
             if (position.eval_phase() <= 1 && !position.pieces[0] && !position.pieces[1]) {
                 result_string = " [0.5] ";
                 break;
             } 
             timer.reset(0, 0, 4 * soft_nodes_limit, soft_nodes_limit, 10);
             int score = iterative_deepening(position, timer, hash, move_order, move, false);
-            if (abs(score) > 18000) {
-                if ((score > 18000) == (position.side_to_move)) result_string = " [1.0] ";
+            if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
+                if ((score > 400) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
                 break;
             }
-            if (!position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
-                buffer.push_back({position.export_fen(), position.side_to_move ? score : -score});
+            if (abs(score) >= 1000) ++resign;
+            else resign = 0;
+            if (abs(score) <= 10) ++draw;
+            else draw = 0;
+            if (resign >= 4 || abs(score) > 18000) {
+                if ((score > 1000) == (position.side_to_move)) result_string = " [1.0] ";
+                else result_string = " [0.0] ";
+                break;
+            }
+            if (position.ply >= 100 && draw >= 10) {
+                result_string = " [0.5] ";
+                break;
+            }
+            if (position.ply >= 6 && !position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
+                buffer.push_back({position.export_fen(), {position.side_to_move ? score : -score, move}});
             } else {
-                buffer.push_back({position.export_fen(), 21000});
+                buffer.push_back({position.export_fen(), {32002, move}});
             }
             position.make_move(move);
         }
-        for (std::pair<std::string, int> pos : buffer) {
-            out << pos.first << result_string << pos.second << std::endl;
+        for (std::pair<std::string, std::pair<int, Move>> pos : buffer) {
+            out << pos.first << result_string << pos.second.first << " " << pos.second.second << std::endl;
             ++positions;
         }
         ++games;
