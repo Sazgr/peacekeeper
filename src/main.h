@@ -13,7 +13,11 @@
 #ifdef SPSA
 #define spsa
 #else
+#ifdef DATAGEN
+#define spsa
+#else
 #define spsa constexpr
+#endif
 #endif
 
 enum Features : bool {
@@ -23,7 +27,11 @@ enum Features : bool {
     history_heuristic    = true,
     futility_pruning     = true,
     delta_pruning        = true,
+#ifdef DATAGEN
+    late_move_pruning    = false,
+#else
     late_move_pruning    = true,
+#endif
     late_move_reductions = true,
     check_extensions     = true,
     internal_iterative_reduction = true,
