@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
                 thread.join();
             }
 #else
-            std::cout << "this executable does not support datagen"
+            std::cout << "this executable does not support datagen";
 #endif
         }
         if (tokens[0] == "eval") {
