@@ -18,6 +18,28 @@ extern std::array<i16, hidden_size> input_bias;
 extern std::array<i16, hidden_dsize> hidden_weights;
 extern std::array<i32, output_size> hidden_bias;
 
+const int king_buckets[64] {
+    0, 0, 1, 1, 1, 1, 0, 0,
+    0, 0, 1, 1, 1, 1, 0, 0,
+    0, 0, 1, 1, 1, 1, 0, 0,
+    0, 0, 1, 1, 1, 1, 0, 0,
+    2, 2, 3, 3, 3, 3, 2, 2,
+    2, 2, 3, 3, 3, 3, 2, 2,
+    2, 2, 3, 3, 3, 3, 2, 2,
+    2, 2, 3, 3, 3, 3, 2, 2,
+};
+
+static inline int king_bucket(int king_square, bool king_color) {
+    if constexpr (buckets > 1) {
+        king_square ^= 56;
+        king_color = !king_color;
+        king_square = (56 * king_color) ^ king_square;
+        return king_buckets[king_square];
+    } else {
+        return 0;
+    }
+}
+
 static inline int index(int piece, int square, bool view, int king_square) {
     const int piece_color = !(piece & 1);
     const int piece_type = piece >> 1;
@@ -25,7 +47,7 @@ static inline int index(int piece, int square, bool view, int king_square) {
     square ^= 56;
     square ^= (56 * view);
     square ^= (7 * !!(king_square & 0x4));
-    return square + (piece_type) * 64 + !(piece_color ^ view) * 64 * 6;
+    return square + (piece_type) * 64 + !(piece_color ^ view) * 64 * 6 + king_bucket(king_square, view) * 64 * 12;
 }
 
 static inline i16 relu(i16 input) {
