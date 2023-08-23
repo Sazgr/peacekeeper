@@ -5,7 +5,7 @@
 #include <array>
 #include <cstring>
 
-constexpr int buckets = 1;
+constexpr int buckets = 4;
 constexpr int input_size = 12 * 64 * buckets;
 constexpr int hidden_size = 256;
 constexpr int hidden_dsize = hidden_size * 2;
@@ -32,7 +32,6 @@ const int king_buckets[64] {
 static inline int king_bucket(int king_square, bool king_color) {
     if constexpr (buckets > 1) {
         king_square ^= 56;
-        king_color = !king_color;
         king_square = (56 * king_color) ^ king_square;
         return king_buckets[king_square];
     } else {

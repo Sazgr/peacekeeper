@@ -668,6 +668,7 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
     int end = move.end();
     int piece = move.piece();
     int captured = move.captured();
+    int king_end = end;
     fill_sq<update_nnue, true>(start, empty_square, nnue);
     switch (move.flag()) {
         case none:
@@ -689,11 +690,13 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
             fill_sq<update_nnue, true>(end, empty_square, nnue);
             fill_sq<update_nnue, true>((start & 56) + 6, piece, nnue);
             fill_sq<update_nnue, true>((start & 56) + 5, piece - 4, nnue);
+            king_end = (start & 56) + 6;
             break;
         case q_castling:
             fill_sq<update_nnue, true>(end, empty_square, nnue);
             fill_sq<update_nnue, true>((start & 56) + 2, piece, nnue);
             fill_sq<update_nnue, true>((start & 56) + 3, piece - 4, nnue);
+            king_end = (start & 56) + 2;
             break;
         case enpassant:
             fill_sq<update_nnue, true>(end ^ 8, empty_square, nnue); //ep square
@@ -719,7 +722,7 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
         hash[ply] ^= zobrist_castling[castling_rights[ply - 1][i]] ^ zobrist_castling[castling_rights[ply][i]];
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
-    if constexpr (update_nnue) if (piece == black_king + side_to_move && ((start ^ end) & 4)) nnue->refresh(*this);
+    if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || king_buckets[start] != king_buckets[king_end])) nnue->refresh(*this);
     king_square[0] = get_lsb(pieces[10]);
     king_square[1] = get_lsb(pieces[11]);
     side_to_move = !side_to_move;
