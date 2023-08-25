@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
-            timer.reset(calculate ? std::max(1, std::min(mytime - move_overhead, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes, 0, depth);
+            timer.reset(calculate ? std::max(1, std::min((mytime - move_overhead) * 3 / 4, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes, 0, depth);
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), true};
             search.detach();
         }
