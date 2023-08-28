@@ -7,4 +7,9 @@ struct Search_stack {
     int ply{};
 };
 
+struct Search_data {
+    u64 nodes;
+    
+};
+
 #endif
