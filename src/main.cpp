@@ -378,7 +378,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
             if (abs(score) <= 10) ++draw;
             else draw = 0;
             if (resign >= 4 || abs(score) > 18000) {
-                if ((score > 1000) == (position.side_to_move)) result_string = " [1.0] ";
+                if ((score >= 1000) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
                 break;
             }
