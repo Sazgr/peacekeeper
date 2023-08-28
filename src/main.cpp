@@ -337,7 +337,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
         std::string white_backrank = frc_backrank[unint(random)];
         for (int i{}; i<8; ++i) white_backrank[i] = std::toupper(white_backrank[i]);
         position.load_fen(black_backrank + "/pppppppp/8/8/8/8/PPPPPPPP/" + white_backrank, "w", "KQkq", "-", "0", "1");
-        for (int i{}; i<4; ++i) {
+        for (int i{}; i<6; ++i) {
             position.legal_moves(movelist);
             if (!movelist.size()) break;
             position.make_move(movelist[unint(random) % movelist.size()]);
@@ -386,7 +386,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 result_string = " [0.5] ";
                 break;
             }
-            if (position.ply >= 8 && !position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
+            if (position.ply >= 10 && !position.check() && move.captured() == 12 && (move.flag() == none || move.flag() == q_castling || move.flag() == k_castling)) {
                 buffer.push_back({position.export_fen(), {position.side_to_move ? score : -score, move}});
             } else {
                 buffer.push_back({position.export_fen(), {32002, move}});
