@@ -722,7 +722,7 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
         hash[ply] ^= zobrist_castling[castling_rights[ply - 1][i]] ^ zobrist_castling[castling_rights[ply][i]];
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
-    if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || king_buckets[start] != king_buckets[king_end])) nnue->refresh(*this);
+    if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || (buckets > 1 && king_buckets[start] != king_buckets[king_end]))) nnue->refresh(*this);
     king_square[0] = get_lsb(pieces[10]);
     king_square[1] = get_lsb(pieces[11]);
     side_to_move = !side_to_move;

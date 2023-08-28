@@ -5,7 +5,7 @@
 #include <array>
 #include <cstring>
 
-constexpr int buckets = 4;
+constexpr int buckets = 1;
 constexpr int input_size = 12 * 64 * buckets;
 constexpr int hidden_size = 256;
 constexpr int hidden_dsize = hidden_size * 2;
