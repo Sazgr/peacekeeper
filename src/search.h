@@ -8,8 +8,7 @@ struct Search_stack {
 };
 
 struct Search_data {
-    u64 nodes;
-    
+    u64 nodes{};
 };
 
 #endif
