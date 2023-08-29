@@ -344,6 +344,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
         }
         position.legal_moves(movelist);
         if (!movelist.size()) continue;
+        //std::cout << 't' << thread_id << ' ' << position.export_fen() << std::endl; //for debugging
         hash.clear();
         move_order.reset();
         int resign = 0;
@@ -819,14 +820,14 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 //no time checks here because we failed low, we allow for some extra time
                 if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
                 else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
-                else alpha = -20000;
+                else alpha = -20001;
             } 
             if (result >= beta) {
                 if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
                 if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
-                else beta = 20000;
+                else beta = 20001;
             } 
         }
         if (output) print_bestmove(out, bestmove);
