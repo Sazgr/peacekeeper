@@ -213,8 +213,8 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
             if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
             if (tokens.size() >= 5 && tokens[2] == "UCI_Chess960" && tokens[3] == "value") {
-                if (tokens[5] == "true") chess960 = true;
-                if (tokens[5] == "false") chess960 = false;
+                if (tokens[4] == "true") chess960 = true;
+                if (tokens[4] == "false") chess960 = false;
             }
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {

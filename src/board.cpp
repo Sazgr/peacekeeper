@@ -468,17 +468,17 @@ template <Move_types types, bool side> void Position::gen_legal(Movelist& moveli
                 }
             }
             if constexpr (gen_quiet) { //castling
-                if (king_castle && (((occupied >> shift) & 0xF0ull) == 0x90ull) && !(opp_attacks & (0x70ull << shift))) { //kingside
+                if (king_castle && !((occupied >> shift) & castling_empty[king_location - shift][castling_rights[ply][side * 2 + 1] - shift]) && !(opp_attacks & (castling_safe[king_location - shift][castling_rights[ply][side * 2 + 1] - shift] << shift))) { //kingside
                     movelist.add(Move{black_king + side, king_location, empty_square, castling_rights[ply][side * 2 + 1], k_castling});
                 }
-                if (queen_castle && (((occupied >> shift) & 0x1Full) == 0x11ull) && !(opp_attacks & (0x1Cull << shift))) { //queenside
+                if (queen_castle && !((occupied >> shift) & castling_empty[king_location - shift][castling_rights[ply][side * 2] - shift]) && !(opp_attacks & (castling_safe[king_location - shift][castling_rights[ply][side * 2] - shift] << shift))) { //queenside
                     movelist.add(Move{black_king + side, king_location, empty_square, castling_rights[ply][side * 2], q_castling});
                 }
             }
             return;
     }
 }
-//[kpos][rpos];
+
 void Position::print_bitboard(u64 bits) {
     for (int rank{0}; rank < 8; ++rank) {
         for (int file{0}; file < 8; ++file) {
@@ -587,34 +587,41 @@ void Position::undo_move(Move move) {
     int end = move.end();
     int piece = move.piece();
     int captured = move.captured();
-    fill_sq<false>(start, piece);
     switch (move.flag()) {
         case none:
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, captured);
             break;
         case knight_pr:
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, captured);
             break;
         case bishop_pr:
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, captured);
             break;
         case rook_pr:
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, captured);
             break;
         case queen_pr:
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, captured);
             break;
         case k_castling:
             fill_sq<false>((start & 56) + 6, empty_square);
             fill_sq<false>((start & 56) + 5, empty_square);
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, piece - 4);
             break;
         case q_castling:
             fill_sq<false>((start & 56) + 2, empty_square);
             fill_sq<false>((start & 56) + 3, empty_square);
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, piece - 4);
             break;
         case enpassant:
+            fill_sq<false>(start, piece);
             fill_sq<false>(end, empty_square);
             fill_sq<false>(end ^ 8, piece ^ 1);
             break;
@@ -905,12 +912,10 @@ bool Position::parse_move(Move& out, std::string move) {
         }
         if (chess960 && piece == black_king + side_to_move && captured == black_rook + side_to_move && end > start) {
             flag = k_castling;
-            end = start + 3;
             captured = empty_square;
         }
         if (chess960 && piece == black_king + side_to_move && captured == black_rook + side_to_move && end < start) {
             flag = q_castling;
-            end = start - 4;
             captured = empty_square;
         }
         if (piece == black_pawn + side_to_move && (abs(end - start) == 7 || abs(end - start) == 9) && captured == empty_square) {
