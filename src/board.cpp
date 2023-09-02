@@ -1,7 +1,15 @@
 #include "bit_operations.h"
 #include "board.h"
+#include "nnue.h"
 #include <cstring>
 #include <iostream>
+
+Position::Position() {
+    pst_init();
+    slider_attacks_init();
+    zobrist_init();
+    nnue_init();
+}
 
 u64 Position::positive_ray_attacks(u64 occ, int direction, int square) {
     u64 attacks = rays[direction][square];
@@ -519,45 +527,51 @@ std::ostream& operator<<(std::ostream& out, Position& position) {
     return out;
 }
 
-void Position::make_move(Move move) {
+template void Position::make_move<false>(Move move, NNUE* nnue);
+template void Position::make_move<true>(Move move, NNUE* nnue);
+
+template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
+    if constexpr (update_nnue) nnue->push();
     ++ply;
     hash[ply] = hash[ply - 1];
     hash[ply] ^= zobrist_black;
-    side_to_move = !side_to_move;
     int start = move.start();
     int end = move.end();
     int piece = move.piece();
     int captured = move.captured();
-    fill_sq<true>(start, empty_square);
+    int king_end = end;
+    fill_sq<update_nnue, true>(start, empty_square, nnue);
     switch (move.flag()) {
         case none:
-            fill_sq<true>(end, piece);
+            fill_sq<update_nnue, true>(end, piece, nnue);
             break;
         case knight_pr:
-            fill_sq<true>(end, piece + 2);
+            fill_sq<update_nnue, true>(end, piece + 2, nnue);
             break;
         case bishop_pr:
-            fill_sq<true>(end, piece + 4);
+            fill_sq<update_nnue, true>(end, piece + 4, nnue);
             break;
         case rook_pr:
-            fill_sq<true>(end, piece + 6);
+            fill_sq<update_nnue, true>(end, piece + 6, nnue);
             break;
         case queen_pr:
-            fill_sq<true>(end, piece + 8);
+            fill_sq<update_nnue, true>(end, piece + 8, nnue);
             break;
         case k_castling:
-            fill_sq<true>(end, empty_square);
-            fill_sq<true>((start & 56) + 6, piece);
-            fill_sq<true>((start & 56) + 5, piece - 4);
+            fill_sq<update_nnue, true>(end, empty_square, nnue);
+            fill_sq<update_nnue, true>((start & 56) + 6, piece, nnue);
+            fill_sq<update_nnue, true>((start & 56) + 5, piece - 4, nnue);
+            king_end = (start & 56) + 6;
             break;
         case q_castling:
-            fill_sq<true>(end, empty_square);
-            fill_sq<true>((start & 56) + 2, piece);
-            fill_sq<true>((start & 56) + 3, piece - 4);
+            fill_sq<update_nnue, true>(end, empty_square, nnue);
+            fill_sq<update_nnue, true>((start & 56) + 2, piece, nnue);
+            fill_sq<update_nnue, true>((start & 56) + 3, piece - 4, nnue);
+            king_end = (start & 56) + 2;
             break;
         case enpassant:
-            fill_sq<true>(end ^ 8, empty_square);//ep square
-            fill_sq<true>(end, piece);
+            fill_sq<update_nnue, true>(end ^ 8, empty_square, nnue);//ep square
+            fill_sq<update_nnue, true>(end, piece, nnue);
             break;
     }
     enpassant_square[ply] = (!(piece & ~1) && end == (start ^ 16)) ? (end ^ 8) : 64;
@@ -579,9 +593,18 @@ void Position::make_move(Move move) {
         hash[ply] ^= zobrist_castling[castling_rights[ply - 1][i]] ^ zobrist_castling[castling_rights[ply][i]];
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
+    if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || (buckets > 1 && king_buckets[start] != king_buckets[king_end]))) nnue->refresh(*this);
+    king_square[0] = get_lsb(pieces[10]);
+    king_square[1] = get_lsb(pieces[11]);
+    side_to_move = !side_to_move;
+
 }
 
-void Position::undo_move(Move move) {
+template void Position::undo_move<false>(Move move, NNUE* nnue);
+template void Position::undo_move<true>(Move move, NNUE* nnue);
+
+template <bool update_nnue> void Position::undo_move(Move move, NNUE* nnue) {
+    if constexpr (update_nnue) nnue->pop();
     side_to_move = !side_to_move;
     int start = move.start();
     int end = move.end();
@@ -589,50 +612,56 @@ void Position::undo_move(Move move) {
     int captured = move.captured();
     switch (move.flag()) {
         case none:
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, captured);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, captured, nnue);
             break;
         case knight_pr:
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, captured);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, captured, nnue);
             break;
         case bishop_pr:
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, captured);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, captured, nnue);
             break;
         case rook_pr:
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, captured);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, captured, nnue);
             break;
         case queen_pr:
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, captured);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, captured, nnue);
             break;
         case k_castling:
-            fill_sq<false>((start & 56) + 6, empty_square);
-            fill_sq<false>((start & 56) + 5, empty_square);
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, piece - 4);
+            fill_sq<false, false>((start & 56) + 6, empty_square, nnue);
+            fill_sq<false, false>((start & 56) + 5, empty_square, nnue);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, piece - 4, nnue);
             break;
         case q_castling:
-            fill_sq<false>((start & 56) + 2, empty_square);
-            fill_sq<false>((start & 56) + 3, empty_square);
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, piece - 4);
+            fill_sq<false, false>((start & 56) + 2, empty_square, nnue);
+            fill_sq<false, false>((start & 56) + 3, empty_square, nnue);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, piece - 4, nnue);
             break;
         case enpassant:
-            fill_sq<false>(start, piece);
-            fill_sq<false>(end, empty_square);
-            fill_sq<false>(end ^ 8, piece ^ 1);
+            fill_sq<false, false>(start, piece, nnue);
+            fill_sq<false, false>(end, empty_square, nnue);
+            fill_sq<false, false>(end ^ 8, piece ^ 1, nnue);
             break;
     }
+    king_square[0] = get_lsb(pieces[10]);
+    king_square[1] = get_lsb(pieces[11]);
     --ply;
 }
 
-template <bool update_hash> inline void Position::fill_sq(int sq, int piece) {
-    if constexpr (update_hash) hash[ply] ^= zobrist_pieces[board[sq]][sq] ^ zobrist_pieces[piece][sq];
-    //mg_static_eval = mg_static_eval - middlegame[board[sq]][sq] + middlegame[piece][sq];
-    //eg_static_eval = eg_static_eval - endgame[board[sq]][sq] + endgame[piece][sq];
+template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int sq, int piece, NNUE* nnue) {
+    if constexpr (update_hash) {
+        hash[ply] ^= zobrist_pieces[board[sq]][sq] ^ zobrist_pieces[piece][sq];
+    }
+    if constexpr (update_nnue) {
+        nnue->update_accumulator<false>(board[sq], sq, king_square[0], king_square[1]);
+        nnue->update_accumulator<true>(piece, sq, king_square[0], king_square[1]);
+    }
     pieces[board[sq]] ^= (1ull << sq);
     pieces[piece] ^= (1ull << sq);
     board[sq] = piece;
@@ -648,7 +677,7 @@ int Position::static_eval() {
     u32 eval{};
     u64 black_pieces = pieces[0] | pieces[2] | pieces[4] | pieces[6] | pieces[8] | pieces[10];
     u64 white_pieces = pieces[1] | pieces[3] | pieces[5] | pieces[7] | pieces[9] | pieces[11];
-    int bk = get_lsb(pieces[10]), wk = get_lsb(pieces[11]);
+    int bk = king_square[0], wk = king_square[1];
     for (u64 bb{pieces[0]}; bb;) {
         const int sq = pop_lsb(bb);
         eval += full_king[0][bk][0][sq] + full_king[1][wk][0][sq];
@@ -768,6 +797,10 @@ int Position::static_eval() {
     return ((2 * side_to_move - 1) * (static_cast<i16>(eval >> 16) * phase + static_cast<i16>(eval & 0xFFFF) * (24 - phase)) / 24) + phase / 2;
 }
 
+int Position::static_eval(NNUE& nnue) {
+    return nnue.evaluate(side_to_move);
+}
+
 std::string Position::export_fen() {
     static std::vector<std::string> pieces{"p", "P", "n", "N", "b", "B", "r", "R", "q", "Q", "k", "K", ".", "."};
     std::string fen{};
@@ -801,24 +834,24 @@ std::string Position::export_fen() {
     return fen;
 }
 
-bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock = "0", std::string fen_fmove_counter = "1") {
+bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock, std::string fen_fmove_counter) {
     int sq = 0;
     ply = 0;
-    for (int i{}; i<64; ++i) fill_sq<false>(i, empty_square);
+    for (int i{}; i<64; ++i) fill_sq<false, false>(i, empty_square);
     for (auto pos = fen_pos.begin(); pos != fen_pos.end(); ++pos) {
         switch (*pos) {
-            case 'p': fill_sq<false>(sq, black_pawn); break;
-            case 'n': fill_sq<false>(sq, black_knight); break;
-            case 'b': fill_sq<false>(sq, black_bishop); break;
-            case 'r': fill_sq<false>(sq, black_rook); break;
-            case 'q': fill_sq<false>(sq, black_queen); break;
-            case 'k': fill_sq<false>(sq, black_king); break;
-            case 'P': fill_sq<false>(sq, white_pawn); break;
-            case 'N': fill_sq<false>(sq, white_knight); break;
-            case 'B': fill_sq<false>(sq, white_bishop); break;
-            case 'R': fill_sq<false>(sq, white_rook); break;
-            case 'Q': fill_sq<false>(sq, white_queen); break;
-            case 'K': fill_sq<false>(sq, white_king); break;
+            case 'p': fill_sq<false, false>(sq, black_pawn); break;
+            case 'n': fill_sq<false, false>(sq, black_knight); break;
+            case 'b': fill_sq<false, false>(sq, black_bishop); break;
+            case 'r': fill_sq<false, false>(sq, black_rook); break;
+            case 'q': fill_sq<false, false>(sq, black_queen); break;
+            case 'k': fill_sq<false, false>(sq, black_king); break;
+            case 'P': fill_sq<false, false>(sq, white_pawn); break;
+            case 'N': fill_sq<false, false>(sq, white_knight); break;
+            case 'B': fill_sq<false, false>(sq, white_bishop); break;
+            case 'R': fill_sq<false, false>(sq, white_rook); break;
+            case 'Q': fill_sq<false, false>(sq, white_queen); break;
+            case 'K': fill_sq<false, false>(sq, white_king); break;
             case '/': --sq; break;
             case '1': break;
             case '2': ++sq; break;
@@ -832,6 +865,8 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
         }
         ++sq;
     }
+    king_square[0] = get_lsb(pieces[10]);
+    king_square[1] = get_lsb(pieces[11]);
     if (fen_stm == "w") side_to_move = true;
     else if (fen_stm == "b") side_to_move = false;
     else return false;
@@ -840,13 +875,13 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
         for (auto pos = fen_castling.begin(); pos != fen_castling.end(); ++pos) {
             switch (*pos) {
                 case '-': break;
-                case 'q': castling_rights[0][0] = get_lsb(pieces[6] & rays[west][get_lsb(pieces[10])]); break;
-                case 'k': castling_rights[0][1] = get_lsb(pieces[6] & rays[east][get_lsb(pieces[10])]); break;
-                case 'Q': castling_rights[0][2] = get_lsb(pieces[7] & rays[west][get_lsb(pieces[11])]); break;
-                case 'K': castling_rights[0][3] = get_lsb(pieces[7] & rays[east][get_lsb(pieces[11])]); break;
+                case 'q': castling_rights[0][0] = get_lsb(pieces[6] & rays[west][king_square[0]]); break;
+                case 'k': castling_rights[0][1] = get_lsb(pieces[6] & rays[east][king_square[0]]); break;
+                case 'Q': castling_rights[0][2] = get_lsb(pieces[7] & rays[west][king_square[1]]); break;
+                case 'K': castling_rights[0][3] = get_lsb(pieces[7] & rays[east][king_square[1]]); break;
                 default:
                     if ((*pos) >= 97) { //lowercase means black castling rights
-                        int king_location = get_lsb(pieces[10]);
+                        int king_location = king_square[0];
                         int rook_location = (static_cast<int>(*pos) - 97);
                         if (rook_location > king_location) {
                             castling_rights[0][1] = rook_location;
@@ -854,7 +889,7 @@ bool Position::load_fen(std::string fen_pos, std::string fen_stm, std::string fe
                             castling_rights[0][0] = rook_location;
                         }
                     } else { //upper case means white castling rights
-                        int king_location = get_lsb(pieces[11]);
+                        int king_location = king_square[1];
                         int rook_location = (static_cast<int>(*pos) - 65) + 56;
                         if (rook_location > king_location) {
                             castling_rights[0][3] = rook_location;
