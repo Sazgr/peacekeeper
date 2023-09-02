@@ -54,7 +54,7 @@ i32 NNUE::evaluate(bool side) {
     for (int i = 0; i < hidden_size; i++) {
         output += relu(accumulator[!side][i]) * hidden_weights[hidden_size + i];
     }
-    return (output * 400) / input_quantization / hidden_quantization;
+    return output * 400 * 100 / 256 / input_quantization / hidden_quantization;
 }
 
 void read_bin() {
