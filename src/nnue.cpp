@@ -49,10 +49,10 @@ i32 NNUE::evaluate(bool side) {
     Accumulator &accumulator = accumulator_stack[current_accumulator];
     i32 output = hidden_bias[0];
     for (int i = 0; i < hidden_size; i++) {
-        output += relu(accumulator[side][i]) * hidden_weights[i];
+        output += crelu(accumulator[side][i]) * hidden_weights[i];
     }
     for (int i = 0; i < hidden_size; i++) {
-        output += relu(accumulator[!side][i]) * hidden_weights[hidden_size + i];
+        output += crelu(accumulator[!side][i]) * hidden_weights[hidden_size + i];
     }
     return (output * 400) / input_quantization / hidden_quantization;
 }
