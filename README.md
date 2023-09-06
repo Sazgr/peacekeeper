@@ -17,8 +17,10 @@ Windows (and formerly linux) executables are provided for each release in the [R
 
 ### Ratings
 
-* denotes a version which has not been tested on that rating list and does not have a rating
+\* denotes a version which has not been tested on that rating list and does not have a rating.
+
 Ratings prefixed with ~ have large error margins because of few games played.
+
 Note that ratings from different rating lists are not comparable to each other.
 
 Version | CCRL Blitz | CCRL 40/15 | CEGT 40/4 
