@@ -17,14 +17,19 @@ Windows (and formerly linux) executables are provided for each release in the [R
 
 ### Ratings
 
-Version | CCRL Blitz | CCRL 40/15
---------|------------|-----------
-v1.10   | 2448       | 2381
-v1.20   | 2563       | 2474
-v1.30   | 2646       | 2608
-v1.40   | 2733       | 2694
-v1.50   | 2819       | 2768
-v1.60   | 3054       | 2977
+* denotes a version which has not been tested on that rating list and does not have a rating
+Ratings prefixed with ~ have large error margins because of few games played.
+Note that ratings from different rating lists are not comparable to each other.
+
+Version | CCRL Blitz | CCRL 40/15 | CEGT 40/4 
+--------|------------|------------|----------
+v1.10   | 2448       | 2381       | *
+v1.20   | 2563       | 2474       | *
+v1.30   | 2646       | 2608       | *
+v1.40   | 2733       | 2694       | *
+v1.50   | 2819       | 2768       | *
+v1.60   | 3054       | 2977       | 2864
+v1.7x   | *          | ~3020      | *
 
 ### Features
 
