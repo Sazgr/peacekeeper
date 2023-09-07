@@ -2,7 +2,9 @@
 
 ## Peacekeeper
 
-A fairly strong and probably [superhuman](https://dokumen.tips/documents/the-level-of-play-in-ccrl-and-fide-rating-vs-fidepdfthe-level-of-play-in-ccrl-and.html) UCI Chess Engine written in C++17.
+A fairly strong and probably [superhuman](https://dokumen.tips/documents/the-level-of-play-in-ccrl-and-fide-rating-vs-fidepdfthe-level-of-play-in-ccrl-and.html) UCI Chess Engine, written in C++17.
+
+Achieved [top 100](https://web.archive.org/web/20230907172325/http://ccrl.chessdom.com/ccrl/404/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list&profile_step=50&profile_numbers=1&print=Results+table&print=LOS+table&table_size=100&ct_from_elo=0&ct_to_elo=10000&match_length=30&cross_tables_for_best_versions_only=1&sort_tables=by+rating&diag=0&reference_list=None&recalibrate=no) in CCRL Blitz with hand crafted evaluation (HCE).
 
 ### Engine Issues
 
@@ -31,7 +33,7 @@ v1.30   | 2646       | 2608       | *        | *
 v1.40   | 2733       | 2694       | *        | *
 v1.50   | 2819       | 2768       | *        | *
 v1.60   | 3054       | 2977       | *        | 2864
-v1.7x   | *          | ~3020      | 2989     | *
+v1.7x   | 3096       | ~3020      | 2989     | *
 
 ### Features
 
