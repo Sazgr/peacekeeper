@@ -15,6 +15,7 @@ Peacekeeper Chess Engine
 
 #include "main.h"
 #include "movelist.h"
+#include "nnue.h"
 #include "uci.h"
 #include <algorithm>
 #include <atomic>
@@ -218,6 +219,10 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "UCI_Chess960" && tokens[3] == "value") {
                 if (tokens[4] == "true") chess960 = true;
                 if (tokens[4] == "false") chess960 = false;
+            }
+            if (tokens.size() >= 5 && tokens[2] == "EvalFile" && tokens[3] == "value") {
+                if (tokens[4] == "<internal>") load_default();
+                else load_from_file(tokens[4]);
             }
 #ifdef SPSA
             if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {

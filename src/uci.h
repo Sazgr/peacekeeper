@@ -49,6 +49,7 @@ inline void print_info(std::ostream& out) {
         << "option name Threads type spin default 1 min 1 max 1" << '\n'
         << "option name Move Overhead type spin default 5 min 0 max 1000" << '\n'
         << "option name UCI_Chess960 type check default false" << '\n'
+        << "option name EvalFile type string default <internal>" << '\n'
 #ifdef SPSA
         << "option name futility_multiplier type spin default 400 min 0 max 1000" << '\n'
         << "option name futility_power type spin default 70 min 0 max 1000" << '\n'

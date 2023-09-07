@@ -91,6 +91,8 @@ public:
     i32 evaluate(bool side);
 };
 
+void load_default();
+void load_from_file(std::string& name);
 void nnue_init();
 
 #endif

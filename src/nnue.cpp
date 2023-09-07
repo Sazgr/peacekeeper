@@ -1,6 +1,7 @@
 #include "board.h"
 #include "bit_operations.h"
 #include "nnue.h"
+#include <fstream>
 
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include "incbin.h"
@@ -57,7 +58,7 @@ i32 NNUE::evaluate(bool side) {
     return (output * 400) / input_quantization / hidden_quantization;
 }
 
-void read_bin() {
+void load_default() {
     uint64_t memory_index = 0;
     std::memcpy(input_weights.data(), &geval_data[memory_index], input_size * hidden_size * sizeof(i16));
     memory_index += input_size * hidden_size * sizeof(i16);
@@ -69,6 +70,20 @@ void read_bin() {
     memory_index += output_size * sizeof(i32);
 }
 
+void load_from_file(std::string& name) {
+    std::ifstream fin(name, std::ios::binary);
+    fin.read(reinterpret_cast<char*>(input_weights.data()), input_size * hidden_size * sizeof(i16));
+    fin.read(reinterpret_cast<char*>(input_bias.data()), hidden_size * sizeof(i16));
+    fin.read(reinterpret_cast<char*>(hidden_weights.data()), hidden_dsize * output_size * sizeof(i16));
+    fin.read(reinterpret_cast<char*>(hidden_bias.data()), output_size * sizeof(i16));
+    if (!fin) {
+        std::cout << "info string error could not load net from " << name << std::endl;
+        load_default();
+    } else {
+        std::cout << "info string loaded net from " << name << std::endl;
+    }
+}
+
 void nnue_init() {
-    read_bin();
+    load_default();
 }
