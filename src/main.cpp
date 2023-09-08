@@ -334,7 +334,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
     Move move{};
     Movelist movelist;
     Position position;
-    Hashtable hash{2};
+    std::array<Hashtable, 2> hashes{Hashtable(1), Hashtable(1)};
     Move_order_tables move_order{};
     Search_data sd{};
     Stop_timer timer{0, 0, 0};
