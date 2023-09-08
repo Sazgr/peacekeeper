@@ -13,11 +13,11 @@
 #endif
 
 inline void print_score(std::ostream& out, int score) {
-    if (VERSION == -1 && abs(score) <= 50) {
+    if (VERSION == -1 && abs(score) <= 100) {
         out << "cp 0";
         return;
     }
-    if (abs(score) <= 18000) out << "cp " << score;
+    if (abs(score) <= 18000) out << "cp " << score / 2;
     else if (score < 0) out << "mate -" << (20001 + score) / 2;
     else out << "mate " << (20001 - score) / 2;
 }
