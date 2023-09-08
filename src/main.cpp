@@ -357,7 +357,8 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
         position.legal_moves(movelist);
         if (!movelist.size()) continue;
         //std::cout << 't' << thread_id << ' ' << position.export_fen() << std::endl; //for debugging
-        hash.clear();
+        hashes[0].clear();
+        hashes[1].clear();
         move_order.reset();
         int resign = 0;
         int draw = 0;
@@ -380,7 +381,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 break;
             } 
             timer.reset(0, 0, 4 * soft_nodes_limit, soft_nodes_limit, 10);
-            int score = iterative_deepening(position, timer, hash, move_order, move, sd, false);
+            int score = iterative_deepening(position, timer, hashes[position.side_to_move], move_order, move, sd, false);
             if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
                 if ((score > 400) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
@@ -804,6 +805,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         int last_score, result;
         int stability = 0;
         bestmove = movelist[0];
+        Move other_move = movelist[0]; //For datagen randomization
         pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
             for (int j{}; j<64; ++j) {
@@ -821,7 +823,10 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 } else {
                     stability = 0;
                 }
-                if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
+                if (!pv_table[0][0].is_null()) {
+                    other_move = bestmove;
+                    bestmove = pv_table[0][0];
+                }
                 //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
                 //nodes_before = sd.nodes;
                 time_scale = tc_stability[stability];
@@ -838,13 +843,22 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 else alpha = -20001;
             } 
             if (result >= beta) {
-                if (!pv_table[0][0].is_null()) bestmove = pv_table[0][0];
+                if (!pv_table[0][0].is_null()) {
+                    other_move = bestmove;
+                    bestmove = pv_table[0][0];
+                }
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
                 if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
                 else beta = 20001;
             } 
         }
+#if DATAGEN
+        std::random_device device;
+        std::mt19937 random(device());
+        std::uniform_int_distribution<int> unint(0, 7);
+        if (!unint(random)) bestmove = other_move;
+#endif
         if (output) print_bestmove(out, bestmove);
         sd.nnue = nullptr;
         return last_score;
