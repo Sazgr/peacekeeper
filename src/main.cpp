@@ -853,12 +853,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 else beta = 20001;
             } 
         }
-#if DATAGEN
-        std::random_device device;
-        std::mt19937 random(device());
-        std::uniform_int_distribution<int> unint(0, 7);
-        if (!unint(random)) bestmove = other_move;
-#endif
         if (output) print_bestmove(out, bestmove);
         sd.nnue = nullptr;
         return last_score;
