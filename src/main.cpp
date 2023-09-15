@@ -231,6 +231,15 @@ int main(int argc, char *argv[]) {
                 futility_power = 0.01 * stoi(tokens[4]);
                 for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
+            if (tokens.size() >= 5 && tokens[2] == "lmr_base" && tokens[3] == "value") {
+                lmr_base = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmr_nopv_divisor" && tokens[3] == "value") {
+                lmr_nopv_divisor = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmr_ispv_divisor" && tokens[3] == "value") {
+                lmr_ispv_divisor = 0.01 * stoi(tokens[4]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
             }

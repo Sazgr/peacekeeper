@@ -40,8 +40,19 @@ spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
+#ifdef DATAGEN
 spsa double futility_multiplier = 37;
 spsa double futility_power = 0.6;
+spsa double lmr_base = 0.4;
+spsa double lmr_nopv_divisor = 1.95;
+spsa double lmr_ispv_divisor = 4.3;
+#else
+spsa double futility_multiplier = 47.5;
+spsa double futility_power = 0.666;
+spsa double lmr_base = 0.5;
+spsa double lmr_nopv_divisor = 1.85;
+spsa double lmr_ispv_divisor = 4.3;
+#endif
 spsa double see_noisy_constant = 113.5;
 spsa double see_noisy_linear = 0.0;
 spsa double see_noisy_quadratic = 8.0;
@@ -63,8 +74,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Move (*pv_table)[128], Search_data& sd);
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {
-    if (is_pv) return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 4.3 + 0.5);
-    else return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / 1.85 + 0.5);
+    if (is_pv) return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
+    else return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
 }
 inline int late_move_margin(int depth, int move_num, bool improving) {
     if constexpr (late_move_pruning) {
