@@ -106,8 +106,6 @@ int main(int argc, char *argv[]) {
         if (tokens[0] == "datagen") {
 #ifdef DATAGEN
             chess960 = true;
-            futility_multiplier *= 2;
-            for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             int num_threads = stoi(tokens[1]);
             u64 soft_nodes_limit = stoi(tokens[2]);
             std::vector<std::thread> thread_pool;

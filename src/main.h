@@ -12,11 +12,7 @@
 #ifdef SPSA
 #define spsa
 #else
-#ifdef DATAGEN
-#define spsa
-#else
 #define spsa constexpr
-#endif
 #endif
 
 enum Features : bool {
@@ -36,12 +32,16 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
+#ifdef DATAGEN
+spsa std::array<int, 6> futile_margins{37, 56, 71, 85, 97, 108};
+#else
 spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
+#endif
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-spsa double futility_multiplier = 47.5;
-spsa double futility_power = 0.666;
+spsa double futility_multiplier = 37;
+spsa double futility_power = 0.6;
 spsa double see_noisy_constant = 113.5;
 spsa double see_noisy_linear = 0.0;
 spsa double see_noisy_quadratic = 8.0;
