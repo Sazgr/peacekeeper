@@ -43,16 +43,13 @@ spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 #ifdef DATAGEN
 spsa double futility_multiplier = 37;
 spsa double futility_power = 0.6;
-spsa double lmr_base = 0.4;
-spsa double lmr_nopv_divisor = 1.95;
-spsa double lmr_ispv_divisor = 4.3;
 #else
 spsa double futility_multiplier = 47.5;
 spsa double futility_power = 0.666;
+#endif
 spsa double lmr_base = 0.5;
 spsa double lmr_nopv_divisor = 1.85;
 spsa double lmr_ispv_divisor = 4.3;
-#endif
 spsa double see_noisy_constant = 113.5;
 spsa double see_noisy_linear = 0.0;
 spsa double see_noisy_quadratic = 8.0;
