@@ -240,6 +240,15 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "lmr_ispv_divisor" && tokens[3] == "value") {
                 lmr_ispv_divisor = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_base" && tokens[3] == "value") {
+                nmp_base = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_depth_divisor" && tokens[3] == "value") {
+                nmp_depth_divisor = 0.01 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "nmp_eval_divisor" && tokens[3] == "value") {
+                nmp_eval_divisor = 0.01 * stoi(tokens[4]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
             }
@@ -609,7 +618,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ss->move = Move{};
         ++sd.nodes;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(2.19999999 + depth / 4.0 + improving + std::sqrt(static_eval - beta) / 12.0)), -beta, -beta + 1, ss + 1, pv_table, sd);
+        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, pv_table, sd);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             return (abs(result) > 18000 ? beta : result);
