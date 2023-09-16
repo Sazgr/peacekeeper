@@ -114,7 +114,7 @@ void load_from_file(std::string& name) {
     fin.read(reinterpret_cast<char*>(input_weights.data()), input_size * hidden_size * sizeof(i16));
     fin.read(reinterpret_cast<char*>(input_bias.data()), hidden_size * sizeof(i16));
     fin.read(reinterpret_cast<char*>(hidden_weights.data()), hidden_dsize * output_size * sizeof(i16));
-    fin.read(reinterpret_cast<char*>(hidden_bias.data()), output_size * sizeof(i16));
+    fin.read(reinterpret_cast<char*>(hidden_bias.data()), output_size * sizeof(i32));
     if (!fin) {
         std::cout << "info string error could not load net from " << name << std::endl;
         load_default();
