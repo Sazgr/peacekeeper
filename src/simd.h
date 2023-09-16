@@ -39,7 +39,7 @@ using register_type = __m256i;
 
 #ifdef SIMD
 inline int32_t register_sum_32(register_type& reg) {
-#if defined(__AVX512F__)
+#if defined(__AVX512F__) && defined(__AVX512BW__)
     const __m256i reduced_8 = _mm256_add_epi32(_mm512_castsi512_si256(reg), _mm512_extracti32x8_epi32(reg, 1));
 #elif defined(__AVX2__) || defined(__AVX__)
     const __m256i reduced_8 = reg;
