@@ -798,7 +798,7 @@ int Position::static_eval() {
 }
 
 int Position::static_eval(NNUE& nnue) {
-    return nnue.evaluate(side_to_move);
+    return nnue.evaluate(side_to_move) * (72 + eval_phase()) / 96;
 }
 
 std::string Position::export_fen() {
