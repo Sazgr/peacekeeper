@@ -1,6 +1,7 @@
 #ifndef PEACEKEEPER_NNUE
 #define PEACEKEEPER_NNUE
 
+#include "simd.h"
 #include "typedefs.h"
 #include <array>
 #include <cstring>
@@ -54,8 +55,13 @@ static inline i16 crelu(i16 input) {
 }
 
 struct Accumulator {
+#ifdef SIMD
+    alignas(ALIGNMENT) std::array<i16, hidden_size> black;
+    alignas(ALIGNMENT) std::array<i16, hidden_size> white;
+#else
     std::array<i16, hidden_size> black;
     std::array<i16, hidden_size> white;
+#endif
     std::array<i16, hidden_size>& operator[](bool side) {
         return side ? white : black;
     }
