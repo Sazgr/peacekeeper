@@ -639,6 +639,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ss->excluded = Move{};
             if (singular_score < singular_beta) {
                 extend_this = 1;
+            } else if (singular_beta >= beta) {
+                return singular_beta;
             }
         }
         position.make_move<true>(hash_move, sd.nnue);
