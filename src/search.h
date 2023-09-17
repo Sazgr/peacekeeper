@@ -4,9 +4,10 @@
 #include "nnue.h"
 
 struct Search_stack {
-    int static_eval{-20001};
     Move move{};
+    Move excluded{};
     int ply{};
+    int static_eval{-20001};
 };
 
 struct Search_data {
