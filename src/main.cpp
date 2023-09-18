@@ -249,6 +249,15 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "nmp_eval_divisor" && tokens[3] == "value") {
                 nmp_eval_divisor = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "aspiration_bounds_0" && tokens[3] == "value") {
+                aspiration_bounds[0] = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "aspiration_bounds_1" && tokens[3] == "value") {
+                aspiration_bounds[1] = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "aspiration_bounds_2" && tokens[3] == "value") {
+                aspiration_bounds[2] = stoi(tokens[4]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "see_noisy_constant" && tokens[3] == "value") {
                 see_noisy_constant = 0.1 * stoi(tokens[4]);
             }

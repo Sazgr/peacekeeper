@@ -37,7 +37,7 @@ spsa std::array<int, 6> futile_margins{37, 56, 71, 85, 97, 108};
 #else
 spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
 #endif
-constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
+spsa std::array<int, 3> aspiration_bounds{24, 96, 250};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 #ifdef DATAGEN
