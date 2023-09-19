@@ -8,6 +8,7 @@ struct Search_stack {
     Move excluded{};
     int ply{};
     int static_eval{-20001};
+    int double_extensions{};
 };
 
 struct Search_data {

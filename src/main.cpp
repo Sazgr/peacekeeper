@@ -596,6 +596,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = position.static_eval(*sd.nnue);
     ss->static_eval = static_eval;
+    ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
     int result{};
     int old_alpha{alpha};
@@ -637,7 +638,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, pv_table, sd);
             ss->excluded = Move{};
             if (singular_score < singular_beta) {
-                extend_this = 1;
+                if (!is_pv && singular_score < singular_beta - 20 && ss->double_extensions <= 4) {
+                    extend_this = 2;
+                    ++ss->double_extensions;
+                } else {
+                    extend_this = 1;
+                }
             } else if (singular_beta >= beta) {
                 return singular_beta;
             }
