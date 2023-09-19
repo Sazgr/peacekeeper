@@ -350,7 +350,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
     Move move{};
     Movelist movelist;
     Position position;
-    std::array<Hashtable, 2> hashes{Hashtable(1), Hashtable(1)};
+    Hashtable hash(2);
     Move_order_tables move_order{};
     Search_data sd{};
     Stop_timer timer{0, 0, 0};
@@ -373,8 +373,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
         position.legal_moves(movelist);
         if (!movelist.size()) continue;
         //std::cout << 't' << thread_id << ' ' << position.export_fen() << std::endl; //for debugging
-        hashes[0].clear();
-        hashes[1].clear();
+        hash.clear();
         move_order.reset();
         int resign = 0;
         int draw = 0;
@@ -397,7 +396,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
                 break;
             } 
             timer.reset(0, 0, 4 * soft_nodes_limit, soft_nodes_limit, 10);
-            int score = iterative_deepening(position, timer, hashes[position.side_to_move], move_order, move, sd, false);
+            int score = iterative_deepening(position, timer, hash, move_order, move, sd, false);
             if (popcount(position.occupied) == 3 && position.eval_phase() >= 2 && abs(score) > 400) { //KRvK, KQvK are adjudicated to prevent mislabeling as draw due to low search depth
                 if ((score > 400) == (position.side_to_move)) result_string = " [1.0] ";
                 else result_string = " [0.0] ";
