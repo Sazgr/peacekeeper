@@ -594,8 +594,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
-    int static_eval = position.static_eval(*sd.nnue);
-    ss->static_eval = static_eval;
+    if (ss->excluded.is_null()) ss->static_eval = position.static_eval(*sd.nnue);
+    int static_eval = ss->static_eval;
     int move_num{0};
     int result{};
     int old_alpha{alpha};
@@ -612,6 +612,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
         return entry.score();
     }
+    if (ss->excluded.is_null() && entry.type() != tt_none && entry.full_hash == position.hashkey()) ss->static_eval = entry.score();
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
