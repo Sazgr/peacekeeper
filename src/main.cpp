@@ -612,7 +612,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
         return entry.score();
     }
-    if (ss->excluded.is_null() && entry.type() != tt_none && entry.full_hash == position.hashkey()) ss->static_eval = entry.score();
+    if (ss->excluded.is_null() && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.type() != tt_alpha) ss->static_eval = entry.score();
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
