@@ -1,6 +1,7 @@
 #ifndef PEACEKEEPER_SEARCH
 #define PEACEKEEPER_SEARCH
 
+#include "move.h"
 #include "nnue.h"
 
 struct Search_stack {
@@ -13,6 +14,7 @@ struct Search_stack {
 struct Search_data {
     u64 nodes{};
     NNUE* nnue = nullptr;
+    Move pv_table[128][128];
 };
 
 #endif

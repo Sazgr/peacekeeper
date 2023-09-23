@@ -71,7 +71,7 @@ u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>
 void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit);
 bool see(Position& position, Move move, const int threshold);
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd);
-int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Move (*pv_table)[128], Search_data& sd);
+int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd);
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {
     if (is_pv) return static_cast<int>((std::log(move_num - 3) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
