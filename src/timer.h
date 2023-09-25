@@ -7,17 +7,19 @@
 
 class Timer {
 private:
-	using clock_t = std::chrono::steady_clock;
-	using second_t = std::chrono::duration<double, std::ratio<1>>;	
-	std::chrono::time_point<clock_t> m_beg;
+    using clock_t = std::chrono::steady_clock;
+    using second_t = std::chrono::duration<double, std::ratio<1>>;
+    std::chrono::time_point<clock_t> m_beg;
 public:
-	Timer() : m_beg(clock_t::now()) {}
-	void reset() {
-		m_beg = clock_t::now();
-	}
-	double elapsed() const {
-		return std::chrono::duration_cast<second_t>(clock_t::now() - m_beg).count();
-	}
+    Timer() : m_beg(clock_t::now()) {}
+    Timer(const Timer& rhs) = default;
+    Timer& operator=(Timer& rhs) = default;
+    void reset() {
+        m_beg = clock_t::now();
+    }
+    double elapsed() const {
+        return std::chrono::duration_cast<second_t>(clock_t::now() - m_beg).count();
+    }
 };
 
 class Stop_timer {
@@ -33,6 +35,8 @@ public:
     Stop_timer(int ht = 0, int st = 0, u64 hn = 0, u64 sn = 0, int d = 0) {
         reset(ht, st, hn, sn, d);
     }
+    Stop_timer(const Stop_timer& rhs) = default;
+    Stop_timer& operator=(Stop_timer& rhs) = default;
     inline void reset(int ht = 0, int st = 0, u64 hn = 0, u64 sn = 0, int d = 0) {
         stop = false;
         hard_time_limit = ht;

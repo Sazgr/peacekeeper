@@ -125,6 +125,12 @@ bool Position::check(u64 occ) {
 }
 
 bool Position::check() {
+#ifndef NDEBUG
+    if (king_square[0] == 64 || king_square[1] == 64) {
+        std::cout << *this;
+        for (int i{}; i < 20; ++i) std::cout << prev_move[i] << ' ' << std::flush;
+    }
+#endif
     return square_attacked(occupied, get_lsb(pieces[black_king + side_to_move]), !side_to_move);
 }
 
@@ -532,6 +538,9 @@ template void Position::make_move<true>(Move move, NNUE* nnue);
 
 template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
     if constexpr (update_nnue) nnue->push();
+#ifndef NDEBUG
+    prev_move[ply] = move;
+#endif
     ++ply;
     hash[ply] = hash[ply - 1];
     hash[ply] ^= zobrist_black;

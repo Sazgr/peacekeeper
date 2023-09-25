@@ -124,7 +124,7 @@ public:
         0x1000000000000000,
         0xffff00000000ffff,
     };
-    const u64& occupied{pieces[12]};
+    u64& occupied{pieces[12]};
     int board[64] {
         6,  2,  4,  8, 10,  4,  2,  6,
         0,  0,  0,  0,  0,  0,  0,  0,
@@ -141,11 +141,35 @@ public:
     int enpassant_square[1024] {64};
     int castling_rights[1024][4] {0, 7, 56, 63};
     int halfmove_clock[1024] {0};
+#ifndef NDEBUG
+    Move prev_move[1024] {};
+#endif
     u64 hash[1024] {};
     int eval_phase();
     int mg_static_eval{};
     int eg_static_eval{};
     Position();
+    Position& operator=(Position& rhs) {
+        memcpy(pieces, rhs.pieces, sizeof(u64) * 13);
+        occupied = pieces[12];
+        memcpy(board, rhs.board, sizeof(int) * 64);
+        for (int i{}; i < 2; ++i) {
+            king_square[i] = rhs.king_square[i];
+        }
+        side_to_move = rhs.side_to_move;
+        ply = rhs.ply;
+        memcpy(enpassant_square, rhs.enpassant_square, sizeof(int) * 1024);
+        memcpy(castling_rights, rhs.castling_rights, sizeof(int) * 1024 * 4);
+        memcpy(halfmove_clock, rhs.halfmove_clock, sizeof(int) * 1024);
+        memcpy(hash, rhs.hash, sizeof(u64) * 1024);
+        mg_static_eval = rhs.mg_static_eval;
+        eg_static_eval = rhs.eg_static_eval;
+        memcpy(zobrist_pieces, rhs.zobrist_pieces, sizeof(u64) * 13 * 64);
+        zobrist_black = rhs.zobrist_black;
+        memcpy(zobrist_castling, rhs.zobrist_castling, sizeof(u64) * 65);
+        memcpy(zobrist_enpassant, rhs.zobrist_enpassant, sizeof(u64) * 65);
+        return *this;
+    }
 };
 
 template <bool side> inline u64 Position::pawns_forward_one(u64 pawns) {
