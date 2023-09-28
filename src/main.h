@@ -33,7 +33,7 @@ enum Features : bool {
 };
 
 #ifdef DATAGEN
-spsa std::array<int, 6> futile_margins{37, 56, 71, 85, 97, 108};
+spsa std::array<int, 6> futile_margins{94, 150, 196, 238, 276, 312};
 #else
 spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
 #endif
