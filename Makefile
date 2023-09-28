@@ -4,7 +4,7 @@ SOURCES := src/*.cpp
 
 CXX := g++
 
-CXXFLAGS := -pthread -std=c++17 -Ofast -DNDEBUG -m64 -mpopcnt -msse2 -mavx2 -mavx512f -mavx512bw -static -DVERSION=-1
+CXXFLAGS := -pthread -std=c++17 -Ofast -DNDEBUG -march=native -static -DVERSION=-1
 
 LINKER :=
 
