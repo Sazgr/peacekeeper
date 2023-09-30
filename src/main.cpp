@@ -669,7 +669,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) if (bestmove.captured() == 12) {
                         move_order.history_edit(bestmove.piece(), bestmove.end(), depth * depth, true);
-                        move_order.continuation_edit((ss - 4)->move, bestmove, depth * depth, true);
+                        move_order.continuation_edit((ss - 4)->move, bestmove, depth * depth / 2, true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
@@ -728,7 +728,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         int score{};
         if constexpr (history_heuristic) {
             score += move_order.history_value(movelist[i].piece(), movelist[i].end());
-            score += move_order.continuation_value((ss - 4)->move, movelist[i]);
+            score += move_order.continuation_value((ss - 4)->move, movelist[i]) / 2;
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
             score += move_order.continuation_value((ss - 1)->move, movelist[i]);
         }
@@ -797,13 +797,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
                         move_order.history_edit(movelist[j].piece(), movelist[j].end(), depth * depth, false);
-                        move_order.continuation_edit((ss - 4)->move, movelist[j], depth * depth, false);
+                        move_order.continuation_edit((ss - 4)->move, movelist[j], depth * depth / 2, false);
                         move_order.continuation_edit((ss - 2)->move, movelist[j], depth * depth, false);
                         move_order.continuation_edit((ss - 1)->move, movelist[j], depth * depth, false);   
                     }
                     if constexpr (history_heuristic) {
                         move_order.history_edit(bestmove.piece(), bestmove.end(), depth * depth, true);
-                        move_order.continuation_edit((ss - 4)->move, bestmove, depth * depth, true);
+                        move_order.continuation_edit((ss - 4)->move, bestmove, depth * depth / 2, true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
