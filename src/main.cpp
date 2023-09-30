@@ -638,7 +638,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, pv_table, sd);
             ss->excluded = Move{};
             if (singular_score < singular_beta) {
-                if (!is_pv && singular_score < singular_beta - 20 && ss->double_extensions <= 4) {
+                if (!is_pv && singular_score < singular_beta - 30 && ss->double_extensions <= 4) {
                     extend_this = 2;
                     ++ss->double_extensions;
                 } else {
