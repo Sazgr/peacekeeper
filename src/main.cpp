@@ -669,6 +669,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) if (bestmove.captured() == 12) {
                         move_order.history_edit(bestmove.piece(), bestmove.end(), depth * depth, true);
+                        move_order.continuation_edit((ss - 4)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
@@ -727,6 +728,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         int score{};
         if constexpr (history_heuristic) {
             score += move_order.history_value(movelist[i].piece(), movelist[i].end());
+            score += move_order.continuation_value((ss - 4)->move, movelist[i]);
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
             score += move_order.continuation_value((ss - 1)->move, movelist[i]);
         }
@@ -795,11 +797,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
                         move_order.history_edit(movelist[j].piece(), movelist[j].end(), depth * depth, false);
+                        move_order.continuation_edit((ss - 4)->move, movelist[j], depth * depth, false);
                         move_order.continuation_edit((ss - 2)->move, movelist[j], depth * depth, false);
                         move_order.continuation_edit((ss - 1)->move, movelist[j], depth * depth, false);   
                     }
                     if constexpr (history_heuristic) {
                         move_order.history_edit(bestmove.piece(), bestmove.end(), depth * depth, true);
+                        move_order.continuation_edit((ss - 4)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
@@ -828,7 +832,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
     sd.nnue = &nnue;
     Move pv_table[128][128];
     Search_stack search_stack[96];
-    search_stack[2].ply = 0;
+    search_stack[4].ply = 0;
     position.legal_moves(movelist);
     if (movelist.size() == 0) return 0;
     else {
@@ -849,7 +853,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             }
         }
         for (; depth <= 64;) {
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], pv_table, sd);
+            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[4], pv_table, sd);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, sd.nodes, static_cast<int>(sd.nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), pv_table[0]);
