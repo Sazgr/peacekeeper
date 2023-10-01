@@ -683,7 +683,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        movelist[i].add_sortkey(movelist[i].mvv_lva());
+        movelist[i].add_sortkey(see(position, movelist[i], -107) ? 1000 + movelist[i].mvv_lva() : movelist[i].mvv_lva());
     }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
