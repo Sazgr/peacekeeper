@@ -823,7 +823,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
 
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
     if constexpr (history_heuristic) move_order.age();
-    table.age();
     Movelist movelist;
     NNUE nnue;
     nnue.refresh(position);
