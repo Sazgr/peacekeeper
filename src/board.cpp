@@ -798,7 +798,11 @@ int Position::static_eval() {
 }
 
 int Position::static_eval(NNUE& nnue) {
+#ifdef DATAGEN
+    return nnue.evaluate(side_to_move);
+#else
     return nnue.evaluate(side_to_move) * (72 + eval_phase()) / 96;
+#endif
 }
 
 std::string Position::export_fen() {
