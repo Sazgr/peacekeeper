@@ -631,7 +631,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
         int extend_this = 0;
-        if (!is_root && depth >= 7 && (entry.type() == tt_exact || entry.type() == tt_beta) && no_mate(entry.score(), entry.score()) && entry.depth() >= depth - 3) {
+        if constexpr (singular_extensions) if (!is_root && depth >= 7 && (entry.type() == tt_exact || entry.type() == tt_beta) && no_mate(entry.score(), entry.score()) && entry.depth() >= depth - 3) {
             int singular_beta = entry.score() - depth * 4;
             int singular_depth = (depth - 1) / 2;
             ss->excluded = hash_move;
@@ -844,7 +844,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         int last_score, result;
         int stability = 0;
         bestmove = movelist[0];
-        Move other_move = movelist[0]; //For datagen randomization
         pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
             for (int j{}; j<64; ++j) {
@@ -863,7 +862,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                     stability = 0;
                 }
                 if (!pv_table[0][0].is_null()) {
-                    other_move = bestmove;
                     bestmove = pv_table[0][0];
                 }
                 //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
@@ -883,7 +881,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             } 
             if (result >= beta) {
                 if (!pv_table[0][0].is_null()) {
-                    other_move = bestmove;
                     bestmove = pv_table[0][0];
                 }
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}

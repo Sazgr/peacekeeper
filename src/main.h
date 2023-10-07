@@ -30,6 +30,11 @@ enum Features : bool {
     late_move_reductions = true,
     check_extensions     = true,
     internal_iterative_reduction = true,
+#ifdef DATAGEN
+    singular_extensions  = false;
+#else
+    singular_extensions  = true;
+#endif
 };
 
 #ifdef DATAGEN
@@ -41,8 +46,8 @@ constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 #ifdef DATAGEN
-spsa double futility_multiplier = 37;
-spsa double futility_power = 0.6;
+spsa double futility_multiplier = 94;
+spsa double futility_power = 0.666;
 #else
 spsa double futility_multiplier = 47.5;
 spsa double futility_power = 0.666;
