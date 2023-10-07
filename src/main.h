@@ -31,9 +31,9 @@ enum Features : bool {
     check_extensions     = true,
     internal_iterative_reduction = true,
 #ifdef DATAGEN
-    singular_extensions  = false;
+    singular_extensions  = false,
 #else
-    singular_extensions  = true;
+    singular_extensions  = true,
 #endif
 };
 
