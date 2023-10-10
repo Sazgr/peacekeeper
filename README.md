@@ -109,6 +109,7 @@ In no particular order.
 - The Engine Programming Discord and the people on it
 - Slender (@rafid-dev) especially for coinhabiting an OB, contributing hardware mutually, and sharing SSS test results.
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
+- @albert-wastakentoomuch, @ccao25 for help in generating data
 - PeSTO for starter piece square tables
 - [Chess cache](https://www.chesscache.com/ChessEngines.html) (Dusan Stamenkovic) and Graham from CCRL for logos
 - Some engines which I got inspiration from (in alphabetical order) along with their authors:
