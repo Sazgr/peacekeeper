@@ -27,7 +27,7 @@ using register_type = __m512i;
 #define register_set_16 _mm512_set1_epi16
 #elif defined(__AVX2__) || defined(__AVX__)
 using register_type = __m256i;
-#define register_madd_epi16 _mm256_madd_epi16
+#define register_madd_16 _mm256_madd_epi16
 #define register_add_32 _mm256_add_epi32
 #define register_sub_32 _mm256_sub_epi32
 #define register_add_16 _mm256_add_epi16
