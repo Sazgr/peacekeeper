@@ -1,12 +1,12 @@
 #ifndef PEACEKEEPER_SIMD
 #define PEACEKEEPER_SIMD
 
-#if defined(__AVX__) || defined(__AVX2__) || (defined(__AVX512F__) && defined(__AVX512BW__))
+#if defined(__AVX__) || defined(__AVX2__) || (defined(__AVX512F__) && defined(__AVX512BW__) && defined(__AVX512DQ__))
 #include <immintrin.h>
 #define SIMD
 #endif
 
-#if defined(__AVX512F__) && defined(__AVX512BW__)
+#if defined(__AVX512F__) && defined(__AVX512BW__) && defined(__AVX512DQ__)
 #define BIT_ALIGNMENT 512
 #elif defined(__AVX2__) || defined(__AVX__)
 #define BIT_ALIGNMENT 256
@@ -15,7 +15,7 @@
 #define I16_STRIDE (BIT_ALIGNMENT / 16)
 #define ALIGNMENT (BIT_ALIGNMENT / 8)
 
-#if defined(__AVX512F__) && defined(__AVX512BW__)
+#if defined(__AVX512F__) && defined(__AVX512BW__) && defined(__AVX512DQ__)
 using register_type = __m512i;
 #define register_madd_16 _mm512_madd_epi16
 #define register_add_32 _mm512_add_epi32
@@ -39,7 +39,7 @@ using register_type = __m256i;
 
 #ifdef SIMD
 inline int32_t register_sum_32(register_type& reg) {
-#if defined(__AVX512F__) && defined(__AVX512BW__)
+#if defined(__AVX512F__) && defined(__AVX512BW__) && defined(__AVX512DQ__)
     const __m256i reduced_8 = _mm256_add_epi32(_mm512_castsi512_si256(reg), _mm512_extracti32x8_epi32(reg, 1));
 #elif defined(__AVX2__) || defined(__AVX__)
     const __m256i reduced_8 = reg;

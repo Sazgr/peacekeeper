@@ -71,9 +71,9 @@ void NNUE::refresh(Position& position) {
 
 i32 NNUE::evaluate(bool side) {
     Accumulator &accumulator = accumulator_stack[current_accumulator];
-#if defined(USE_SIMD)
+#ifdef SIMD
     const register_type crelu_min{};
-    const register_type crelu_max{};
+    const register_type crelu_max = register_set_16(255);
     register_type res{};
     const register_type* accumulator_us = reinterpret_cast<register_type*>(accumulator[side].data());
     const register_type* accumulator_them = reinterpret_cast<register_type*>(accumulator[!side].data());
