@@ -76,35 +76,20 @@ public:
         table.resize(size);
     }
     void prefetch(const u64 hash) const {
-        __builtin_prefetch(&table[hash & (size - 2)]);
-        __builtin_prefetch(&table[(hash & (size - 2)) + 1]);
+        __builtin_prefetch(&table[hash & (size - 1)]);
     }
     Element query(const u64 hash) {
-        if (table[(hash & (size - 2))].full_hash == hash) {
-            table[(hash & (size - 2))].set_age(table_age);
-            return table[(hash & (size - 2))];
-        } else {
-            table[(hash & (size - 2)) + 1].set_age(table_age);
-            return table[(hash & (size - 2)) + 1];
-        }
+        return table[hash & (size - 1)];
     }
     void clear() {
         for (int i{0}; i<size; ++i) table[i] = Element{};
     }
     void age() {
-        ++table_age;
-    }
-    int index(const u64 hash, int score, u8 type, Move bestmove, u8 dp) {
-        if (table[(hash & (size - 2))].full_hash == hash) return 0; //first test hashes to prevent storing any duplicate positions
-        if (table[(hash & (size - 2)) + 1].full_hash == hash) return 1;
-        if (table[(hash & (size - 2))].type() == tt_none) return 0; //then check if a slot is empty
-        if (table[(hash & (size - 2)) + 1].type() == tt_none) return 1;
-        if (table[(hash & (size - 2))].depth() < dp || table[(hash & (size - 2))].age() != table_age) return 0; //now if we have a deeper search or an aged search in the first slot, we replace it
-        return 1;
+        ; //nothing needed here
     }
     void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply) {
-        int offset = index(hash, score, type, bestmove, dp);
-        table[(hash & (size - 2)) + offset] = Element{hash, bestmove, score, type, dp, table_age, ply};
+        Element previous = table[hash & (size - 1)];
+        if (previous.depth() <= dp + 3) table[hash & (size - 1)] = Element{hash, bestmove, score, type, dp, table_age, ply};
     }
 private:
     std::vector<Element> table;
