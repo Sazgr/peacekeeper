@@ -89,7 +89,7 @@ public:
     }
     void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply) {
         Element previous = table[hash & (size - 1)];
-        if (previous.depth() <= dp + 3) table[hash & (size - 1)] = Element{hash, bestmove, score, type, dp, table_age, ply};
+        if (previous.depth() <= dp + 5) table[hash & (size - 1)] = Element{hash, bestmove, score, type, dp, table_age, ply};
     }
 private:
     std::vector<Element> table;
