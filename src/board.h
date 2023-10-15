@@ -146,6 +146,27 @@ public:
     int mg_static_eval{};
     int eg_static_eval{};
     Position();
+    Position& operator=(Position& rhs) {
+        memcpy(pieces, rhs.pieces, sizeof(u64) * 13);
+        const_cast<u64&>(occupied) = pieces[12];
+        memcpy(board, rhs.board, sizeof(int) * 64);
+        for (int i{}; i < 2; ++i) {
+            king_square[i] = rhs.king_square[i];
+        }
+        side_to_move = rhs.side_to_move;
+        ply = rhs.ply;
+        memcpy(enpassant_square, rhs.enpassant_square, sizeof(int) * 1024);
+        memcpy(castling_rights, rhs.castling_rights, sizeof(int) * 1024 * 4);
+        memcpy(halfmove_clock, rhs.halfmove_clock, sizeof(int) * 1024);
+        memcpy(hash, rhs.hash, sizeof(u64) * 1024);
+        mg_static_eval = rhs.mg_static_eval;
+        eg_static_eval = rhs.eg_static_eval;
+        memcpy(zobrist_pieces, rhs.zobrist_pieces, sizeof(u64) * 13 * 64);
+        zobrist_black = rhs.zobrist_black;
+        memcpy(zobrist_castling, rhs.zobrist_castling, sizeof(u64) * 65);
+        memcpy(zobrist_enpassant, rhs.zobrist_enpassant, sizeof(u64) * 65);
+        return *this;
+    }
 };
 
 template <bool side> inline u64 Position::pawns_forward_one(u64 pawns) {

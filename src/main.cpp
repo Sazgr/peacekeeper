@@ -212,8 +212,15 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         if (tokens[0] == "setoption" && tokens[1] == "name") {
-            if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
-            if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
+            if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {
+                hash.resize(stoi(tokens[4]));
+            }
+            if (tokens.size() >= 5 && tokens[2] == "Threads" && tokens[3] == "value") {
+                threads = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {
+                move_overhead = stoi(tokens[5]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "UCI_Chess960" && tokens[3] == "value") {
                 if (tokens[4] == "true") chess960 = true;
                 if (tokens[4] == "false") chess960 = false;
@@ -523,12 +530,12 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         int old_alpha{alpha};
         Move bestmove{};
         Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-        if (entry.type() != tt_none && entry.full_hash == position.hashkey() && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
-            return entry.score();
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+            return entry.score;
         }
         int result = -20000;
-        Move hash_move = entry.bestmove();
-        bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
+        Move hash_move = entry.bestmove;
+        bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
         if (hash_move_usable) {//searching best move from hashtable
             if (!(delta_pruning && static_eval + hash_move.gain() + futile_margins[0] < alpha)) { //delta pruning
                 position.make_move<true>(hash_move, sd.nnue);
@@ -610,8 +617,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return static_eval - futile_margins[depth - improving];
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-    if (!is_pv && ss->excluded.is_null() && entry.type() != tt_none && entry.full_hash == position.hashkey() && entry.depth() >= depth && (entry.type() == tt_exact || (entry.type() == tt_alpha && entry.score() <= alpha) || (entry.type() == tt_beta && entry.score() >= beta))) {
-        return entry.score();
+    if (!is_pv && ss->excluded.is_null() && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+        return entry.score;
     }
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
@@ -625,14 +632,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
-    Move hash_move = entry.bestmove();
-    bool hash_move_usable = entry.type() != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
+    Move hash_move = entry.bestmove;
+    bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
         int extend_this = 0;
-        if (!is_root && depth >= 7 && (entry.type() == tt_exact || entry.type() == tt_beta) && no_mate(entry.score(), entry.score()) && entry.depth() >= depth - 3) {
-            int singular_beta = entry.score() - depth * 4;
+        if (!is_root && depth >= 7 && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
+            int singular_beta = entry.score - depth * 4;
             int singular_depth = (depth - 1) / 2;
             ss->excluded = hash_move;
             int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd);
@@ -646,7 +653,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
             } else if (singular_beta >= beta) {
                 return singular_beta;
-            } else if (entry.score() >= beta) {
+            } else if (entry.score >= beta) {
                 extend_this = -1;
             }
         }
@@ -822,6 +829,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     return timer.stopped() ? 0 : best_value;
 }
 
+int pvs_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd) {
+    Position copy;
+    copy = position;
+    return pvs(copy, timer, table, move_order, depth, alpha, beta, ss, sd);
+}
+
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
     if constexpr (history_heuristic) move_order.age();
     table.age();
@@ -855,11 +868,40 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 nodes_used[i][j] = 0;
             }
         }
+        std::array<Stop_timer, 256> thread_timer;
+        std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
+        std::vector<Move_order_tables> thread_move_order(threads - 1, Move_order_tables{});
+        Search_stack thread_search_stack[256][96];
+        std::vector<NNUE> thread_nnue(threads - 1, NNUE{});
+        std::vector<Search_data> thread_sd(threads - 1, Search_data{});
         for (; depth <= 64;) {
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
+            std::vector<std::thread> thread_pool;
+            for (int i{}; i < threads - 1; ++i) {
+                thread_timer[i].reset();
+                thread_search_stack[i][2].ply = 0;
+                thread_nnue[i].refresh(position);
+                thread_sd[i].nnue = &thread_nnue[i];
+                for (int j{}; j < 128; ++j) {
+                    for (int k{}; k < 128; ++k) {
+                        thread_sd[i].pv_table[j][k] = Move{};
+                    }
+                }
+                thread_pool.emplace_back(pvs_base, std::ref(position), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
+            }
+            result = pvs_base(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
+            for (int i{}; i < threads - 1; ++i) {
+                thread_timer[i].stop = true;
+            }
+            for (int i{}; i < threads - 1; ++i) {
+                thread_pool[i].join();
+            }
+            u64 total_nodes = sd.nodes;
+            for (int i{}; i < threads - 1; ++i) {
+                total_nodes += thread_sd[i].nodes;
+            }
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
-                if (output) print_uci(out, last_score, depth, sd.nodes, static_cast<int>(sd.nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
+                if (output) print_uci(out, last_score, depth, total_nodes, static_cast<int>(total_nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
                 ++depth;
                 if (sd.pv_table[0][0] == bestmove) {
                     stability = std::min(stability + 1, 3);
