@@ -12,6 +12,10 @@ struct Move_order_tables {
         continuation_successes = new int[12 * 64 * 12 * 64];
         continuation_all = new int[12 * 64 * 12 * 64];
     }
+    ~Move_order_tables() {
+        delete[] continuation_successes;
+        delete[] continuation_all;
+    }
     void reset() {
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
