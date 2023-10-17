@@ -38,7 +38,7 @@ std::ostream& out = std::cout;
 std::istream& in = std::cin;
 
 bool debug_mode{false};
-Position* thread_position = new Position[256];
+std::array<Position, 16> thread_position;
 
 int main(int argc, char *argv[]) {
     Move move{};
