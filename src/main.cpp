@@ -38,6 +38,7 @@ std::ostream& out = std::cout;
 std::istream& in = std::cin;
 
 bool debug_mode{false};
+Position* thread_position = new Position[256];
 
 int main(int argc, char *argv[]) {
     Move move{};
@@ -212,8 +213,15 @@ int main(int argc, char *argv[]) {
             return 0;
         }
         if (tokens[0] == "setoption" && tokens[1] == "name") {
-            if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {hash.resize(stoi(tokens[4]));}
-            if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {move_overhead = stoi(tokens[5]);}
+            if (tokens.size() >= 5 && tokens[2] == "Hash" && tokens[3] == "value") {
+                hash.resize(stoi(tokens[4]));
+            }
+            if (tokens.size() >= 5 && tokens[2] == "Threads" && tokens[3] == "value") {
+                threads = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 6 && tokens[2] == "Move" && tokens[3] == "Overhead" && tokens[4] == "value") {
+                move_overhead = stoi(tokens[5]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "UCI_Chess960" && tokens[3] == "value") {
                 if (tokens[4] == "true") chess960 = true;
                 if (tokens[4] == "false") chess960 = false;
@@ -822,6 +830,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     return timer.stopped() ? 0 : best_value;
 }
 
+int pvs_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd) {
+    Position copy;
+    copy = position;
+    return pvs(copy, timer, table, move_order, depth, alpha, beta, ss, sd);
+}
+
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
     if constexpr (history_heuristic) move_order.age();
     table.age();
@@ -855,11 +869,43 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 nodes_used[i][j] = 0;
             }
         }
+        for (int i{}; i < threads - 1; ++i) {
+            thread_position[i] = position;
+        }
+        std::array<Stop_timer, 256> thread_timer;
+        std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
+        std::vector<Move_order_tables> thread_move_order(threads - 1, Move_order_tables{});
+        Search_stack thread_search_stack[256][96];
+        std::vector<NNUE> thread_nnue(threads - 1, NNUE{});
+        std::vector<Search_data> thread_sd(threads - 1, Search_data{});
         for (; depth <= 64;) {
+            std::vector<std::thread> thread_pool;
+            for (int i{}; i < threads - 1; ++i) {
+                thread_timer[i].reset();
+                thread_search_stack[i][2].ply = 0;
+                thread_nnue[i].refresh(position);
+                thread_sd[i].nnue = &thread_nnue[i];
+                for (int j{}; j < 128; ++j) {
+                    for (int k{}; k < 128; ++k) {
+                        thread_sd[i].pv_table[j][k] = Move{};
+                    }
+                }
+                thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
+            }
             result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
+            for (int i{}; i < threads - 1; ++i) {
+                thread_timer[i].stop = true;
+            }
+            for (int i{}; i < threads - 1; ++i) {
+                thread_pool[i].join();
+            }
+            u64 total_nodes = sd.nodes;
+            for (int i{}; i < threads - 1; ++i) {
+                total_nodes += thread_sd[i].nodes;
+            }
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
-                if (output) print_uci(out, last_score, depth, sd.nodes, static_cast<int>(sd.nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
+                if (output) print_uci(out, last_score, depth, total_nodes, static_cast<int>(total_nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
                 ++depth;
                 if (sd.pv_table[0][0] == bestmove) {
                     stability = std::min(stability + 1, 3);

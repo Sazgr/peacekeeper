@@ -7,7 +7,6 @@
 Position::Position() {
     pst_init();
     slider_attacks_init();
-    zobrist_init();
     nnue_init();
 }
 
@@ -964,29 +963,6 @@ bool Position::parse_move(Move& out, std::string move) {
     }
     out = Move{piece, start, captured, end, flag};
     return true;
-}
-
-u64 Position::rand64() {
-    static u64 next = 1;
-    next = next * 1103515245 + 12345;
-    return next;
-}
-
-void Position::zobrist_init() {
-    for (int i{0}; i<12; ++i) {
-        for (int j{0}; j<64; ++j) {
-            zobrist_pieces[i][j] = rand64();
-        }
-    }
-    for (int i{0}; i<64; ++i) zobrist_pieces[12][i] = 0;
-    zobrist_black = rand64();
-    for (int i{0}; i<64; ++i) zobrist_enpassant[i] = rand64();
-    for (int i{0}; i<8; ++i) zobrist_castling[i] = rand64();
-    for (int i{8}; i<56; ++i) zobrist_castling[i] = 0;
-    for (int i{56}; i<64; ++i) zobrist_castling[i] = rand64();
-    zobrist_castling[64] = 0;
-    zobrist_enpassant[64] = 0;
-    zobrist_update();
 }
 
 void Position::zobrist_update() {
