@@ -862,7 +862,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             for (int j{}; j < 128; ++j) {
                 sd.pv_table[i][j] = Move{};
             }
-        }        
+        }
         sd.pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
             for (int j{}; j<64; ++j) {
@@ -874,7 +874,8 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         }
         std::array<Stop_timer, 256> thread_timer;
         std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
-        std::vector<Move_order_tables> thread_move_order(threads - 1, Move_order_tables{});
+        std::vector<Move_order_tables> thread_move_order;
+        thread_move_order.resize(threads - 1);
         Search_stack thread_search_stack[256][96];
         std::vector<NNUE> thread_nnue(threads - 1, NNUE{});
         std::vector<Search_data> thread_sd(threads - 1, Search_data{});
