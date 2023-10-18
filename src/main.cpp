@@ -866,75 +866,119 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         for (int i{}; i < threads - 1; ++i) {
             thread_position[i] = position;
         }
-        std::array<Stop_timer, 256> thread_timer;
-        std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
-        std::vector<Move_order_tables> thread_move_order;
-        thread_move_order.resize(threads - 1);
-        Search_stack thread_search_stack[256][96];
-        std::vector<NNUE> thread_nnue(threads - 1, NNUE{});
-        std::vector<Search_data> thread_sd(threads - 1, Search_data{});
-        for (; depth <= 64;) {
-            std::vector<std::thread> thread_pool;
-            for (int i{}; i < threads - 1; ++i) {
-                thread_timer[i].reset();
-                thread_search_stack[i][2].ply = 0;
-                thread_nnue[i].refresh(position);
-                thread_sd[i].nnue = &thread_nnue[i];
-                for (int j{}; j < 128; ++j) {
-                    for (int k{}; k < 128; ++k) {
-                        thread_sd[i].pv_table[j][k] = Move{};
+        if (threads == 1) { //code duplication here to prevent elo loss on creating SMP data structures
+            for (; depth <= 64;) {
+                result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
+                if (alpha < result && result < beta) {
+                    if (!timer.stopped()) last_score = result;
+                    if (output) print_uci(out, last_score, depth, sd.nodes, static_cast<int>(sd.nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
+                    ++depth;
+                    if (sd.pv_table[0][0] == bestmove) {
+                        stability = std::min(stability + 1, 3);
+                    } else {
+                        stability = 0;
                     }
+                    if (!sd.pv_table[0][0].is_null()) {
+                        other_move = bestmove;
+                        bestmove = sd.pv_table[0][0];
+                    }
+                    //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
+                    //nodes_before = sd.nodes;
+                    time_scale = tc_stability[stability];
+                    if (timer.check(sd.nodes, depth)) {break;}
+                    if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
+                    alpha = last_score - aspiration_bounds[0];
+                    beta = last_score + aspiration_bounds[0];
+                    continue;
                 }
-                thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
-            }
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
-            for (int i{}; i < threads - 1; ++i) {
-                thread_timer[i].stop = true;
-            }
-            for (int i{}; i < threads - 1; ++i) {
-                thread_pool[i].join();
-            }
-            u64 total_nodes = sd.nodes;
-            for (int i{}; i < threads - 1; ++i) {
-                total_nodes += thread_sd[i].nodes;
-            }
-            if (alpha < result && result < beta) {
-                if (!timer.stopped()) last_score = result;
-                if (output) print_uci(out, last_score, depth, total_nodes, static_cast<int>(total_nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
-                ++depth;
-                if (sd.pv_table[0][0] == bestmove) {
-                    stability = std::min(stability + 1, 3);
-                } else {
-                    stability = 0;
+                if (result <= alpha) {
+                    //no time checks here because we failed low, we allow for some extra time
+                    if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
+                    else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
+                    else alpha = -20001;
+                } 
+                if (result >= beta) {
+                    if (!sd.pv_table[0][0].is_null()) {
+                        other_move = bestmove;
+                        bestmove = sd.pv_table[0][0];
+                    }
+                    if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
+                    if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
+                    else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
+                    else beta = 20001;
                 }
-                if (!sd.pv_table[0][0].is_null()) {
-                    other_move = bestmove;
-                    bestmove = sd.pv_table[0][0];
-                }
-                //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
-                //nodes_before = sd.nodes;
-                time_scale = tc_stability[stability];
-                if (timer.check(sd.nodes, depth)) {break;}
-                if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
-                alpha = last_score - aspiration_bounds[0];
-                beta = last_score + aspiration_bounds[0];
-                continue;
             }
-            if (result <= alpha) {
-                //no time checks here because we failed low, we allow for some extra time
-                if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
-                else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
-                else alpha = -20001;
-            } 
-            if (result >= beta) {
-                if (!sd.pv_table[0][0].is_null()) {
-                    other_move = bestmove;
-                    bestmove = sd.pv_table[0][0];
+        } else {
+            std::array<Stop_timer, 256> thread_timer;
+            std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
+            std::vector<Move_order_tables> thread_move_order;
+            thread_move_order.resize(threads - 1);
+            Search_stack thread_search_stack[256][96];
+            std::vector<NNUE> thread_nnue(threads - 1, NNUE{});
+            std::vector<Search_data> thread_sd(threads - 1, Search_data{});
+            for (; depth <= 64;) {
+                std::vector<std::thread> thread_pool;
+                for (int i{}; i < threads - 1; ++i) {
+                    thread_timer[i].reset();
+                    thread_search_stack[i][2].ply = 0;
+                    thread_nnue[i].refresh(position);
+                    thread_sd[i].nnue = &thread_nnue[i];
+                    for (int j{}; j < 128; ++j) {
+                        for (int k{}; k < 128; ++k) {
+                            thread_sd[i].pv_table[j][k] = Move{};
+                        }
+                    }
+                    thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
                 }
-                if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
-                if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
-                else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
-                else beta = 20001;
+                result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
+                for (int i{}; i < threads - 1; ++i) {
+                    thread_timer[i].stop = true;
+                }
+                for (int i{}; i < threads - 1; ++i) {
+                    thread_pool[i].join();
+                }
+                u64 total_nodes = sd.nodes;
+                for (int i{}; i < threads - 1; ++i) {
+                    total_nodes += thread_sd[i].nodes;
+                }
+                if (alpha < result && result < beta) {
+                    if (!timer.stopped()) last_score = result;
+                    if (output) print_uci(out, last_score, depth, total_nodes, static_cast<int>(total_nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
+                    ++depth;
+                    if (sd.pv_table[0][0] == bestmove) {
+                        stability = std::min(stability + 1, 3);
+                    } else {
+                        stability = 0;
+                    }
+                    if (!sd.pv_table[0][0].is_null()) {
+                        other_move = bestmove;
+                        bestmove = sd.pv_table[0][0];
+                    }
+                    //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
+                    //nodes_before = sd.nodes;
+                    time_scale = tc_stability[stability];
+                    if (timer.check(sd.nodes, depth)) {break;}
+                    if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
+                    alpha = last_score - aspiration_bounds[0];
+                    beta = last_score + aspiration_bounds[0];
+                    continue;
+                }
+                if (result <= alpha) {
+                    //no time checks here because we failed low, we allow for some extra time
+                    if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
+                    else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
+                    else alpha = -20001;
+                } 
+                if (result >= beta) {
+                    if (!sd.pv_table[0][0].is_null()) {
+                        other_move = bestmove;
+                        bestmove = sd.pv_table[0][0];
+                    }
+                    if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
+                    if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
+                    else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
+                    else beta = 20001;
+                }
             } 
         }
         if (output) print_bestmove(out, bestmove);
