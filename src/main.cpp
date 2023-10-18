@@ -830,12 +830,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     return timer.stopped() ? 0 : best_value;
 }
 
-int pvs_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd) {
-    Position copy;
-    copy = position;
-    return pvs(copy, timer, table, move_order, depth, alpha, beta, ss, sd);
-}
-
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
     if constexpr (history_heuristic) move_order.age();
     table.age();
