@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
-            timer.reset(calculate ? std::max(1, std::min((mytime - move_overhead) * 3 / 4, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes, 0, depth);
+            timer.reset(calculate ? std::max(1, std::min((mytime - move_overhead) * 3 / 4, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes / threads, 0, depth);
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), std::ref(sd), true};
             search.detach();
         }
@@ -863,9 +863,6 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 nodes_used[i][j] = 0;
             }
         }
-        for (int i{}; i < threads - 1; ++i) {
-            thread_position[i] = position;
-        }
         if (threads == 1) { //code duplication here to prevent elo loss on creating SMP data structures
             for (; depth <= 64;) {
                 result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
@@ -909,6 +906,9 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                 }
             }
         } else {
+            for (int i{}; i < threads - 1; ++i) {
+                thread_position[i] = position;
+            }
             std::array<Stop_timer, 256> thread_timer;
             std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
             std::vector<Move_order_tables> thread_move_order;
