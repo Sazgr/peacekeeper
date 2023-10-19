@@ -32,21 +32,12 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
-#ifdef DATAGEN
-spsa std::array<int, 6> futile_margins{94, 150, 196, 238, 276, 312};
-#else
 spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
-#endif
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-#ifdef DATAGEN
-spsa double futility_multiplier = 37;
-spsa double futility_power = 0.6;
-#else
 spsa double futility_multiplier = 47.5;
 spsa double futility_power = 0.666;
-#endif
 spsa double lmr_base = 0.5;
 spsa double lmr_nopv_divisor = 1.85;
 spsa double lmr_ispv_divisor = 4.3;
