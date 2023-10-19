@@ -16,6 +16,7 @@ struct Search_data {
     u64 nodes{};
     NNUE* nnue = nullptr;
     Move pv_table[128][128];
+    bool is_smp_helper = false;
 };
 
 #endif

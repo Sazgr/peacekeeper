@@ -691,7 +691,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        movelist[i].add_sortkey(movelist[i].mvv_lva());
+        if (sd.is_smp_helper) movelist[i].add_sortkey(movelist[i].mvv_lva() ^ (sd.nodes & 31));
+        else movelist[i].add_sortkey(movelist[i].mvv_lva());
     }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
@@ -746,7 +747,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
             if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
         }
-        movelist[i].add_sortkey(score);
+        if (sd.is_smp_helper) movelist[i].add_sortkey(score ^ (sd.nodes & 255));
+        else movelist[i].add_sortkey(score);
     }
     movelist.sort(0, movelist.size());
     //Stage 3 - Quiet Moves
@@ -923,6 +925,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                     thread_search_stack[i][2].ply = 0;
                     thread_nnue[i].refresh(position);
                     thread_sd[i].nnue = &thread_nnue[i];
+                    thread_sd[i].is_smp_helper = true;
                     for (int j{}; j < 128; ++j) {
                         for (int k{}; k < 128; ++k) {
                             thread_sd[i].pv_table[j][k] = Move{};
