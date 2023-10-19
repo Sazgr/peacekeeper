@@ -8,11 +8,11 @@
 
 constexpr int buckets = 1;
 constexpr int input_size = 12 * 64 * buckets;
-constexpr int hidden_size = 256;
+constexpr int hidden_size = 768;
 constexpr int hidden_dsize = hidden_size * 2;
 constexpr int output_size = 1;
 constexpr int input_quantization = 255;
-constexpr int hidden_quantization = 128;
+constexpr int hidden_quantization = 64;
 
 extern std::array<i16, input_size * hidden_size> input_weights;
 extern std::array<i16, hidden_size> input_bias;
@@ -41,13 +41,13 @@ static inline int king_bucket(int king_square, bool king_color) {
 }
 
 static inline int index(int piece, int square, bool view, int king_square) {
-    const int piece_color = !(piece & 1);
-    const int piece_type = piece >> 1;
-    view = !view;
     square ^= 56;
-    square ^= (56 * view);
-    square ^= (7 * !!(king_square & 0x4));
-    return square + (piece_type) * 64 + !(piece_color ^ view) * 64 * 6 + king_bucket(king_square, view) * 64 * 12;
+    constexpr u32 ColorStride = 64 * 6;
+    constexpr u32 PieceStride = 64;
+    const auto type = static_cast<u32>(piece / 2);
+    const u32 color = (piece & 1) ^ 1;
+
+    return (view ? (color * ColorStride + type * PieceStride +  static_cast<u32>(square)) : (!color * ColorStride + type * PieceStride + (static_cast<u32>(square) ^ 0x38)));
 }
 
 static inline i16 crelu(i16 input) {

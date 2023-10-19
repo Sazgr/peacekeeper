@@ -98,15 +98,17 @@ i32 NNUE::evaluate(bool side) {
 }
 
 void load_default() {
-    uint64_t memory_index = 0;
+    uint64_t memory_index = 64;
     std::memcpy(input_weights.data(), &geval_data[memory_index], input_size * hidden_size * sizeof(i16));
     memory_index += input_size * hidden_size * sizeof(i16);
     std::memcpy(input_bias.data(), &geval_data[memory_index], hidden_size * sizeof(i16));
     memory_index += hidden_size * sizeof(i16);
     std::memcpy(hidden_weights.data(), &geval_data[memory_index], hidden_dsize * output_size * sizeof(i16));
     memory_index += hidden_dsize * output_size * sizeof(i16);
-    std::memcpy(hidden_bias.data(), &geval_data[memory_index], output_size * sizeof(i32));
-    memory_index += output_size * sizeof(i32);
+    i16 temp;
+    std::memcpy(&temp, &geval_data[memory_index], output_size * sizeof(i16));
+    hidden_bias[0] = temp;
+    memory_index += output_size * sizeof(i16);
 }
 
 void load_from_file(std::string& name) {
