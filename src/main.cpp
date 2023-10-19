@@ -928,7 +928,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                             thread_sd[i].pv_table[j][k] = Move{};
                         }
                     }
-                    thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
+                    thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), (i & 1 ? depth : depth + 1), alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
                 }
                 result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
                 for (int i{}; i < threads - 1; ++i) {
