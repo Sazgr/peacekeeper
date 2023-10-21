@@ -21,7 +21,7 @@ enum Features : bool {
     killer_heuristic     = true,
     history_heuristic    = true,
     futility_pruning     = true,
-    delta_pruning        = true,
+    delta_pruning        = false,
 #ifdef DATAGEN
     late_move_pruning    = false,
 #else
