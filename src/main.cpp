@@ -691,7 +691,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        movelist[i].add_sortkey(movelist[i].mvv_lva());
+        int score{movelist[i].mvv_lva()};
+        if constexpr (history_heuristic) {
+            score += move_order.caphist_value(movelist[i].piece(), movelist[i].end(), movelist[i].captured());
+        }
+        movelist[i].add_sortkey(score);
     }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
@@ -726,6 +730,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
+                    if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
+                        move_order.caphist_edit(movelist[j].piece(), movelist[j].end(), movelist[j].captured(), depth * depth, false); 
+                    }
+                    if constexpr (history_heuristic) {
+                        move_order.caphist_edit(bestmove.piece(), bestmove.end(), bestmove.captured(), depth * depth, true); 
+                    }
                     if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     return alpha;
                 }

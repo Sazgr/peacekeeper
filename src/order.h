@@ -6,6 +6,8 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
+    int caphist_successes[12][64][13]{};
+    int caphist_all[12][64][13]{};
     int* continuation_successes;
     int* continuation_all;
     Move_order_tables() {
@@ -47,6 +49,18 @@ struct Move_order_tables {
     int history_value(int piece, int to_square) {
         if (!history_all[piece][to_square]) return (1 << 10);
         return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
+    }
+    void caphist_edit(int piece, int to_square, int captured, int change, bool success) {
+        caphist_all[piece][to_square][captured] += change;
+        if (success) caphist_successes[piece][to_square][captured] += change << 12;
+        if (caphist_all[piece][to_square][captured] > 0x3FFFF) {
+            caphist_all[piece][to_square][captured] /= 2;
+            caphist_successes[piece][to_square][captured] /= 2;
+        }
+    }
+    int caphist_value(int piece, int to_square, int captured) {
+        if (!caphist_all[piece][to_square][captured]) return (1 << 10);
+        return caphist_successes[piece][to_square][captured] / caphist_all[piece][to_square][captured]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
