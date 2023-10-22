@@ -55,7 +55,7 @@ struct Move {
     inline constexpr bool not_null() const {return !(data & 0x200);}
     inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key) << 32);}
     inline int gain() const {
-        return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);
+        return nnue_mg_value[captured() >> 1] + (flag() == queen_pr ? 2410 : 0);
     }
     inline constexpr int sortkey() const{return data >> 32;}
     inline constexpr int evade_order() const {
