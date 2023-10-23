@@ -666,7 +666,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         (ss + 1)->ply = ss->ply + 1;
         result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd);
         position.undo_move<true>(hash_move, sd.nnue);
-        if (is_root) nodes_used[hash_move.start()][hash_move.end()] += sd.nodes - nodes_before;
+        if (is_root) sd.nodes_used[hash_move.start()][hash_move.end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (result > alpha) {
@@ -715,7 +715,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move<true>(movelist[i], sd.nnue);
-        if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
+        if (is_root) sd.nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (result > alpha) {
@@ -793,7 +793,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move<true>(movelist[i], sd.nnue);
-        if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
+        if (is_root) sd.nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (!timer.stopped() && result > alpha) {
@@ -860,7 +860,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         sd.pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
             for (int j{}; j<64; ++j) {
-                nodes_used[i][j] = 0;
+                sd.nodes_used[i][j] = 0;
             }
         }
         if (threads == 1) { //code duplication here to prevent elo loss on creating SMP data structures
@@ -879,9 +879,8 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                         other_move = bestmove;
                         bestmove = sd.pv_table[0][0];
                     }
-                    //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
-                    //nodes_before = sd.nodes;
-                    time_scale = tc_stability[stability];
+                    time_scale = (node_timescale_base - static_cast<double>(sd.nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
+                    time_scale *= tc_stability[stability];
                     if (timer.check(sd.nodes, depth)) {break;}
                     if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                     alpha = last_score - aspiration_bounds[0];
@@ -938,8 +937,10 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                     thread_pool[i].join();
                 }
                 u64 total_nodes = sd.nodes;
+                u64 bestmove_nodes = sd.nodes_used[bestmove.start()][bestmove.end()];
                 for (int i{}; i < threads - 1; ++i) {
                     total_nodes += thread_sd[i].nodes;
+                    bestmove_nodes += thread_sd[i].nodes_used[bestmove.start()][bestmove.end()];
                 }
                 if (alpha < result && result < beta) {
                     if (!timer.stopped()) last_score = result;
@@ -954,9 +955,8 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                         other_move = bestmove;
                         bestmove = sd.pv_table[0][0];
                     }
-                    //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
-                    //nodes_before = sd.nodes;
-                    time_scale = tc_stability[stability];
+                    time_scale = (node_timescale_base - static_cast<double>(bestmove_nodes) / (sd.nodes)) / node_timescale_div;
+                    time_scale *= tc_stability[stability];
                     if (timer.check(sd.nodes, depth)) {break;}
                     if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                     alpha = last_score - aspiration_bounds[0];

@@ -16,6 +16,7 @@ struct Search_data {
     u64 nodes{};
     NNUE* nnue = nullptr;
     Move pv_table[128][128];
+    u64 nodes_used[64][64];
 };
 
 #endif
