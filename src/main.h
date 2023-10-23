@@ -50,8 +50,8 @@ spsa double see_noisy_quadratic = 8.0;
 spsa double see_quiet_constant = 90.0;
 spsa double see_quiet_linear = 10.0;
 spsa double see_quiet_quadratic = 8.8;
-spsa double node_timescale_base = 2.4;
-spsa double node_timescale_div = 2.0;
+spsa double node_timescale_base = 2.1;
+spsa double node_timescale_div = 2.1;
 spsa double aspiration_beta_timescale = 1.35;
 
 u64 perft(Position& position, int depth);
