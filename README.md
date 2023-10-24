@@ -45,6 +45,8 @@ This is a list of features I have implemented so far in Peacekeeper. It may be i
     - Make-Unmake
     - Fixed-shift Fancy Magic Bitboards for slider move generation
     - Fully legal move generation
+    - Supports Fischer Random Chess (FRC) and Double Fischer Random Chess (DFRC)
+    - Includes LazySMP, can use up to 256 threads in parallel
 - Search
     - Negamax framework
     - Principal Variation Search (PVS)
@@ -77,27 +79,35 @@ This is a list of features I have implemented so far in Peacekeeper. It may be i
         - History Heuristic for quiet moves
         - Continuation and Countermoves History
 - Evaluation
+    - Efficiently Updatable Neural Network (NNUE)
+        - Used in version 2.00 and after
+        - Tuned using modified version of Slender's Carbon trainer
+        - 768->256x2->1 architecture
+            - Clipped ReLU (CReLU) activation function
+            - Perspective network
+        - Trained on selfplay DFRC data
     - Hand-Crafted
-    - Texel Tuned using Gradient Descent tuner
-        - ADAM algorithm
-    - King-Relative Piece Square Tables
-    - Pawn structure
-        - Passed Pawns
-        - Free Passed Pawns
-        - Doubled Pawns
-        - Isolated Pawns
-        - Supported Pawns
-        - Pawn Phalanxes
-    - Mobility
-        - Regular mobility
-        - Forward mobility
-    - Bishop Pair
-    - Open and Semi-Open Files
-    - Tapered Eval
-    - Tempo Bonus
-        - Phase dependent
-    - Contempt
-        - Phase dependent
+        - Used in version 1.71 and before
+        - Texel Tuned using Gradient Descent tuner
+            - ADAM algorithm
+        - King-Relative Piece Square Tables
+        - Pawn structure
+            - Passed Pawns
+            - Free Passed Pawns
+            - Doubled Pawns
+            - Isolated Pawns
+            - Supported Pawns
+            - Pawn Phalanxes
+        - Mobility
+            - Regular mobility
+            - Forward mobility
+        - Bishop Pair
+        - Open and Semi-Open Files
+        - Tapered Eval
+        - Tempo Bonus
+            - Phase dependent
+        - Contempt
+            - Phase dependent
 
 ### Credits & Thanks
 In no particular order.
