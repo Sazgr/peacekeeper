@@ -71,7 +71,6 @@ This is a list of features I have implemented so far in Peacekeeper. It may be i
         - Null Move Pruning (NMP)
         - Late Move Reductions (LMR)
         - Futility Pruning
-        - Delta Pruning
         - SEE Pruning
         - Internal Iterative Reductions (IIR)
     - Move Ordering

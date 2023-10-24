@@ -538,22 +538,20 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         Move hash_move = entry.bestmove;
         bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
         if (hash_move_usable) {//searching best move from hashtable
-            if (!(delta_pruning && static_eval + hash_move.gain() + futile_margins[0] < alpha)) { //delta pruning
-                position.make_move<true>(hash_move, sd.nnue);
-                ss->move = hash_move;
-                ++sd.nodes;
-                (ss + 1)->ply = ss->ply + 1;
-                result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
-                position.undo_move<true>(hash_move, sd.nnue);
-                if (result > best_value) {
-                    best_value = result;
-                    if (result > alpha) {
-                        alpha = result;
-                        bestmove = hash_move;
-                        if (alpha >= beta) {
-                            if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
-                            return alpha;
-                        }
+            position.make_move<true>(hash_move, sd.nnue);
+            ss->move = hash_move;
+            ++sd.nodes;
+            (ss + 1)->ply = ss->ply + 1;
+            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            position.undo_move<true>(hash_move, sd.nnue);
+            if (result > best_value) {
+                best_value = result;
+                if (result > alpha) {
+                    alpha = result;
+                    bestmove = hash_move;
+                    if (alpha >= beta) {
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
+                        return alpha;
                     }
                 }
             }
@@ -563,7 +561,6 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
-            if constexpr (delta_pruning) if (static_eval + movelist[i].gain() + futile_margins[0] < alpha) break; //delta pruning
             if (!see(position, movelist[i], -107)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
