@@ -774,6 +774,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             reduce_this = lmr_reduction(is_pv, depth, move_num);
             if (gives_check) --reduce_this;
             if (movelist[i].sortkey() < 1500) ++reduce_this;
+            if (!improving) ++reduce_this;
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
