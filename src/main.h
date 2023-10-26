@@ -37,9 +37,9 @@ spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 spsa double futility_multiplier = 47.5;
 spsa double futility_power = 0.666;
-spsa double lmr_base = 0.5;
-spsa double lmr_nopv_divisor = 1.85;
-spsa double lmr_ispv_divisor = 4.3;
+spsa double lmr_base = 0.45;
+spsa double lmr_nopv_divisor = 2.0;
+spsa double lmr_ispv_divisor = 4.0;
 spsa double nmp_base = 2.19999999;
 spsa double nmp_depth_divisor = 4.0;
 spsa double nmp_eval_divisor = 12.0;

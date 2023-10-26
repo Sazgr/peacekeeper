@@ -53,9 +53,9 @@ inline void print_info(std::ostream& out) {
 #ifdef SPSA
         << "option name futility_multiplier type spin default 400 min 0 max 1000" << '\n'
         << "option name futility_power type spin default 70 min 0 max 1000" << '\n'
-        << "option name lmr_base type spin default 50 min 0 max 10000" << '\n'
-        << "option name lmr_nopv_divisor type spin default 185 min 0 max 10000" << '\n'
-        << "option name lmr_ispv_divisor type spin default 430 min 0 max 10000" << '\n'
+        << "option name lmr_base type spin default 45 min 0 max 10000" << '\n'
+        << "option name lmr_nopv_divisor type spin default 200 min 0 max 10000" << '\n'
+        << "option name lmr_ispv_divisor type spin default 400 min 0 max 10000" << '\n'
         << "option name nmp_base type spin default 220 min 0 max 10000" << '\n'
         << "option name nmp_depth_divisor type spin default 400 min 0 max 10000" << '\n'
         << "option name nmp_eval_divisor type spin default 1200 min 0 max 10000" << '\n'
