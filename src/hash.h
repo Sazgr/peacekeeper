@@ -113,12 +113,12 @@ public:
     void age() {
         ; //nothing needed here
     }
-    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply) {
+    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply, bool is_pv) {
         Element previous = Element(table[hash & (size - 1)]);
         if (bestmove.is_null() && previous.full_hash == hash) {
             bestmove = previous.bestmove;
         }
-        if (previous.depth <= dp + 3) table[hash & (size - 1)] = Packed_element{hash, bestmove, score, type, dp, table_age, ply};
+        if (previous.depth <= dp + 2 + 2 * is_pv) table[hash & (size - 1)] = Packed_element{hash, bestmove, score, type, dp, table_age, ply};
     }
 private:
     std::vector<Packed_element> table;

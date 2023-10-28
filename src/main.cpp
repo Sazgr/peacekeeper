@@ -550,7 +550,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                     alpha = result;
                     bestmove = hash_move;
                     if (alpha >= beta) {
-                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply, false);
                         return alpha;
                     }
                 }
@@ -574,13 +574,13 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                     alpha = result;
                     bestmove = movelist[i];
                     if (alpha >= beta) {
-                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply, false);
                         return alpha;
                     }
                 }
             }
         }
-        if (!timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0, ss->ply);
+        if (!timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0, ss->ply, false);
         return best_value;
     }
 }
@@ -679,7 +679,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
-                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
+                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply, is_pv);
                     return alpha;
                 }
             }
@@ -723,7 +723,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
-                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
+                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply, is_pv);
                     return alpha;
                 }
             }
@@ -811,7 +811,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         move_order.continuation_edit((ss - 2)->move, bestmove, depth * depth, true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, depth * depth, true);  
                     }
-                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
+                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply, is_pv);
                     if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
                     return alpha;
                 }
@@ -823,7 +823,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (in_check) return -20000 + ss->ply;
         else return 0;
     }
-    if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
+    if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply, is_pv);
     return timer.stopped() ? 0 : best_value;
 }
 
