@@ -9,6 +9,7 @@
 #include "options.h"
 #include "typedefs.h"
 #include <cstdint>
+#include <cstring>
 #include <string>
 #include <vector>
 
