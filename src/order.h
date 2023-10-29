@@ -9,10 +9,12 @@ struct Move_order_tables {
     int* continuation_successes;
     int* continuation_all;
     Move_order_tables() {
+        std::cout << "move_order_tables constructed" << std::endl;
         continuation_successes = new int[12 * 64 * 12 * 64];
         continuation_all = new int[12 * 64 * 12 * 64];
     }
     ~Move_order_tables() {
+        std::cout << "move_order_tables destructed" << std::endl;
         delete[] continuation_successes;
         delete[] continuation_all;
     }
@@ -25,6 +27,7 @@ struct Move_order_tables {
         }
     }
     void age() {
+        std::cout << "move_order_tables age() called" << std::endl;
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
                 history_all[i][j] /= 2;
