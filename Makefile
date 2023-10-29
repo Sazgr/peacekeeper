@@ -6,7 +6,7 @@ CXX := g++
 
 CXXFLAGS := -pthread -std=c++17 -Ofast -DNDEBUG -march=native -static -DVERSION=-1
 
-LINKER :=
+LINKER := -Wl,--stack,8388608
 
 SUFFIX :=
 
