@@ -32,6 +32,8 @@ Peacekeeper Chess Engine
 #include <thread>
 #include <vector>
 
+using namespace std;
+
 std::ifstream infile ("peacekeeper/logs/input.txt");
 std::ofstream debug ("logs/debug.txt");
 std::ostream& out = std::cout;
