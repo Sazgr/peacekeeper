@@ -6,8 +6,8 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
-    int* continuation_successes;
-    int* continuation_all;
+    i16* continuation_successes;
+    i16* continuation_all;
     Move_order_tables() {
         continuation_successes = new int[12 * 64 * 12 * 64];
         continuation_all = new int[12 * 64 * 12 * 64];
@@ -52,7 +52,7 @@ struct Move_order_tables {
         if (previous.is_null()) return;
         continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
         if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
-        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
+        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x7FFF) {
             continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
             continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
         }
