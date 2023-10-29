@@ -127,12 +127,14 @@ int main(int argc, char *argv[]) {
             out << "NNUE: " << nnue.evaluate(position.side_to_move) << std::endl;
         }
         if (tokens[0] == "go") {
+            cout << "pass0" << endl;
             if (std::find(tokens.begin(), tokens.end(), "infinite") != tokens.end()) {
                 timer.reset();
                 std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), std::ref(sd), true};
                 search.detach();
                 continue;
             }
+            cout << "pass1" << endl;
             int movetime = 0;
             int depth = 0;
             int nodes = 0;
@@ -142,13 +144,16 @@ int main(int argc, char *argv[]) {
             int winc = 0;
             int binc = 0;
             int movestogo = 0;
+            cout << "pass2" << endl;
             if (std::find(tokens.begin(), tokens.end(), "movetime") != tokens.end()) {movetime = stoi(*(++std::find(tokens.begin(), tokens.end(), "movetime")));}
             if (std::find(tokens.begin(), tokens.end(), "depth") != tokens.end()) {depth = stoi(*(++std::find(tokens.begin(), tokens.end(), "depth")));}
             if (std::find(tokens.begin(), tokens.end(), "nodes") != tokens.end()) {nodes = stoi(*(++std::find(tokens.begin(), tokens.end(), "nodes")));}
+            cout << "pass3" << endl;
             if (std::find(tokens.begin(), tokens.end(), "wtime") != tokens.end()) {
                 calculate = true;
                 wtime = stoi(*(++std::find(tokens.begin(), tokens.end(), "wtime")));
             }
+            cout << "pass4" << endl;
             if (std::find(tokens.begin(), tokens.end(), "btime") != tokens.end()) {
                 calculate = true;
                 btime = stoi(*(++std::find(tokens.begin(), tokens.end(), "btime")));
@@ -156,18 +161,24 @@ int main(int argc, char *argv[]) {
             if (std::find(tokens.begin(), tokens.end(), "winc") != tokens.end()) {winc = stoi(*(++std::find(tokens.begin(), tokens.end(), "winc")));}
             if (std::find(tokens.begin(), tokens.end(), "binc") != tokens.end()) {binc = stoi(*(++std::find(tokens.begin(), tokens.end(), "binc")));}
             if (std::find(tokens.begin(), tokens.end(), "movestogo") != tokens.end()) {movestogo = stoi(*(++std::find(tokens.begin(), tokens.end(), "movestogo"))) + 1;}
+            cout << "pass5" << endl;
             int mytime;
             if (movetime == 0 && calculate == true) {
                 mytime = position.side_to_move ? wtime : btime;
                 int myinc{position.side_to_move ? winc : binc};
                 if (movestogo == 0 || movestogo > std::max(20, (40 - position.ply / 5))) {movestogo = std::max(20, (40 - position.ply / 5));} //estimated number of moves until fresh time or end of game
+            cout << "pass6" << endl;
                 movetime = (mytime / movestogo + winc * 3 / 4); //time usable in terms of time remaining and increment
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
             }
+            cout << "pass7" << endl;
             timer.reset(calculate ? std::max(1, std::min((mytime - move_overhead) * 3 / 4, 4 * movetime)) : movetime, calculate ? movetime : 0, nodes / threads, 0, depth);
+            cout << "pass8" << endl;
             std::thread search{iterative_deepening, std::ref(position), std::ref(timer), std::ref(hash), std::ref(move_order), std::ref(move), std::ref(sd), true};
+            cout << "pass9" << endl;
             search.detach();
+            cout << "pass10" << endl;
         }
         if (tokens[0] == "isready") {out << "readyok" << std::endl;}
         if (tokens[0] == "perft") {
@@ -828,15 +839,22 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
 }
 
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
+    cout << "pass11" << endl;
     if constexpr (history_heuristic) move_order.age();
+    cout << "pass12" << endl;
     table.age();
     Movelist movelist;
+    cout << "pass13" << endl;
     Search_stack search_stack[96];
     search_stack[2].ply = 0;
+    cout << "pass14" << endl;
     NNUE nnue;
     nnue.refresh(position);
+    cout << "pass15" << endl;
     sd.nnue = &nnue;
+    cout << "pass16" << endl;
     position.legal_moves(movelist);
+    cout << "pass17" << endl;
     if (movelist.size() == 0) return 0;
     else {
         int alpha = -20000;
@@ -847,22 +865,29 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
         int depth{1};
         int last_score, result;
         int stability = 0;
+        cout << "pass18" << endl;
         bestmove = movelist[0];
         Move other_move = movelist[0]; //For datagen randomization
+        cout << "pass19" << endl;
         for (int i{}; i < 128; ++i) {
             for (int j{}; j < 128; ++j) {
                 sd.pv_table[i][j] = Move{};
             }
         }
+        cout << "pass20" << endl;
         sd.pv_table[0][0] = Move{};
         for (int i{}; i<64; ++i) {
             for (int j{}; j<64; ++j) {
                 nodes_used[i][j] = 0;
             }
         }
+        cout << "pass21" << endl;
         if (threads == 1) { //code duplication here to prevent elo loss on creating SMP data structures
+            cout << "pass22" << endl;
             for (; depth <= 64;) {
+                cout << "pass23" << endl;
                 result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
+                cout << "pass24" << endl;
                 if (alpha < result && result < beta) {
                     if (!timer.stopped()) last_score = result;
                     if (output) print_uci(out, last_score, depth, sd.nodes, static_cast<int>(sd.nodes/timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
