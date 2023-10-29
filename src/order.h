@@ -2,6 +2,8 @@
 #define PEACEKEEPER_HISTORY
 
 #include "move.h"
+#include <cstring>
+
 struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
@@ -31,10 +33,8 @@ struct Move_order_tables {
                 history_successes[i][j] /= 2;
             }
         }
-        for (int i{}; i<12 * 64 * 12 * 64; ++i) {
-            continuation_all[i] /= 2;
-            continuation_successes[i] /= 2;
-        }
+        memset(continuation_successes, 0, sizeof(continuation_successes));
+        memset(continuation_all, 0, sizeof(continuation_all));
     }
     void history_edit(int piece, int to_square, int change, bool success) {
         history_all[piece][to_square] += change;
