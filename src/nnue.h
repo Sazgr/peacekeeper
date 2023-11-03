@@ -8,7 +8,7 @@
 
 constexpr int buckets = 1;
 constexpr int input_size = 12 * 64 * buckets;
-constexpr int hidden_size = 256;
+constexpr int hidden_size = 512;
 constexpr int hidden_dsize = hidden_size * 2;
 constexpr int output_size = 1;
 constexpr int input_quantization = 255;
