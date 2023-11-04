@@ -881,8 +881,13 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                     time_scale = tc_stability[stability];
                     if (timer.check(sd.nodes, depth)) {break;}
                     if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
-                    alpha = last_score - aspiration_bounds[0];
-                    beta = last_score + aspiration_bounds[0];
+                    if (depth >= 4) {
+                        alpha = last_score - aspiration_bounds[0];
+                        beta = last_score + aspiration_bounds[0];
+                    } else {
+                        alpha = last_score - aspiration_bounds[1];
+                        beta = last_score + aspiration_bounds[1];
+                    }
                     continue;
                 }
                 if (result <= alpha) {
