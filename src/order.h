@@ -3,7 +3,8 @@
 
 #include "move.h"
 
-int history_bonus(int depth) {
+int history_bonus(int depth, int quiet_num) {
+    if (depth < 3 && quiet_num == 0) return 0;
     return depth * depth;
 }
 struct Move_order_tables {
