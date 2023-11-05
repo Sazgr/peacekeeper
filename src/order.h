@@ -10,15 +10,13 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
-    int* continuation_successes;
-    int* continuation_all;
+    std::vector<int> continuation_successes;
+    std::vector<int> continuation_all;
     Move_order_tables() {
-        continuation_successes = new int[12 * 64 * 12 * 64];
-        continuation_all = new int[12 * 64 * 12 * 64];
+        continuation_successes.resize(12 * 64 * 12 * 64);
+        continuation_all.resize(12 * 64 * 12 * 64);
     }
     ~Move_order_tables() {
-        delete[] continuation_successes;
-        delete[] continuation_all;
     }
     void reset() {
         for (int i{}; i<12; ++i) {
