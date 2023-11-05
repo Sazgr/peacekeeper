@@ -6,7 +6,7 @@
 
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include "incbin.h"
-INCBIN(eval, "./src/default.nn");
+INCBIN(eval, "./default.nn");
 
 #ifdef SIMD
 alignas(ALIGNMENT) std::array<i16, input_size * hidden_size> input_weights;
