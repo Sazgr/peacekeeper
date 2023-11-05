@@ -10,11 +10,7 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
-    std::vector<int> continuation_successes;
-    std::vector<int> continuation_all;
     Move_order_tables() {
-        continuation_successes.resize(12 * 64 * 12 * 64);
-        continuation_all.resize(12 * 64 * 12 * 64);
     }
     ~Move_order_tables() {
     }
@@ -33,10 +29,6 @@ struct Move_order_tables {
                 history_successes[i][j] /= 2;
             }
         }
-        /*for (int i{}; i<12 * 64 * 12 * 64; ++i) {
-            continuation_all[i] /= 2;
-            continuation_successes[i] /= 2;
-        }*/
     }
     void history_edit(int piece, int to_square, int change, bool success) {
         history_all[piece][to_square] += change;
@@ -51,17 +43,10 @@ struct Move_order_tables {
         return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
-        if (previous.is_null()) return;
-        continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
-        if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
-        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
-            continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
-            continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
-        }
+        return;
     }
     int continuation_value(Move previous, Move current) {
-        if (previous.is_null()) return 256;
-        return (4096 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
+        return 256;
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {
