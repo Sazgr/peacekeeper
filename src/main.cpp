@@ -906,7 +906,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             for (int i{}; i < threads - 1; ++i) {
                 thread_position[i] = position;
             }
-            std::array<Stop_timer, 256> thread_timer;
+            Stop_timer iteration_timer;
             std::vector<Hashtable> thread_hash(threads - 1, Hashtable{1});
             std::vector<Move_order_tables> thread_move_order;
             thread_move_order.resize(threads - 1);
@@ -915,8 +915,8 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             std::vector<Search_data> thread_sd(threads - 1, Search_data{});
             for (; depth <= 64;) {
                 std::vector<std::thread> thread_pool;
+                iteration_timer.reset();
                 for (int i{}; i < threads - 1; ++i) {
-                    thread_timer[i].reset();
                     thread_search_stack[i][2].ply = 0;
                     thread_nnue[i].refresh(position);
                     thread_sd[i].nnue = &thread_nnue[i];
@@ -925,12 +925,10 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
                             thread_sd[i].pv_table[j][k] = Move{};
                         }
                     }
-                    thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(thread_timer[i]), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
+                    thread_pool.emplace_back(pvs, std::ref(thread_position[i]), std::ref(iteration_timer), std::ref(table), std::ref(thread_move_order[i]), depth, alpha, beta, &thread_search_stack[i][2], std::ref(thread_sd[i]));
                 }
                 result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
-                for (int i{}; i < threads - 1; ++i) {
-                    thread_timer[i].stop = true;
-                }
+                iteration_timer.stop = true;
                 for (int i{}; i < threads - 1; ++i) {
                     thread_pool[i].join();
                 }
