@@ -33,10 +33,10 @@ struct Move_order_tables {
                 history_successes[i][j] /= 2;
             }
         }
-        for (int i{}; i<12 * 64 * 12 * 64; ++i) {
+        /*for (int i{}; i<12 * 64 * 12 * 64; ++i) {
             continuation_all[i] /= 2;
             continuation_successes[i] /= 2;
-        }
+        }*/
     }
     void history_edit(int piece, int to_square, int change, bool success) {
         history_all[piece][to_square] += change;
