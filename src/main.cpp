@@ -623,10 +623,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ss->move = Move{};
         ++sd.nodes;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd);
+        int nmp_reduction = reduce_all + static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor);
+        result = -pvs(position, timer, table, move_order, std::max(1, depth - nmp_reduction), -beta, -beta + 1, ss + 1, sd);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
-            return (abs(result) > 18000 ? beta : result);
+            if (result > 18000 || depth < 12) return beta;
+            int verification_score = pvs(position, timer, table, move_order, std::max(1, depth - nmp_reduction), -beta, -beta + 1, ss + 1, sd);
+            if (verification_score >= beta) return beta;
         }
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
