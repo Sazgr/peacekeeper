@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
             total_nodes += sd.nodes;
             total_time += timer.elapsed();
         }
-        out << total_nodes << " nodes " << static_cast<int>(total_nodes / total_time) << " nps" << std::endl;
+        out << total_nodes * 2 << " nodes " << static_cast<int>(total_nodes * 2 / total_time) << " nps" << std::endl;
         return 0;
     } else if (argc > 1) {
         std::cout << "unsupported command-line argument \"" << argv[1] << "\"" << std::endl;
