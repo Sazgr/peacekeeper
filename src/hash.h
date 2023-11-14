@@ -118,7 +118,7 @@ public:
         if (bestmove.is_null() && previous.full_hash == hash) {
             bestmove = previous.bestmove;
         }
-        if (previous.depth <= dp + 3) table[hash & (size - 1)] = Packed_element{hash, bestmove, score, type, dp, table_age, ply};
+        if (previous.depth + (previous.type == tt_exact) <= dp + (type == tt_exact) + 3) table[hash & (size - 1)] = Packed_element{hash, bestmove, score, type, dp, table_age, ply};
     }
 private:
     std::vector<Packed_element> table;
