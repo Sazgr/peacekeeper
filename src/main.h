@@ -31,7 +31,7 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
-spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
+spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156, 173, 189};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 

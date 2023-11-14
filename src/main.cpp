@@ -611,7 +611,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
-    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
+    if constexpr (static_null_move) if (depth < 8 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
         return static_eval - futile_margins[depth - improving];
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
@@ -691,7 +691,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         movelist[i].add_sortkey(movelist[i].mvv_lva());
     }
     movelist.sort(0, movelist.size());
-    bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
+    bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 8;
     //Stage 2 - Captures
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
