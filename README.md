@@ -34,7 +34,8 @@ v1.40   | 2739       | 2693       | *        | *
 v1.50   | 2824       | 2762       | *        | *
 v1.60   | 3057       | 2981       | *        | 2871
 v1.7x   | 3104       | 3013       | 2996     | 2930
-v2.00   | *          | ~3223      | 3504     | *
+v2.00   | *          | 3222       | 3504     | *
+v2.10   | *          | *          | *        | *
 
 ### Features
 
@@ -47,8 +48,8 @@ This is a list of features I have implemented so far in Peacekeeper. It may be i
     - Fixed-shift Fancy Magic Bitboards for slider move generation
     - Fully legal move generation
     - Supports Fischer Random Chess (FRC) and Double Fischer Random Chess (DFRC)
-    - Includes LazySMP, can use up to 256 threads in parallel
 - Search
+    - Supports LazySMP, can use up to 256 threads in parallel
     - Negamax framework
     - Principal Variation Search (PVS)
     - Quiescence Search (QS)
@@ -70,6 +71,7 @@ This is a list of features I have implemented so far in Peacekeeper. It may be i
         - Static Null Move Pruning/Reverse Futility Pruning (SNMP/RFP)
         - Null Move Pruning (NMP)
         - Late Move Reductions (LMR)
+        - Late Move Pruning (LMP)
         - Futility Pruning
         - SEE Pruning
         - Internal Iterative Reductions (IIR)
@@ -82,7 +84,7 @@ This is a list of features I have implemented so far in Peacekeeper. It may be i
     - Efficiently Updatable Neural Network (NNUE)
         - Used in version 2.00 and after
         - Tuned using modified version of Slender's Carbon trainer
-        - 768->256x2->1 architecture
+        - 768->512x2->1 architecture
             - Clipped ReLU (CReLU) activation function
             - Perspective network
         - Trained on selfplay DFRC data
@@ -117,7 +119,8 @@ In no particular order.
 - The [Chess Programming Wiki](https://www.chessprogramming.org) for being a great resource for everything related to chess programming
 - The [Talkchess](https://talkchess.com) forum and the people on it for answering my more specific questions
 - The Engine Programming Discord and the people on it
-- Slender (@rafid-dev) especially for coinhabiting an OB, contributing hardware mutually, and sharing SSS test results.
+- Slender (@rafid-dev) especially for coinhabiting an OpenBench instance, contributing hardware mutually, and sharing SSS test results
+- @Witek902 for tons of hardware and hosting an OpenBench instance, and @gab8192
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
 - @albert-wastakentoomuch, @ccao25 for help in generating data
 - PeSTO for starter piece square tables
