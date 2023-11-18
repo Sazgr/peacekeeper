@@ -34,6 +34,18 @@ enum Features : bool {
 spsa std::array<int, 6> futile_margins{47, 75, 98, 119, 138, 156};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
+spsa std::array<double, 16> lmr_crosstable{
+    1.31,  0.23, -0.08,  0.05,
+    0.00, -0.84, -0.02, -0.01,
+    0.00,  0.00,  0.06, -0.09,
+    0.00,  0.00,  0.00, -1.15,
+};
+/*spsa std::array<double, 16> lmr_crosstable{
+    1.00,  0.00,  0.00,  0.00,
+    0.00, -1.00,  0.00,  0.00,
+    0.00,  0.00,  0.00,  0.00,
+    0.00,  0.00,  0.00, -1.00,
+};*/
 
 spsa double futility_multiplier = 47.5;
 spsa double futility_power = 0.666;

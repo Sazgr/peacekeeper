@@ -296,6 +296,9 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "tc_stability_3" && tokens[3] == "value") {
                 tc_stability[3] = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2].substr(0, 15) == "lmr_crosstable_" && tokens[3] == "value") {
+                lmr_crosstable[stoi(tokens[2].substr(15))] = -10.0 + 0.01 * stoi(tokens[4]);
+            }
 #endif
         }
         if (tokens[0] == "see") {
@@ -771,10 +774,19 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 3 && !in_check) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
-            if (gives_check) --reduce_this;
-            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 2, -2, 1); //reduce more for moves with worse history
-            reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
+            std::array<double, 4> factors{};
+            factors[0] = lmr_reduction(is_pv, depth, move_num); //standard formula
+            factors[1] = gives_check; //checking move
+            factors[2] = improving;
+            factors[3] = std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 2, -2, 1); //reduce more for moves with worse history
+            double raw_reduction{};
+            for (int factor_a{}; factor_a < 4; ++factor_a) {
+                raw_reduction += lmr_crosstable[factor_a * 4 + factor_a] * factors[factor_a];
+                for (int factor_b{factor_a + 1}; factor_b < 4; ++factor_b) {
+                    raw_reduction += lmr_crosstable[factor_a * 4 + factor_b] * factors[factor_a] * factors[factor_b];
+                }
+            }
+            reduce_this = std::clamp(static_cast<int>(raw_reduction), 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd);
