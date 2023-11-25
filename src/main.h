@@ -53,6 +53,8 @@ spsa double node_timescale_base = 1.8;
 spsa double node_timescale_div = 1.35;
 spsa double aspiration_beta_timescale = 1.35;
 
+int lmr_reduction_table[2][64][220];
+
 u64 nodes_used[64][64];
 
 u64 perft(Position& position, int depth);
@@ -63,9 +65,16 @@ bool see(Position& position, Move move, const int threshold);
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd);
 int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
+inline void fill_lmr_reduction_table() {
+    for (int depth{1}; depth < 64; ++depth) {
+        for (int move_num{3}; move_num < 220; ++move_num) {
+            lmr_reduction_table[0][depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
+            lmr_reduction_table[1][depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
+        }
+    }
+}
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {
-    if (is_pv) return static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
-    else return static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
+    return lmr_reduction_table[is_pv][depth][move_num];
 }
 inline int late_move_margin(int depth, int move_num, bool improving) {
     if constexpr (late_move_pruning) {

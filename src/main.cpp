@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
     Hashtable hash{1};
     Move_order_tables move_order{};
     Search_data sd{};
+    fill_lmr_reduction_table();
     Stop_timer timer{0, 0, 0};
     int move_overhead = 5;
     std::atomic<bool>& stop = timer.stop;
@@ -861,7 +862,7 @@ int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table,
             }
         }
         if (threads == 1) { //code duplication here to prevent elo loss on creating SMP data structures
-            for (; depth <= 64;) {
+            for (; depth < 64;) {
                 result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd);
                 if (alpha < result && result < beta) {
                     if (!timer.stopped()) last_score = result;
