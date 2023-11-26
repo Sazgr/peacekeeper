@@ -50,7 +50,7 @@ struct Move_order_tables {
     }
     int history_value(int piece, int to_square) {
         if (!history_all[piece][to_square]) return (1 << 10);
-        return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
+        return (65536 + history_successes[piece][to_square]) / (16 + history_all[piece][to_square]); //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;

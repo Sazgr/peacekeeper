@@ -33,7 +33,7 @@ Peacekeeper Chess Engine
 #include <vector>
 
 std::ifstream infile ("peacekeeper/logs/input.txt");
-std::ofstream debug ("logs/debug.txt");
+std::ofstream debug ("debug.txt");
 std::ostream& out = std::cout;
 std::istream& in = std::cin;
 
