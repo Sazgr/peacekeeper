@@ -775,6 +775,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             reduce_this = lmr_reduction(is_pv, depth, move_num);
             if (gives_check) --reduce_this;
             reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 2, -2, 1); //reduce more for moves with worse history
+            if (movelist[i] == move_order.killer_move(ss->ply, 0) || movelist[i] == move_order.killer_move(ss->ply, 1) || ss->ply > 2 && (movelist[i] == move_order.killer_move(ss->ply - 2, 0) || movelist[i] == move_order.killer_move(ss->ply - 2, 1))) { //reduce less for killers
+                --reduce_this;
+            }
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
