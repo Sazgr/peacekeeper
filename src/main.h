@@ -31,11 +31,11 @@ enum Features : bool {
     internal_iterative_reduction = true,
 };
 
-spsa std::array<int, 6> futile_margins{65, 103, 135, 163, 189, 214};
+spsa std::array<int, 6> futile_margins{80, 126, 166, 201, 233, 263};
 constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-spsa double futility_multiplier = 65;
+spsa double futility_multiplier = 80;
 spsa double futility_power = 0.666;
 spsa double lmr_base = 0.5;
 spsa double lmr_nopv_divisor = 2.0;
