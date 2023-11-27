@@ -774,7 +774,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if constexpr (late_move_reductions) if (depth > 2 && move_num >= 3 && !in_check) {
             reduce_this = lmr_reduction(is_pv, depth, move_num);
             if (gives_check) --reduce_this;
-            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 2, -2, 1); //reduce more for moves with worse history
+            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 3, -2, 1); //reduce more for moves with worse history
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {

@@ -49,7 +49,7 @@ struct Move_order_tables {
         }
     }
     int history_value(int piece, int to_square) {
-        if (!history_all[piece][to_square]) return (1 << 10);
+        if (!history_all[piece][to_square]) return (1 << 11);
         return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
@@ -62,8 +62,8 @@ struct Move_order_tables {
         }
     }
     int continuation_value(Move previous, Move current) {
-        if (previous.is_null()) return 256;
-        return (4096 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
+        if (previous.is_null()) return 512;
+        return (8192 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {
