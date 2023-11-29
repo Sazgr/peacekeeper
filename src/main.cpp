@@ -755,13 +755,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
         bool gives_check = position.check();
+        int lmr_depth = depth - lmr_reduction(is_pv, depth, move_num);
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num, improving) < alpha) && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[lmr_depth] - late_move_margin(lmr_depth, move_num, improving) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }
         //Standard Late Move Pruning
-        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1)) {
+        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + lmr_depth * lmr_depth * (improving + 1)) {
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }
