@@ -766,7 +766,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             continue;
         }
         //History Pruning
-        if constexpr (history_pruning) if (depth < 4 && !in_check && !gives_check && movelist[i].sortkey() < 2000 - 400 * depth) {
+        if constexpr (history_pruning) if (depth < 4 && !in_check && !gives_check && movelist[i].sortkey() < 2400 - 600 * sqrt(depth)) {
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }
