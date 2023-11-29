@@ -64,7 +64,8 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit);
 bool see(Position& position, Move move, const int threshold);
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd);
-int iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
+void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
+int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
 inline void fill_lmr_reduction_table() {
     for (int depth{1}; depth < 64; ++depth) {
         for (int move_num{3}; move_num < 220; ++move_num) {
