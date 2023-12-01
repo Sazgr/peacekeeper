@@ -1,10 +1,11 @@
-EXE := peacekeeper-dev
+EXE = peacekeeper-dev
+EVALFILE = src/default.nn
 
 SOURCES := src/*.cpp
 
 CXX := g++
 
-CXXFLAGS := -pthread -std=c++17 -O3 -ffast-math -DNDEBUG -march=native -static -DVERSION=-1
+CXXFLAGS := -pthread -std=c++17 -O3 -ffast-math -DNDEBUG -march=native -static -DVERSION=-1 -DNETWORK_FILE=\"$(EVALFILE)\"
 
 LINKER :=
 
