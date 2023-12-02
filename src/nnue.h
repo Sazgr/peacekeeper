@@ -52,7 +52,7 @@ static inline int index(int piece, int square, bool view, int king_square) {
 
 static inline i32 screlu(i16 input) {
     i16 clipped = std::clamp<i16>(input, 0, input_quantization);
-    return clipped * clipped;
+    return clipped * clipped / input_quantization;
 }
 
 struct Accumulator {
