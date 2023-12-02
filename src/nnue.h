@@ -50,8 +50,9 @@ static inline int index(int piece, int square, bool view, int king_square) {
     return square + (piece_type) * 64 + !(piece_color ^ view) * 64 * 6 + king_bucket(king_square, view) * 64 * 12;
 }
 
-static inline i16 crelu(i16 input) {
-    return std::clamp<i16>(input, 0, input_quantization);
+static inline i32 screlu(i16 input) {
+    i16 clipped = std::clamp<i16>(input, 0, input_quantization);
+    return clipped * clipped;
 }
 
 struct Accumulator {
