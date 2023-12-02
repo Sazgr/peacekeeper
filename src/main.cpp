@@ -605,6 +605,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
     int result{};
+    int alpha_raised{};
     int old_alpha{alpha};
     int best_value = -20000;
     int nodes_before; //used for node time management
@@ -668,6 +669,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (result > alpha) {
+                ++alpha_raised;
                 alpha = result;
                 bestmove = hash_move;
                 if (is_pv) {
@@ -717,6 +719,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (result > alpha) {
+                ++alpha_raised;
                 alpha = result;
                 bestmove = movelist[i];
                 if (is_pv) {
@@ -775,6 +778,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             reduce_this = lmr_reduction(is_pv, depth, move_num);
             if (gives_check) --reduce_this;
             reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 3, -2, 1); //reduce more for moves with worse history
+            reduce_this += alpha_raised / 2;
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
@@ -794,7 +798,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
-            if (!timer.stopped() && result > alpha) {
+            if (result > alpha) {
+                ++alpha_raised;
                 alpha = result;
                 bestmove = movelist[i];
                 if (is_pv) {
