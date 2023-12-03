@@ -667,9 +667,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (is_root) nodes_used[hash_move.start()][hash_move.end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
+            bestmove = hash_move;
             if (result > alpha) {
                 alpha = result;
-                bestmove = hash_move;
                 if (is_pv) {
                     sd.pv_table[ss->ply][0] = bestmove;
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
@@ -716,9 +716,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
+            bestmove = movelist[i];
             if (result > alpha) {
                 alpha = result;
-                bestmove = movelist[i];
                 if (is_pv) {
                     sd.pv_table[ss->ply][0] = bestmove;
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
@@ -794,9 +794,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
+            bestmove = movelist[i];
             if (!timer.stopped() && result > alpha) {
                 alpha = result;
-                bestmove = movelist[i];
                 if (is_pv) {
                     sd.pv_table[ss->ply][0] = bestmove;
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
