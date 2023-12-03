@@ -534,11 +534,16 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         }
     }
     Movelist movelist;
-    if (in_check) position.legal_moves(movelist);
-    else position.legal_noisy(movelist);
+    if (in_check) {
+        position.legal_moves(movelist);
+        if (movelist.size() == 0) return -20000;
+    } else {
+        position.legal_noisy(movelist);
+    }
     for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
     movelist.sort(0, movelist.size());
     for (int i = 0; i < movelist.size(); ++i) {
+        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
         if (!in_check && !see(position, movelist[i], -107)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
