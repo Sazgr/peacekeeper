@@ -600,7 +600,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
-    int static_eval = position.static_eval(*sd.nnue);
+    int static_eval = ss->excluded.is_null() ? position.static_eval(*sd.nnue) : ss->static_eval;
     ss->static_eval = static_eval;
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
