@@ -693,7 +693,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Movelist noisy_movelist;
     position.legal_noisy(noisy_movelist);
     for (int i = 0; i < noisy_movelist.size(); ++i) {
-        noisy_movelist[i].add_sortkey(move_order.caphist_value(noisy_movelist[i]));
+        int score{};
+        if (noisy_movelist[i] == hash_move) score = 100000;
+        if constexpr (history_heuristic) {
+            score += noisy_movelist[i].mvv_lva();
+            score += move_order.caphist_value(noisy_movelist[i]);
+        }
+        noisy_movelist[i].add_sortkey(score);
     }
     noisy_movelist.sort(0, noisy_movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
@@ -744,6 +750,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
         int score{};
+        if (movelist[i] == hash_move) score = 100000;
         if constexpr (history_heuristic) {
             score += move_order.history_value(movelist[i].piece(), movelist[i].end());
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
