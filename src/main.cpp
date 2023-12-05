@@ -732,7 +732,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        int score{};
+        int score{movelist[i] == hash_move ? 100000 : 0};
         if constexpr (history_heuristic) {
             score += move_order.history_value(movelist[i].piece(), movelist[i].end());
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
