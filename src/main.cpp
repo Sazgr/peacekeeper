@@ -301,7 +301,7 @@ int main(int argc, char *argv[]) {
         }
         if (tokens[0] == "see") {
             position.parse_move(move, tokens[1]);
-            std::cout << see(position, move, -107);
+            std::cout << see(position, move, -274);
         }
         if (tokens[0] == "stop") {stop = true;}
         if (tokens[0] == "uci") {print_info(out);}
@@ -562,7 +562,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
-            if (!see(position, movelist[i], -107)) continue;
+            if (!see(position, movelist[i], -274)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
