@@ -562,7 +562,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
-            if (!see(position, movelist[i], -274)) continue;
+            if (!see(position, movelist[i], std::min(1, alpha - static_eval - 274))) continue;
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
@@ -959,4 +959,3 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     }
     return best_score;
 }
-
