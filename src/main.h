@@ -32,7 +32,7 @@ enum Features : bool {
 };
 
 spsa std::array<int, 6> futile_margins{80, 126, 166, 201, 233, 263};
-constexpr std::array<int, 3> aspiration_bounds{28, 90, 280};
+constexpr std::array<int, 3> aspiration_bounds{56, 180, 560};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 spsa double futility_multiplier = 80;
