@@ -889,6 +889,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 //no time checks here because we failed low, we allow for some extra time
                 if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
                 else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
+                else if (alpha == last_score - aspiration_bounds[2]) alpha = last_score - aspiration_bounds[3];
                 else alpha = -20001;
             } 
             if (result >= beta) {
@@ -899,6 +900,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
                 if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
                 else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
+                else if (beta == last_score + aspiration_bounds[2]) beta = last_score + aspiration_bounds[3];
                 else beta = 20001;
             }
         }
