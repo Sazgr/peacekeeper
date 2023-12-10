@@ -913,7 +913,7 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     if (threads == 1) {
         iterative_deepening(position, timer, table, move_order, bestmove, sd, output);
         if (output) print_bestmove(out, bestmove);
-        return best_score;
+        return sd.best_score;
     }
     for (int i{}; i < threads - 1; ++i) {
         thread_position[i] = position;
