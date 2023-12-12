@@ -240,6 +240,14 @@ int main(int argc, char *argv[]) {
                 futility_power = 0.01 * stoi(tokens[4]);
                 for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_power);
             }
+            if (tokens.size() >= 5 && tokens[2] == "aspiration_base" && tokens[3] == "value") {
+                aspiration_base = 0.1 * stoi(tokens[4]);
+                for (int i{}; i<3; ++i) aspiration_bounds[i] = aspiration_base * std::pow(aspiration_multiplier, i);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "aspiration_multiplier" && tokens[3] == "value") {
+                aspiration_multiplier = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<3; ++i) aspiration_bounds[i] = aspiration_base * std::pow(aspiration_multiplier, i);
+            }
             if (tokens.size() >= 5 && tokens[2] == "lmr_base" && tokens[3] == "value") {
                 lmr_base = 0.01 * stoi(tokens[4]);
             }
