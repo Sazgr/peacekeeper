@@ -621,7 +621,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
-        return static_eval - futile_margins[depth - improving];
+        return (static_eval + beta) / 2;
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     if (!is_pv && ss->excluded.is_null() && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
