@@ -683,10 +683,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
-                    if constexpr (history_heuristic) if (bestmove.captured() == 12) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);  
+                    if (bestmove.captured() == 12) {
+                        if constexpr (history_heuristic) {
+                            move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
+                            move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
+                            move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
+                        }
+                        if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
                     }
                     if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     return alpha;
