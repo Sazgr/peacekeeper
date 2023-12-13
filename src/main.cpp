@@ -747,10 +747,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             score += move_order.continuation_value((ss - 1)->move, movelist[i]);
         }
         if constexpr (killer_heuristic) {
-            if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 1600;
-            if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 800;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
+            if (movelist[i] == move_order.get_killer(ss->ply, 0)) score += 1600;
+            if (movelist[i] == move_order.get_killer(ss->ply, 1)) score += 800;
+            if (ss->ply > 2 && movelist[i] == move_order.get_killer(ss->ply - 2, 0)) score += 400;
+            if (ss->ply > 2 && movelist[i] == move_order.get_killer(ss->ply - 2, 1)) score += 200;
+            if (movelist[i] == move_order.get_countermove((ss - 1)->move)) score += 400;
         }
         movelist[i].add_sortkey(score);
     }
@@ -821,7 +822,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
                     }
                     if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
-                    if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
+                    if constexpr (killer_heuristic) move_order.set_killer(bestmove, ss->ply);
+                    if constexpr (countermove_heuristic) move_order.set_countermove((ss - 1)->move, bestmove);
                     return alpha;
                 }
             }

@@ -8,6 +8,7 @@ int history_bonus(int depth) {
 }
 struct Move_order_tables {
     Move killer_table[128][2]{};
+    Move countermove_table[12][64]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
     int* continuation_successes;
@@ -61,18 +62,24 @@ struct Move_order_tables {
             continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
         }
     }
-    int continuation_value(Move previous, Move current) {
+    int continuation_value(Move& previous, Move& current) {
         if (previous.is_null()) return 512;
         return (8192 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
     }
-    void killer_add(Move move, int ply) {
+    void set_killer(Move& move, int ply) {
         if (killer_table[ply][0] != move) {
             killer_table[ply][1] = killer_table[ply][0];
             killer_table[ply][0] = move;
         }
     }
-    Move killer_move(int ply, int index) {
+    Move get_killer(int ply, int index) {
         return killer_table[ply][index];
+    }
+    void set_countermove(Move& previous, Move& current) {
+        countermove_table[previous.piece()][previous.end()] = current;
+    }
+    Move get_countermove(Move& previous) {
+        return countermove_table[previous.piece()][previous.end()];
     }
 };
 
