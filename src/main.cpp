@@ -716,7 +716,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd);
         } else {
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha-1, -alpha, ss + 1, sd);
-            if (is_pv && alpha < result && result < beta) {
+            if (is_pv && alpha < result) {
                 result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd);
             }
         }
@@ -794,7 +794,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1, sd);
                 }
             }
-            if (alpha < result && result < beta && is_pv) {
+            if (alpha < result && is_pv) {
                 result = -pvs(position, timer, table, move_order, depth - reduce_all,  -beta, -alpha, ss + 1, sd);
             }
         }
