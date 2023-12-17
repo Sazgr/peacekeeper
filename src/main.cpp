@@ -534,6 +534,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         table.prefetch(position.hashkey());
         int static_eval = position.static_eval(*sd.nnue);
         int best_value = -20000;
+        int move_num = 0;
         if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
         if (best_value < static_eval) best_value = static_eval;
         if (alpha < static_eval) alpha = static_eval;
@@ -550,6 +551,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             position.make_move<true>(hash_move, sd.nnue);
             ss->move = hash_move;
             ++sd.nodes;
+            ++move_num;
             (ss + 1)->ply = ss->ply + 1;
             result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
             position.undo_move<true>(hash_move, sd.nnue);
@@ -570,10 +572,12 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
+            if (move_num >= 2) continue;
             if (!see(position, movelist[i], -274)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
+            ++move_num;
             (ss + 1)->ply = ss->ply + 1;
             result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
             position.undo_move<true>(movelist[i], sd.nnue);
