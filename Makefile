@@ -3,11 +3,11 @@ EVALFILE = src/default.nn
 
 SOURCES := src/*.cpp
 
-CXX := g++
+CXX := clang++
 
 CXXFLAGS := -pthread -std=c++17 -O3 -ffast-math -DNDEBUG -march=native -static -DVERSION=-1 -DNETWORK_FILE=\"$(EVALFILE)\"
 
-LINKER :=
+LINKER := -fuse-ld=lld
 
 SUFFIX :=
 
