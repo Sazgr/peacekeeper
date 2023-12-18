@@ -250,12 +250,15 @@ int main(int argc, char *argv[]) {
             }
             if (tokens.size() >= 5 && tokens[2] == "lmr_base" && tokens[3] == "value") {
                 lmr_base = 0.01 * stoi(tokens[4]);
+                fill_lmr_reduction_table();
             }
             if (tokens.size() >= 5 && tokens[2] == "lmr_nopv_divisor" && tokens[3] == "value") {
                 lmr_nopv_divisor = 0.01 * stoi(tokens[4]);
+                fill_lmr_reduction_table();
             }
             if (tokens.size() >= 5 && tokens[2] == "lmr_ispv_divisor" && tokens[3] == "value") {
                 lmr_ispv_divisor = 0.01 * stoi(tokens[4]);
+                fill_lmr_reduction_table();
             }
             if (tokens.size() >= 5 && tokens[2] == "nmp_base" && tokens[3] == "value") {
                 nmp_base = 0.01 * stoi(tokens[4]);
