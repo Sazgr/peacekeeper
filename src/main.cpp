@@ -290,17 +290,17 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "aspiration_beta_timescale" && tokens[3] == "value") {
                 aspiration_beta_timescale = 0.01 * stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "tc_stability_0" && tokens[3] == "value") {
-                tc_stability[0] = 0.01 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_base" && tokens[3] == "value") {
+                tc_stability_base = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<4; ++i) tc_stability[i] = tc_stability_multiplier * std::pow(tc_stability_power, i) + tc_stability_base;
             }
-            if (tokens.size() >= 5 && tokens[2] == "tc_stability_1" && tokens[3] == "value") {
-                tc_stability[1] = 0.01 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_multiplier" && tokens[3] == "value") {
+                tc_stability_multiplier = 0.01 * stoi(tokens[4]);
+                for (int i{}; i<4; ++i) tc_stability[i] = tc_stability_multiplier * std::pow(tc_stability_power, i) + tc_stability_base;
             }
-            if (tokens.size() >= 5 && tokens[2] == "tc_stability_2" && tokens[3] == "value") {
-                tc_stability[2] = 0.01 * stoi(tokens[4]);
-            }
-            if (tokens.size() >= 5 && tokens[2] == "tc_stability_3" && tokens[3] == "value") {
-                tc_stability[3] = 0.01 * stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "tc_stability_power" && tokens[3] == "value") {
+                tc_stability_power = 0.001 * stoi(tokens[4]);
+                for (int i{}; i<4; ++i) tc_stability[i] = tc_stability_multiplier * std::pow(tc_stability_power, i) + tc_stability_base;
             }
 #endif
         }

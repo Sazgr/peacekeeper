@@ -52,6 +52,9 @@ spsa double see_quiet_constant = 230.4;
 spsa double see_quiet_linear = 25.6;
 spsa double see_quiet_quadratic = 22.5;
 spsa double aspiration_beta_timescale = 1.35;
+spsa tc_stability_base = 0.80;
+spsa tc_stability_multiplier = 1.25;
+spsa tc_stability_power = 0.313;
 
 int lmr_reduction_table[2][64][220];
 

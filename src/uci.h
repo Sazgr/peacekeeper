@@ -68,10 +68,9 @@ inline void print_info(std::ostream& out) {
         << "option name see_quiet_linear type spin default 25 min 0 max 1000" << '\n'
         << "option name see_quiet_quadratic type spin default 55 min 0 max 1000" << '\n'
         << "option name aspiration_beta_timescale type spin default 135 min 0 max 1000" << '\n'
-        << "option name tc_stability_0 type spin default 205 min 0 max 1000" << '\n'
-        << "option name tc_stability_1 type spin default 120 min 0 max 1000" << '\n'
-        << "option name tc_stability_2 type spin default 90 min 0 max 1000" << '\n'
-        << "option name tc_stability_3 type spin default 85 min 0 max 1000" << '\n'
+        << "option name tc_stability_base type spin default 80 min 0 max 1000" << '\n'
+        << "option name tc_stability_multiplier type spin default 125 min 0 max 1000" << '\n'
+        << "option name tc_stability_power type spin default 313 min 0 max 1000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
