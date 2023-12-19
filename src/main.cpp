@@ -287,12 +287,6 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "see_quiet_quadratic" && tokens[3] == "value") {
                 see_quiet_quadratic = 0.01 * stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "node_timescale_base" && tokens[3] == "value") {
-                node_timescale_base = 0.01 * stoi(tokens[4]);
-            }
-            if (tokens.size() >= 5 && tokens[2] == "node_timescale_div" && tokens[3] == "value") {
-                node_timescale_div = 0.01 * stoi(tokens[4]);
-            }
             if (tokens.size() >= 5 && tokens[2] == "aspiration_beta_timescale" && tokens[3] == "value") {
                 aspiration_beta_timescale = 0.01 * stoi(tokens[4]);
             }
@@ -618,7 +612,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int result{};
     int old_alpha{alpha};
     int best_value = -20000;
-    int nodes_before; //used for node time management
     int reduce_all{1};
     int reduce_this{};
     Move bestmove{};
@@ -669,13 +662,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
         position.make_move<true>(hash_move, sd.nnue);
         ss->move = hash_move;
-        if (is_root) nodes_before = sd.nodes;
         ++sd.nodes;
         ++move_num;
         (ss + 1)->ply = ss->ply + 1;
         result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
         position.undo_move<true>(hash_move, sd.nnue);
-        if (is_root) nodes_used[hash_move.start()][hash_move.end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (result > alpha) {
@@ -711,7 +702,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
-        if (is_root) nodes_before = sd.nodes;
         ++sd.nodes;
         ++move_num;
         (ss + 1)->ply = ss->ply + 1;
@@ -724,7 +714,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move<true>(movelist[i], sd.nnue);
-        if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (result > alpha) {
@@ -776,7 +765,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }
-        if (is_root) nodes_before = sd.nodes;
         ++sd.nodes;
         ++move_num;
         (ss + 1)->ply = ss->ply + 1;
@@ -803,7 +791,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.undo_move<true>(movelist[i], sd.nnue);
-        if (is_root) nodes_used[movelist[i].start()][movelist[i].end()] += sd.nodes - nodes_before;
         if (!timer.stopped() && result > best_value) {
             best_value = result;
             if (!timer.stopped() && result > alpha) {
@@ -855,7 +842,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         int alpha = -20000;
         int beta = 20000;
         double time_scale = 1;
-        int nodes_before = 0;
         sd.nodes = 0;
         int depth{1};
         int last_score, result;
@@ -868,11 +854,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             }
         }
         sd.pv_table[0][0] = Move{};
-        for (int i{}; i<64; ++i) {
-            for (int j{}; j<64; ++j) {
-                nodes_used[i][j] = 0;
-            }
-        }
         for (; depth < 64;) {
             result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
             if (alpha < result && result < beta) {
@@ -888,8 +869,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                     other_move = bestmove;
                     bestmove = sd.pv_table[0][0];
                 }
-                //time_scale = (node_timescale_base - static_cast<double>(nodes_used[bestmove.start()][bestmove.end()]) / (sd.nodes)) / node_timescale_div;
-                //nodes_before = sd.nodes;
                 time_scale = tc_stability[stability];
                 if (timer.check(sd.nodes, depth)) {break;}
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}

@@ -51,13 +51,9 @@ spsa double see_noisy_quadratic = 20.5;
 spsa double see_quiet_constant = 230.4;
 spsa double see_quiet_linear = 25.6;
 spsa double see_quiet_quadratic = 22.5;
-spsa double node_timescale_base = 1.8;
-spsa double node_timescale_div = 1.35;
 spsa double aspiration_beta_timescale = 1.35;
 
 int lmr_reduction_table[2][64][220];
-
-u64 nodes_used[64][64];
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
