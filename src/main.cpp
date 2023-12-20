@@ -287,6 +287,12 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "see_quiet_quadratic" && tokens[3] == "value") {
                 see_quiet_quadratic = 0.01 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "singular_extension_margin" && tokens[3] == "value") {
+                singular_extension_margin = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "double_extension_margin" && tokens[3] == "value") {
+                double_extension_margin = stoi(tokens[4]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "aspiration_beta_timescale" && tokens[3] == "value") {
                 aspiration_beta_timescale = 0.01 * stoi(tokens[4]);
             }
@@ -642,13 +648,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
         int extend_this = 0;
         if (!is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
-            int singular_beta = entry.score - depth * 4;
+            int singular_beta = entry.score - depth * singular_extension_margin / 16;
             int singular_depth = (depth - 1) / 2;
             ss->excluded = hash_move;
             int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd, cutnode);
             ss->excluded = Move{};
             if (singular_score < singular_beta) {
-                if (!is_pv && singular_score < singular_beta - 20 && ss->double_extensions <= 4) {
+                if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
                     extend_this = 2;
                     ++ss->double_extensions;
                 } else {
