@@ -71,7 +71,7 @@ void NNUE::refresh(Position& position) {
 
 i32 NNUE::evaluate(bool side) {
     Accumulator &accumulator = accumulator_stack[current_accumulator];
-    i64 output = hidden_bias[0];
+    i64 output = hidden_bias[0] * input_quantization;
     for (int i = 0; i < hidden_size; ++i) {
         output += screlu(accumulator[side][i]) * hidden_weights[i];
     }
