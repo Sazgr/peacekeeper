@@ -800,7 +800,7 @@ int Position::static_eval(NNUE& nnue) {
 #ifdef DATAGEN
     return nnue.evaluate(side_to_move);
 #else
-    return nnue.evaluate(side_to_move) * (72 + eval_phase()) / 96;
+    return nnue.evaluate(side_to_move) * (72 + eval_phase()) / 96 * (256 - halfmove_clock[ply]) / 256;
 #endif
 }
 
