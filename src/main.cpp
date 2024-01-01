@@ -508,6 +508,7 @@ bool see(Position& position, Move move, const int threshold) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd) {
+    bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes))) return 0;
     if (position.check()) {
         int result = -20000;
@@ -543,7 +544,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         int old_alpha{alpha};
         Move bestmove{};
         Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-        if (entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+        if (!is_pv && entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
             return entry.score;
         }
         int result = -20000;
