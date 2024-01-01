@@ -29,6 +29,7 @@ enum Features : bool {
     late_move_reductions = true,
     check_extensions     = true,
     internal_iterative_reduction = true,
+    razoring             = true,
 };
 
 spsa std::array<int, 6> futile_margins{80, 126, 166, 201, 233, 263};
