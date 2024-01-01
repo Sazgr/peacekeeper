@@ -508,8 +508,10 @@ bool see(Position& position, Move move, const int threshold) {
 }
 
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd) {
+    bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes))) return 0;
     if (position.check()) {
+        int move_num = 0;
         int result = -20000;
         int best_value = -20000;
         Movelist movelist;
@@ -521,8 +523,16 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
+            ++move_num;
             (ss + 1)->ply = ss->ply + 1;
-            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            if (move_num == 1) {
+                result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            } else {
+                result = -quiescence(position, timer, table, -alpha-1, -alpha, ss + 1, sd);
+                if (is_pv && alpha < result) {
+                    result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+                }
+            }
             position.undo_move<true>(movelist[i], sd.nnue);
             if (result > best_value) {
                 best_value = result;
@@ -546,6 +556,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         if (entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
             return entry.score;
         }
+        int move_num = 0;
         int result = -20000;
         Move hash_move = entry.bestmove;
         bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
@@ -553,6 +564,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             position.make_move<true>(hash_move, sd.nnue);
             ss->move = hash_move;
             ++sd.nodes;
+            ++move_num;
             (ss + 1)->ply = ss->ply + 1;
             result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
             position.undo_move<true>(hash_move, sd.nnue);
@@ -577,8 +589,16 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
+            ++move_num;
             (ss + 1)->ply = ss->ply + 1;
-            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            if (move_num == 1) {
+                result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            } else {
+                result = -quiescence(position, timer, table, -alpha-1, -alpha, ss + 1, sd);
+                if (is_pv && alpha < result) {
+                    result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+                }
+            }
             position.undo_move<true>(movelist[i], sd.nnue);
             if (result > best_value) {
                 best_value = result;
