@@ -656,11 +656,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
             int probcut_result = 0;
             for (int i = 0; i < capture_list.size(); ++i) {
-                if (!see(position, capture_list[i], -274)) continue;
+                if (!see(position, capture_list[i], 1)) continue;
                 if (capture_list[i] == hash_move) continue;
                 ss->move = capture_list[i];
                 ++sd.nodes;
-                ++move_num;
                 (ss + 1)->ply = ss->ply + 1;
                 position.make_move<true>(capture_list[i], sd.nnue);
                 probcut_result = -quiescence(position, timer, table, -probcut_beta, -probcut_beta + 1, ss + 1, sd);
