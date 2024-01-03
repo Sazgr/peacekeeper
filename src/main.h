@@ -72,9 +72,9 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
 int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
 inline void fill_lmr_reduction_table() {
     for (int depth{1}; depth < 64; ++depth) {
-        for (int move_num{3}; move_num < 220; ++move_num) {
-            lmr_reduction_table[0][depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
-            lmr_reduction_table[1][depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
+        for (int move_num{2}; move_num < 220; ++move_num) {
+            lmr_reduction_table[0][depth][move_num] = static_cast<int>((std::log(move_num - 1) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
+            lmr_reduction_table[1][depth][move_num] = static_cast<int>((std::log(move_num - 1) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
         }
     }
 }
