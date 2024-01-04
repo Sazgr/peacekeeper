@@ -600,6 +600,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd, bool cutnode) {
     bool is_root = (ss->ply == 0);
     bool is_pv = (beta - alpha) != 1;
+    bool enough_pieces = position.eval_phase() >= 4;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes, 0))) return 0;
     if (depth <= 0) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
@@ -629,7 +630,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
-    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
+    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && enough_pieces) {
         position.make_null();
         ss->move = Move{};
         ++sd.nodes;
@@ -770,7 +771,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             continue;
         }
         //Standard Late Move Pruning
-        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1)) {
+        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1) && enough_pieces) {
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }
