@@ -836,7 +836,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         else return 0;
     }
     if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
-    return timer.stopped() ? 0 : best_value;
+    return timer.stopped() ? 0 : move_num == 0 ? static_eval : best_value;
 }
 
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
