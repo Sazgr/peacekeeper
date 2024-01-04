@@ -943,7 +943,7 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     }
     int max_depth_reached = sd.depth_reached;
     for (int i{}; i < threads - 1; ++i) {
-        if (thread_sd[i].depth_reached > max_depth_reached || (thread_sd[i].depth_reached > max_depth_reached && thread_sd[i].best_score > best_score)) {
+        if (thread_sd[i].depth_reached > max_depth_reached || (thread_sd[i].depth_reached == max_depth_reached && thread_sd[i].best_score > best_score)) {
             max_depth_reached = thread_sd[i].depth_reached;
             best_score = thread_sd[i].best_score;
             bestmove = thread_bestmove[i];
