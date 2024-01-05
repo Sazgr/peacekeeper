@@ -647,6 +647,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Move hash_move = entry.bestmove;
     bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
+    if (depth >= 8 && static_eval + 250 <= alpha) reduce_all += 1;
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
         int extend_this = 0;
