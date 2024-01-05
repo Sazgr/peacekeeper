@@ -708,7 +708,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
+        if (move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
         ++sd.nodes;
@@ -760,12 +760,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
+        if (move_num != 0 && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
         bool gives_check = position.check();
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num, improving) < alpha) && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (move_num != 0 && can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num, improving) < alpha) && !gives_check) {
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }
