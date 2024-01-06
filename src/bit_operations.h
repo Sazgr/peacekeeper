@@ -3,7 +3,7 @@
 
 #include "typedefs.h"
 
-#ifdef __GNUC__
+#if defined(__GNUC__) || defined(__clang__)
 
 inline int popcount(u64 bits) {return __builtin_popcountll(bits);}
 inline int get_lsb(u64 bits) {return __builtin_ctzll(bits);}
@@ -20,7 +20,9 @@ inline int pop_lsb(u64& bits) {
     return lsb;
 }
 
-#elif _MSC_VER
+#elif defined(_MSC_VER)
+
+#include <intrin.h>
 
 inline int popcount(u64 bits) {return __popcnt64(bits);}
 inline int get_lsb(u64 bits) {return _BitScanForward64(bits);}
