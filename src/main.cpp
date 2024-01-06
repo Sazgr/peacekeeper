@@ -836,7 +836,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (in_check) return -20000 + ss->ply;
         else return 0;
     } else if (move_num == 0) { //all moves got pruned away (possible with SEE pruning)
-        return alpha;
+        sd.pv_table[ss->ply][0] = Move{};
+        return -18000;
     }
     if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
     return timer.stopped() ? 0 : best_value;
