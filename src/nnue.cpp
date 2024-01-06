@@ -4,8 +4,20 @@
 #include "simd.h"
 #include <fstream>
 
+#ifdef _MSC_VER
+#define INCBIN_MSVC
+#pragma push_macro("_MSC_VER")
+#undef _MSC_VER
+#endif
+
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include "incbin.h"
+
+#ifdef INCBIN_MSVC
+#pragma pop_macro("_MSC_VER")
+#undef INCBIN_MSVC
+#endif
+
 INCBIN(eval, NETWORK_FILE);
 
 #ifdef SIMD
