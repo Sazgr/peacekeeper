@@ -629,7 +629,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
-    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
+    bool stm_has_piece = position.pieces[2 + position.side_to_move] | position.pieces[4 + position.side_to_move] | position.pieces[6 + position.side_to_move] | position.pieces[8 + position.side_to_move];
+    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && stm_has_piece) {
         position.make_null();
         ss->move = Move{};
         ++sd.nodes;
