@@ -640,7 +640,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             return (abs(result) > 18000 ? beta : result);
         }
     }
-    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval - 63 + 182 * depth <= alpha) {
+    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval - 94 + 273 * depth <= alpha) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
