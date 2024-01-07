@@ -652,7 +652,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         int extend_this = 0;
         if (!is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
             int singular_beta = entry.score - depth * singular_extension_margin / 16;
-            int singular_depth = (depth - 1) / 2;
+            int singular_depth = depth / 2;
             ss->excluded = hash_move;
             int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd, cutnode);
             ss->excluded = Move{};
