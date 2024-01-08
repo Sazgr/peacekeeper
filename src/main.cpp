@@ -687,7 +687,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) if (bestmove.captured() == 12) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
+                        move_order.history_edit(bestmove, history_bonus(depth), true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);  
                     }
@@ -743,7 +743,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i = 0; i < movelist.size(); ++i) {
         int score{};
         if constexpr (history_heuristic) {
-            score += move_order.history_value(movelist[i].piece(), movelist[i].end());
+            score += move_order.history_value(movelist[i]);
             score += move_order.continuation_value((ss - 2)->move, movelist[i]);
             score += move_order.continuation_value((ss - 1)->move, movelist[i]);
         }
@@ -812,12 +812,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 if (alpha >= beta) {
                     if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
-                        move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus(depth), false);
+                        move_order.history_edit(movelist[j], history_bonus(depth), false);
                         move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
                         move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
                     }
                     if constexpr (history_heuristic) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
+                        move_order.history_edit(bestmove, history_bonus(depth), true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
                     }

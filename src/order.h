@@ -2,14 +2,15 @@
 #define PEACEKEEPER_HISTORY
 
 #include "move.h"
+#include <cstring>
 
 int history_bonus(int depth) {
     return depth * depth;
 }
 struct Move_order_tables {
     Move killer_table[128][2]{};
-    int history_successes[12][64]{};
-    int history_all[12][64]{};
+    int history_successes[12][64][13]{};
+    int history_all[12][64][13]{};
     int* continuation_successes;
     int* continuation_all;
     Move_order_tables() {
@@ -21,18 +22,16 @@ struct Move_order_tables {
         delete[] continuation_all;
     }
     void reset() {
-        for (int i{}; i<12; ++i) {
-            for (int j{}; j<64; ++j) {
-                history_all[i][j] = 0;
-                history_successes[i][j] = 0;
-            }
-        }
+        std::memset(history_all, 0, sizeof(int) * 12 * 64 * 13);
+        std::memset(history_successes, 0, sizeof(int) * 12 * 64 * 13);
     }
     void age() {
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
-                history_all[i][j] /= 2;
-                history_successes[i][j] /= 2;
+                for (int k{}; k<13; ++k) {
+                    history_all[i][j][k] /= 2;
+                    history_successes[i][j][k] /= 2;
+                }
             }
         }
         for (int i{}; i<12 * 64 * 12 * 64; ++i) {
@@ -40,17 +39,17 @@ struct Move_order_tables {
             continuation_successes[i] /= 2;
         }
     }
-    void history_edit(int piece, int to_square, int change, bool success) {
-        history_all[piece][to_square] += change;
-        if (success) history_successes[piece][to_square] += change << 12;
-        if (history_all[piece][to_square] > 0x3FFFF) {
-            history_all[piece][to_square] /= 2;
-            history_successes[piece][to_square] /= 2;
+    void history_edit(Move move, int change, bool success) {
+        history_all[move.piece()][move.end()][move.captured()] += change;
+        if (success) history_successes[move.piece()][move.end()][move.captured()] += change << 12;
+        if (history_all[move.piece()][move.end()][move.captured()] > 0x3FFFF) {
+            history_all[move.piece()][move.end()][move.captured()] /= 2;
+            history_successes[move.piece()][move.end()][move.captured()] /= 2;
         }
     }
-    int history_value(int piece, int to_square) {
-        if (!history_all[piece][to_square]) return (1 << 11);
-        return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
+    int history_value(Move move) {
+        if (!history_all[move.piece()][move.end()][move.captured()]) return (1 << 11);
+        return history_successes[move.piece()][move.end()][move.captured()] / history_all[move.piece()][move.end()][move.captured()]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
