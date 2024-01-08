@@ -53,6 +53,7 @@ struct Move {
     inline constexpr int end() const {return (data >> 3) & 0x7F;}
     inline constexpr bool is_null() const {return (data & 0x200);}
     inline constexpr bool not_null() const {return !(data & 0x200);}
+    inline constexpr is_quiet() const {return captured() == 12 && flag() != queen_pr;}
     inline void add_sortkey(int key) {data = (data & 0xFFFFFFFF) | (static_cast<u64>(key) << 32);}
     inline int gain() const {
         return mg_value[captured() >> 1] + (flag() == queen_pr ? 939 : 0);

@@ -621,6 +621,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_all{1};
     int reduce_this{};
     Move bestmove{};
+    Movelist moves_tried{};
     bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
         return (static_eval + beta) / 2;
@@ -686,7 +687,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
-                    if constexpr (history_heuristic) if (bestmove.captured() == 12) {
+                    if constexpr (history_heuristic) {
                         move_order.history_edit(bestmove, history_bonus(depth), true);
                         move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
                         move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);  
@@ -696,11 +697,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
             }
         }
+        moves_tried.add(hash_move);
     }
     Movelist movelist;
     position.legal_noisy(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
-        movelist[i].add_sortkey(movelist[i].mvv_lva());
+        movelist[i].add_sortkey(movelist[i].mvv_lva() + move_order.history_value(movelist[i]));
     }
     movelist.sort(0, movelist.size());
     bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
@@ -733,11 +735,26 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
+                    if constexpr (history_heuristic) for (int j{}; j < moves_tried.size(); ++j) {
+                        if (bestmove.is_quiet() || !moves_tried[j].is_quiet()) move_order.history_edit(moves_tried[j], history_bonus(depth), false);
+                        if (bestmove.is_quiet() && moves_tried[j].is_quiet()) {
+                            move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
+                            move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
+                        }
+                    }
+                    if constexpr (history_heuristic) {
+                        move_order.history_edit(bestmove, history_bonus(depth), true);
+                        if (bestmove.is_quiet()) {
+                            move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
+                            move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
+                        }
+                    }
                     if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     return alpha;
                 }
             }
         }
+        moves_tried.add(movelist[i]);
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
@@ -811,15 +828,19 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
-                    if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
-                        move_order.history_edit(movelist[j], history_bonus(depth), false);
-                        move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
-                        move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
+                    if constexpr (history_heuristic) for (int j{}; j < moves_tried.size(); ++j) {
+                        if (bestmove.is_quiet() || !moves_tried[j].is_quiet()) move_order.history_edit(moves_tried[j], history_bonus(depth), false);
+                        if (bestmove.is_quiet() && moves_tried[j].is_quiet()) {
+                            move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
+                            move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
+                        }
                     }
                     if constexpr (history_heuristic) {
                         move_order.history_edit(bestmove, history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
+                        if (bestmove.is_quiet()) {
+                            move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
+                            move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
+                        }
                     }
                     if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                     if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
@@ -827,6 +848,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
             }
         }
+        moves_tried.add(movelist[i]);
     }
     if (move_num == 0) {
         sd.pv_table[ss->ply][0] = Move{};
