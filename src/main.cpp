@@ -650,7 +650,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
-        moves_tried.add(hash_move);
         int extend_this = 0;
         if (!is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
             int singular_beta = entry.score - depth * singular_extension_margin / 16;
@@ -700,6 +699,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
             }
         }
+        moves_tried.add(hash_move);
     }
     Movelist movelist;
     position.legal_noisy(movelist);
@@ -712,7 +712,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        moves_tried.add(movelist[i]);
         if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
@@ -738,7 +737,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
-                    if constexpr (history_heuristic) for (int j{}; j < moves_tried.size() - 1; ++j) {
+                    if constexpr (history_heuristic) for (int j{}; j < moves_tried.size(); ++j) {
                         if (bestmove.is_quiet() || !moves_tried[j].is_quiet()) move_order.history_edit(moves_tried[j], history_bonus(depth), false);
                         if (bestmove.is_quiet() && moves_tried[j].is_quiet()) {
                             move_order.continuation_edit((ss - 2)->move, moves_tried[j], history_bonus(depth), false);
@@ -757,6 +756,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
             }
         }
+        moves_tried.add(movelist[i]);
     }
     position.legal_quiet(movelist);
     for (int i = 0; i < movelist.size(); ++i) {
@@ -779,7 +779,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        moves_tried.add(movelist[i]);
         if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
         if (move_num != 0 && depth < 5 && movelist[i].sortkey() < 2500 - 500 * depth) continue;
         position.make_move<true>(movelist[i], sd.nnue);
@@ -831,7 +830,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                 }
                 if (alpha >= beta) {
-                    if constexpr (history_heuristic) for (int j{}; j < moves_tried.size() - 1; ++j) {
+                    if constexpr (history_heuristic) for (int j{}; j < moves_tried.size(); ++j) {
                         if (bestmove.is_quiet() || !moves_tried[j].is_quiet()) move_order.history_edit(moves_tried[j], history_bonus(depth), false);
                         if (bestmove.is_quiet() && moves_tried[j].is_quiet()) {
                             move_order.continuation_edit((ss - 2)->move, moves_tried[j], history_bonus(depth), false);
@@ -851,6 +850,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
             }
         }
+        moves_tried.add(movelist[i]);
     }
     if (move_num == 0) {
         sd.pv_table[ss->ply][0] = Move{};
