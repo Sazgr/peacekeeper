@@ -4,8 +4,9 @@
 #include "move.h"
 
 int history_bonus(int depth) {
-    return depth * depth;
+    return depth * depth + depth - 1;
 }
+
 struct Move_order_tables {
     Move killer_table[128][2]{};
     int history_successes[12][64]{};
