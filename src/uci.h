@@ -73,6 +73,10 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_base type spin default 80 min 0 max 1000" << '\n'
         << "option name tc_stability_multiplier type spin default 125 min 0 max 1000" << '\n'
         << "option name tc_stability_power type spin default 313 min 0 max 1000" << '\n'
+        << "option name razoring_base type spin default -63 min -1000 max 1000" << '\n'
+        << "option name razoring_depth_multiplier type spin default 182 min 0 max 1000" << '\n'
+        << "option name lmr_history_base type spin default 3000 min 0 max 10000" << '\n'
+        << "option name lmr_history_divisor type spin default 1000 min 0 max 10000" << '\n'
 #endif
         << "uciok" << std::endl;
 }

@@ -308,6 +308,18 @@ int main(int argc, char *argv[]) {
                 tc_stability_power = 0.001 * stoi(tokens[4]);
                 for (int i{}; i<4; ++i) tc_stability[i] = tc_stability_multiplier * std::pow(tc_stability_power, i) + tc_stability_base;
             }
+            if (tokens.size() >= 5 && tokens[2] == "razoring_base" && tokens[3] == "value") {
+                razoring_base = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "razoring_depth_multiplier" && tokens[3] == "value") {
+                razoring_depth_multiplier = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmr_history_base" && tokens[3] == "value") {
+                lmr_history_base = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "lmr_history_divisor" && tokens[3] == "value") {
+                lmr_history_divisor = stoi(tokens[4]);
+            }
 #endif
         }
         if (tokens[0] == "see") {
@@ -640,7 +652,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             return (abs(result) > 18000 ? beta : result);
         }
     }
-    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval - 63 + 182 * depth <= alpha) {
+    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval + razoring_base + razoring_depth_multiplier * depth <= alpha) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
@@ -784,7 +796,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             reduce_this = lmr_reduction(is_pv, depth, move_num);
             if (gives_check) --reduce_this;
             if (cutnode) ++reduce_this;
-            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 3, -2, 1); //reduce more for moves with worse history
+            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey() - lmr_history_base) / lmr_history_divisor, -2, 1); //reduce more for moves with worse history
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {

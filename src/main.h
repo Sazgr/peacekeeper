@@ -58,6 +58,10 @@ spsa double aspiration_beta_timescale = 1.35;
 spsa double tc_stability_base = 0.80;
 spsa double tc_stability_multiplier = 1.25;
 spsa double tc_stability_power = 0.313;
+spsa int razoring_base = -63;
+spsa int razoring_depth_multiplier = 182;
+spsa int lmr_history_base = 3000;
+spsa int lmr_history_divisor = 1000;
 
 int lmr_reduction_table[2][64][220];
 
