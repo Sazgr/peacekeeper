@@ -664,7 +664,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     extend_this = 1;
                 }
             } else if (singular_beta >= beta) {
-                return singular_beta;
+                return beta;
             } else if (entry.score >= beta) {
                 extend_this = -1;
             }
