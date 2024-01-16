@@ -663,8 +663,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 } else {
                     extend_this = 1;
                 }
-            } else if (singular_beta >= beta) {
-                return singular_beta;
+            } else if (singular_score >= beta) {
+                return beta;
             } else if (entry.score >= beta) {
                 extend_this = -1;
             }
@@ -961,4 +961,3 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     }
     return best_score;
 }
-
