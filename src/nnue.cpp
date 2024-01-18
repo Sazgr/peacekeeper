@@ -83,14 +83,32 @@ void NNUE::refresh(Position& position) {
 
 i32 NNUE::evaluate(bool side) {
     Accumulator &accumulator = accumulator_stack[current_accumulator];
-    i64 output = hidden_bias[0] * input_quantization;
+#ifdef SIMD
+    const register_type screlu_min{};
+    const register_type screlu_max = register_set_16(input_quantization);
+    register_type res{};
+    const register_type* accumulator_us = reinterpret_cast<register_type*>(accumulator[side].data());
+    const register_type* accumulator_them = reinterpret_cast<register_type*>(accumulator[!side].data());
+    const register_type* weights = reinterpret_cast<register_type*>(hidden_weights.data());
+    for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
+        const register_type clipped = register_min_16(register_max_16(accumulator_us[i], screlu_min), screlu_max);
+        res = register_add_32(res, register_madd_16(register_mul_16(clipped, clipped), weights[i]));
+    }
+    for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
+        const register_type clipped = register_min_16(register_max_16(accumulator_them[i], screlu_min), screlu_max);
+        res = register_add_32(res, register_madd_16(register_mul_16(clipped, clipped), weights[i + hidden_size / I16_STRIDE]));
+    }
+    i32 output = register_sum_32(res) + (hidden_bias[0] * input_quantization);
+#else
+    i32 output = hidden_bias[0] * input_quantization;
     for (int i = 0; i < hidden_size; ++i) {
         output += screlu(accumulator[side][i]) * hidden_weights[i];
     }
     for (int i = 0; i < hidden_size; ++i) {
         output += screlu(accumulator[!side][i]) * hidden_weights[hidden_size + i];
     }
-    return (output * 400) / input_quantization / input_quantization / hidden_quantization;
+#endif
+    return (output / input_quantization * 400) / input_quantization / hidden_quantization;
 }
 
 void load_default() {

@@ -25,6 +25,7 @@ using register_type = __m512i;
 #define register_min_16 _mm512_min_epi16
 #define register_max_16 _mm512_max_epi16
 #define register_set_16 _mm512_set1_epi16
+#define register_mul_16 _mm512_mullo_epi16
 #elif defined(__AVX2__) || defined(__AVX__)
 using register_type = __m256i;
 #define register_madd_16 _mm256_madd_epi16
@@ -35,6 +36,7 @@ using register_type = __m256i;
 #define register_min_16 _mm256_min_epi16
 #define register_max_16 _mm256_max_epi16
 #define register_set_16 _mm256_set1_epi16
+#define register_mul_16 _mm256_mullo_epi16
 #endif
 
 #ifdef SIMD
