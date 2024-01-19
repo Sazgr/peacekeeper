@@ -650,24 +650,28 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
         int extend_this = 0;
-        if (!is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
-            int singular_beta = entry.score - depth * singular_extension_margin / 16;
-            int singular_depth = (depth - 1) / 2;
-            ss->excluded = hash_move;
-            int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd, cutnode);
-            ss->excluded = Move{};
-            if (singular_score < singular_beta) {
-                if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
-                    extend_this = 2;
-                    ++ss->double_extensions;
-                } else {
-                    extend_this = 1;
+        if (!is_root && depth >= (6 + is_pv) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
+            if (entry.type == tt_exact || entry.type == tt_beta) {
+                int singular_beta = entry.score - depth * singular_extension_margin / 16;
+                int singular_depth = (depth - 1) / 2;
+                ss->excluded = hash_move;
+                int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd, cutnode);
+                ss->excluded = Move{};
+                if (singular_score < singular_beta) {
+                    if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
+                        extend_this = 2;
+                        ++ss->double_extensions;
+                    } else {
+                        extend_this = 1;
+                    }
+                } else if (singular_beta >= beta) {
+                    return singular_beta;
+                } else if (entry.score >= beta) {
+                    extend_this = -1;
+                } else if (entry.type == tt_exact && entry.score <= alpha) {
+                    extend_this = -1;
                 }
-            } else if (singular_beta >= beta) {
-                return singular_beta;
-            } else if (entry.score >= beta) {
-                extend_this = -1;
-            } else if (entry.type == tt_exact && entry.score <= alpha) {
+            } else if (entry.score <= alpha) {
                 extend_this = -1;
             }
         }
