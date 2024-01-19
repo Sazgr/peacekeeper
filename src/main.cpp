@@ -667,6 +667,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 return singular_beta;
             } else if (entry.score >= beta) {
                 extend_this = -1;
+            } else if (entry.type == tt_exact && entry.score <= alpha) {
+                extend_this = -1;
             }
         }
         position.make_move<true>(hash_move, sd.nnue);
@@ -961,4 +963,3 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     }
     return best_score;
 }
-
