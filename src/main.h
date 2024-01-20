@@ -37,6 +37,8 @@ spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 spsa double futility_base = 36;
 spsa double futility_depth_margin = 87;
+spsa double reverse_futility_base = 36;
+spsa double reverse_futility_depth_margin = 87;
 spsa double aspiration_base = 28;
 spsa double aspiration_power = 3.16;
 spsa double lmr_base = 0.5;

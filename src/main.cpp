@@ -238,6 +238,12 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "futility_depth_margin" && tokens[3] == "value") {
                 futility_depth_margin = 0.1 * stoi(tokens[4]);
             }
+            if (tokens.size() >= 5 && tokens[2] == "reverse_futility_base" && tokens[3] == "value") {
+                reverse_futility_base = 0.1 * stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "reverse_futility_depth_margin" && tokens[3] == "value") {
+                reverse_futility_depth_margin = 0.1 * stoi(tokens[4]);
+            }
             if (tokens.size() >= 5 && tokens[2] == "aspiration_base" && tokens[3] == "value") {
                 aspiration_base = 0.1 * stoi(tokens[4]);
                 for (int i{}; i<3; ++i) aspiration_bounds[i] = aspiration_base * std::pow(aspiration_power, i);
@@ -620,7 +626,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
-    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
+    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - reverse_futility_base - reverse_futility_depth_margin * (depth - improving) >= beta)) {
         return (static_eval + beta) / 2;
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
