@@ -2,10 +2,10 @@
 #define PEACEKEEPER_BOARD
 
 #include "eval.h"
+#include "fixed_vector.h"
 #include "lookup_arrays.h"
 #include "magics.h"
 #include "move.h"
-#include "movelist.h"
 #include "options.h"
 #include "typedefs.h"
 #include "zobrist.h"

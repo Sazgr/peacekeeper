@@ -13,8 +13,8 @@ Peacekeeper Chess Engine
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#include "fixed_vector.h"
 #include "main.h"
-#include "movelist.h"
 #include "nnue.h"
 #include "uci.h"
 #include <algorithm>
