@@ -592,11 +592,25 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
         hash[ply] ^= zobrist_castling[castling_rights[ply - 1][i]] ^ zobrist_castling[castling_rights[ply][i]];
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
-    if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || (buckets > 1 && king_buckets[start] != king_buckets[king_end]))) nnue->refresh(*this);
+    if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || (buckets > 1 && king_buckets[start] != king_buckets[king_end]))) {
+        nnue->refresh(*this);
+        nnue_sub.clear();
+        nnue_add.clear();
+    }
+    while (nnue_sub.size() > nnue_add.size()) {
+        nnue->update_accumulator_sub_sub_add(nnue_sub[0], nnue_sub[1], nnue_add[0]);
+        nnue_sub.pop_back();
+        nnue_sub.pop_back();
+        nnue_add.pop_back();
+    }
+    while (!nnue_sub.empty()) {
+        nnue->update_accumulator_sub_add(nnue_sub.back(), nnue_add.back());
+        nnue_sub.pop_back();
+        nnue_add.pop_back();
+    }
     king_square[0] = get_lsb(pieces[10]);
     king_square[1] = get_lsb(pieces[11]);
     side_to_move = !side_to_move;
-
 }
 
 template void Position::undo_move<false>(Move move, NNUE* nnue);
@@ -658,8 +672,8 @@ template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int 
         hash[ply] ^= zobrist_pieces[board[sq]][sq] ^ zobrist_pieces[piece][sq];
     }
     if constexpr (update_nnue) {
-        nnue->update_accumulator<false>(board[sq], sq, king_square[0], king_square[1]);
-        nnue->update_accumulator<true>(piece, sq, king_square[0], king_square[1]);
+        if (board[sq] != empty_square) nnue_sub.push_back({index(board[sq], sq, 0, king_square[0]), index(board[sq], sq, 1, king_square[1])});
+        if (piece != empty_square) nnue_add.push_back({index(piece, sq, 0, king_square[0]), index(piece, sq, 1, king_square[1])});
     }
     pieces[board[sq]] ^= (1ull << sq);
     pieces[piece] ^= (1ull << sq);

@@ -1,5 +1,6 @@
 #include "board.h"
 #include "bit_operations.h"
+#include "fixed_vector.h"
 #include "nnue.h"
 #include "simd.h"
 #include <fstream>
@@ -36,7 +37,6 @@ template void NNUE::update_accumulator<true>(int piece, int square, int black_ki
 template void NNUE::update_accumulator<false>(int piece, int square, int black_king_square, int white_king_square);
 
 template <bool add> void NNUE::update_accumulator(int piece, int square, int black_king_square, int white_king_square) {
-    if (piece == empty_square) return;
     Accumulator& accumulator = accumulator_stack[current_accumulator];
     for (int side{}; side < 2; ++side) {
         const int inputs = index(piece, square, side, side ? white_king_square : black_king_square);
@@ -63,6 +63,50 @@ template <bool add> void NNUE::update_accumulator(int piece, int square, int bla
             for (int i = 0; i < hidden_size; ++i) {
                 accumulator[side][i] -= weights[i];
             }
+        }
+#endif
+    }
+}
+
+void NNUE::update_accumulator_sub_add(std::array<int, 2> sub, std::array<int, 2> add) {
+    Accumulator& accumulator = accumulator_stack[current_accumulator];
+    for (int side{}; side < 2; ++side) {
+#ifdef SIMD
+        const register_type* weights_sub = reinterpret_cast<register_type*>(input_weights.data() + sub[side] * hidden_size);
+        const register_type* weights_add = reinterpret_cast<register_type*>(input_weights.data() + add[side] * hidden_size);
+        const register_type* input = reinterpret_cast<register_type*>(accumulator[side].data());
+        register_type* output = reinterpret_cast<register_type*>(accumulator[side].data());
+        for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
+            output[i] = register_add_16(register_sub_16(input[i], weights_sub[i]), weights_add[i]);
+        }
+#else
+        const i16* weights_sub = input_weights.data() + sub[side] * hidden_size;
+        const i16* weights_add = input_weights.data() + add[side] * hidden_size;
+        for (int i = 0; i < hidden_size; ++i) {
+            accumulator[side][i] += -weights_sub[i] + weights_add[i];
+        }
+#endif
+    }
+}
+
+void NNUE::update_accumulator_sub_sub_add(std::array<int, 2> sub1, std::array<int, 2> sub2, std::array<int, 2> add) {
+    Accumulator& accumulator = accumulator_stack[current_accumulator];
+    for (int side{}; side < 2; ++side) {
+#ifdef SIMD
+        const register_type* weights_sub1 = reinterpret_cast<register_type*>(input_weights.data() + sub1[side] * hidden_size);
+        const register_type* weights_sub2 = reinterpret_cast<register_type*>(input_weights.data() + sub2[side] * hidden_size);
+        const register_type* weights_add = reinterpret_cast<register_type*>(input_weights.data() + add[side] * hidden_size);
+        const register_type* input = reinterpret_cast<register_type*>(accumulator[side].data());
+        register_type* output = reinterpret_cast<register_type*>(accumulator[side].data());
+        for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
+            output[i] = register_add_16(register_sub_16(register_sub_16(input[i], weights_sub1[i]), weights_sub2[i]), weights_add[i]);
+        }
+#else
+        const i16* weights_sub1 = input_weights.data() + sub1[side] * hidden_size;
+        const i16* weights_sub2 = input_weights.data() + sub2[side] * hidden_size;
+        const i16* weights_add = input_weights.data() + add[side] * hidden_size;
+        for (int i = 0; i < hidden_size; ++i) {
+            accumulator[side][i] += -weights_sub1[i] - weights_sub2[i] + weights_add[i];
         }
 #endif
     }

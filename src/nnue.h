@@ -95,6 +95,8 @@ public:
     }
     void refresh(Position& position);
     template <bool add> void update_accumulator(int piece, int square, int black_king_square, int white_king_square);
+    void update_accumulator_sub_add(std::array<int, 2> sub, std::array<int, 2> add);
+    void update_accumulator_sub_sub_add(std::array<int, 2> sub1, std::array<int, 2> sub2, std::array<int, 2> add);
     i32 evaluate(bool side);
 };
 

@@ -142,6 +142,8 @@ public:
     int eval_phase();
     int mg_static_eval{};
     int eg_static_eval{};
+    std::vector<std::array<int, 2>> nnue_sub;
+    std::vector<std::array<int, 2>> nnue_add;
     Position();
     Position& operator=(Position& rhs) {
         memcpy(pieces, rhs.pieces, sizeof(u64) * 13);
