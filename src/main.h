@@ -35,7 +35,7 @@ enum Features : bool {
 spsa std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-spsa double futility_base = 36;
+spsa double futility_base = 56;
 spsa double futility_depth_margin = 87;
 spsa double reverse_futility_base = 36;
 spsa double reverse_futility_depth_margin = 87;
