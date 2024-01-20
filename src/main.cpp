@@ -232,13 +232,11 @@ int main(int argc, char *argv[]) {
                 else load_from_file(tokens[4]);
             }
 #ifdef SPSA
-            if (tokens.size() >= 5 && tokens[2] == "futility_multiplier" && tokens[3] == "value") {
-                futility_multiplier = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_exponent);
+            if (tokens.size() >= 5 && tokens[2] == "futility_base" && tokens[3] == "value") {
+                futility_base = 0.1 * stoi(tokens[4]);
             }
-            if (tokens.size() >= 5 && tokens[2] == "futility_exponent" && tokens[3] == "value") {
-                futility_exponent = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<6; ++i) futile_margins[i] = futility_multiplier * std::pow(i + 1, futility_exponent);
+            if (tokens.size() >= 5 && tokens[2] == "futility_depth_margin" && tokens[3] == "value") {
+                futility_depth_margin = 0.1 * stoi(tokens[4]);
             }
             if (tokens.size() >= 5 && tokens[2] == "aspiration_base" && tokens[3] == "value") {
                 aspiration_base = 0.1 * stoi(tokens[4]);
@@ -622,7 +620,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
-    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futile_margins[depth - improving] >= beta)) {
+    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
         return (static_eval + beta) / 2;
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
@@ -766,7 +764,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ss->move = movelist[i];
         bool gives_check = position.check();
         //Futility Pruning
-        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futile_margins[depth] - late_move_margin(depth, move_num, improving) < alpha) && move_num != 0 && !gives_check) {
+        if constexpr (futility_pruning) if (can_fut_prune && (static_eval + futility_base + futility_depth_margin * depth - late_move_margin(depth, move_num, improving) < alpha) && move_num != 0 && !gives_check) {
             position.undo_move<true>(movelist[i], sd.nnue);
             continue;
         }

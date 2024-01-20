@@ -32,12 +32,11 @@ enum Features : bool {
     razoring             = true,
 };
 
-spsa std::array<int, 6> futile_margins{80, 126, 166, 201, 233, 263};
 spsa std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-spsa double futility_multiplier = 80;
-spsa double futility_exponent = 0.666;
+spsa double futility_base = 36;
+spsa double futility_depth_margin = 87;
 spsa double aspiration_base = 28;
 spsa double aspiration_power = 3.16;
 spsa double lmr_base = 0.5;

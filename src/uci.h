@@ -51,8 +51,8 @@ inline void print_info(std::ostream& out) {
         << "option name UCI_Chess960 type check default false" << '\n'
         << "option name EvalFile type string default <internal>" << '\n'
 #ifdef SPSA
-        << "option name futility_multiplier type spin default 800 min 0 max 1000" << '\n'
-        << "option name futility_exponent type spin default 66 min 0 max 1000" << '\n'
+        << "option name futility_base type spin default 360 min 0 max 1000" << '\n'
+        << "option name futility_depth_margin type spin default 870 min 0 max 10000" << '\n'
         << "option name aspiration_base type spin default 280 min 0 max 1000" << '\n'
         << "option name aspiration_power type spin default 316 min 0 max 1000" << '\n'
         << "option name lmr_base type spin default 50 min 0 max 10000" << '\n'
