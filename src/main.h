@@ -30,6 +30,7 @@ enum Features : bool {
     check_extensions     = true,
     internal_iterative_reduction = true,
     razoring             = true,
+    probcut              = true,
 };
 
 spsa std::array<int, 6> futile_margins{80, 126, 166, 201, 233, 263};
