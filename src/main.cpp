@@ -790,7 +790,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
         if (move_num == 1) {
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd, false);
-        } else if (depth < 4 && !is_pv && !in_check && !gives_check && static_eval + 63 - 182 * depth >= beta) {
+        } else if (depth < 4 && !is_pv && !in_check && !gives_check && static_eval - 90 * depth >= beta) {
             result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
         } else {
             result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1, sd, true);
