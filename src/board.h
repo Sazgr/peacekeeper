@@ -79,6 +79,7 @@ public:
     std::string export_fen();
     bool load_fen(std::string fen_pos, std::string fen_stm, std::string fen_castling, std::string fen_ep, std::string fen_hmove_clock = "0", std::string fen_fmove_counter = "1");
     bool parse_move(Move& out, std::string move);
+    void nnue_update_accumulator(NNUE& nnue);
     int static_eval();
     int static_eval(NNUE& nnue);
     u64 rand64();

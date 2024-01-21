@@ -510,6 +510,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
     if (position.check()) {
         int result = -20000;
         int best_value = -20000;
+        position.nnue_update_accumulator(*sd.nnue); // this position is not evaluated but we have to update the accumulator anyways
         Movelist movelist;
         position.legal_moves(movelist);
         if (movelist.size() == 0) return -20000 + ss->ply;

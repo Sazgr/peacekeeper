@@ -597,17 +597,6 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
         nnue_sub.clear();
         nnue_add.clear();
     }
-    while (nnue_sub.size() > nnue_add.size()) {
-        nnue->update_accumulator_sub_sub_add(nnue_sub[0], nnue_sub[1], nnue_add[0]);
-        nnue_sub.pop_back();
-        nnue_sub.pop_back();
-        nnue_add.pop_back();
-    }
-    while (!nnue_sub.empty()) {
-        nnue->update_accumulator_sub_add(nnue_sub.back(), nnue_add.back());
-        nnue_sub.pop_back();
-        nnue_add.pop_back();
-    }
     king_square[0] = get_lsb(pieces[10]);
     king_square[1] = get_lsb(pieces[11]);
     side_to_move = !side_to_move;
@@ -664,6 +653,8 @@ template <bool update_nnue> void Position::undo_move(Move move, NNUE* nnue) {
     }
     king_square[0] = get_lsb(pieces[10]);
     king_square[1] = get_lsb(pieces[11]);
+    nnue_sub.clear();
+    nnue_add.clear();
     --ply;
 }
 
@@ -678,6 +669,20 @@ template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int 
     pieces[board[sq]] ^= (1ull << sq);
     pieces[piece] ^= (1ull << sq);
     board[sq] = piece;
+}
+
+void Position::nnue_update_accumulator(NNUE& nnue) {
+    while (nnue_sub.size() > nnue_add.size()) {
+        nnue.update_accumulator_sub_sub_add(nnue_sub[0], nnue_sub[1], nnue_add[0]);
+        nnue_sub.pop_back();
+        nnue_sub.pop_back();
+        nnue_add.pop_back();
+    }
+    while (!nnue_sub.empty()) {
+        nnue.update_accumulator_sub_add(nnue_sub.back(), nnue_add.back());
+        nnue_sub.pop_back();
+        nnue_add.pop_back();
+    }
 }
 
 int Position::eval_phase() {
@@ -811,6 +816,7 @@ int Position::static_eval() {
 }
 
 int Position::static_eval(NNUE& nnue) {
+    nnue_update_accumulator(nnue);
 #ifdef DATAGEN
     return nnue.evaluate(side_to_move);
 #else
