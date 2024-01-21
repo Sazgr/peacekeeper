@@ -530,7 +530,10 @@ template void Position::make_move<false>(Move move, NNUE* nnue);
 template void Position::make_move<true>(Move move, NNUE* nnue);
 
 template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
-    if constexpr (update_nnue) nnue->push();
+    if constexpr (update_nnue) {
+        nnue_update_accumulator(*nnue);
+        nnue->push();
+    }
     ++ply;
     hash[ply] = hash[ply - 1];
     hash[ply] ^= zobrist_black;
@@ -672,11 +675,13 @@ template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int 
 }
 
 void Position::nnue_update_accumulator(NNUE& nnue) {
-    while (nnue_sub.size() > nnue_add.size()) {
+    if (nnue_sub.empty()) return;
+    if (nnue_sub.size() > nnue_add.size()) {
         nnue.update_accumulator_sub_sub_add(nnue_sub[0], nnue_sub[1], nnue_add[0]);
         nnue_sub.pop_back();
         nnue_sub.pop_back();
         nnue_add.pop_back();
+        return;
     }
     while (!nnue_sub.empty()) {
         nnue.update_accumulator_sub_add(nnue_sub.back(), nnue_add.back());
