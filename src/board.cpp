@@ -1,6 +1,7 @@
 #include "bit_operations.h"
 #include "board.h"
 #include "nnue.h"
+#include <cassert>
 #include <cstring>
 #include <iostream>
 
@@ -531,7 +532,7 @@ template void Position::make_move<true>(Move move, NNUE* nnue);
 
 template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
     if constexpr (update_nnue) {
-        nnue_update_accumulator(*nnue);
+        assert(nnue_sub.empty());
         nnue->push();
     }
     ++ply;
