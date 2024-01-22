@@ -849,8 +849,9 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
     position.legal_moves(movelist);
     if (movelist.size() == 0) return;
     else {
-        int alpha = -20000;
-        int beta = 20000;
+        int alpha = -20001;
+        int beta = 20001;
+        int aspiration_delta = 28;
         double time_scale = 1;
         sd.nodes = 0;
         int depth{1};
@@ -882,15 +883,16 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 time_scale = tc_stability[stability];
                 if (timer.check(sd.nodes, depth)) {break;}
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
-                alpha = last_score - aspiration_bounds[0];
-                beta = last_score + aspiration_bounds[0];
+                aspiration_delta = 28;
+                alpha = last_score - aspiration_delta;
+                beta = last_score + aspiration_delta;
                 continue;
             }
             if (result <= alpha) {
                 //no time checks here because we failed low, we allow for some extra time
-                if (alpha == last_score - aspiration_bounds[0]) alpha = last_score - aspiration_bounds[1];
-                else if (alpha == last_score - aspiration_bounds[1]) alpha = last_score - aspiration_bounds[2];
+                if (aspiration_delta < 300) alpha -= aspiration_delta;
                 else alpha = -20001;
+                aspiration_delta = aspiration_delta * 2;
             } 
             if (result >= beta) {
                 if (!sd.pv_table[0][0].is_null()) {
@@ -898,9 +900,9 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                     bestmove = sd.pv_table[0][0];
                 }
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
-                if (beta == last_score + aspiration_bounds[0]) beta = last_score + aspiration_bounds[1];
-                else if (beta == last_score + aspiration_bounds[1]) beta = last_score + aspiration_bounds[2];
+                if (aspiration_delta < 300) beta += aspiration_delta;
                 else beta = 20001;
+                aspiration_delta = aspiration_delta * 2;
             }
         }
         sd.depth_reached = depth;
