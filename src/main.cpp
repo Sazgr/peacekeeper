@@ -890,6 +890,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             }
             if (result <= alpha) {
                 //no time checks here because we failed low, we allow for some extra time
+                beta = (alpha + beta) / 2;
                 if (aspiration_delta < 300) alpha -= aspiration_delta;
                 else alpha = -20001;
                 aspiration_delta = aspiration_delta * 2;
