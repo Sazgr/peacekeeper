@@ -855,6 +855,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         double time_scale = 1;
         sd.nodes = 0;
         int depth{1};
+        int aspiration_depth{1};
         int last_score, result;
         int stability = 0;
         bestmove = movelist[0];
@@ -866,7 +867,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         }
         sd.pv_table[0][0] = Move{};
         for (; depth < 64;) {
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
+            result = pvs(position, timer, table, move_order, aspiration_depth, alpha, beta, &search_stack[2], sd, false);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, sd.nodes * threads, static_cast<int>(sd.nodes * threads / timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
@@ -884,6 +885,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (timer.check(sd.nodes, depth)) {break;}
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                 aspiration_delta = 28;
+                aspiration_depth = depth;
                 alpha = last_score - aspiration_delta;
                 beta = last_score + aspiration_delta;
                 continue;
@@ -893,6 +895,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (aspiration_delta < 300) alpha -= aspiration_delta;
                 else alpha = -20001;
                 aspiration_delta = aspiration_delta * 2;
+                aspiration_depth = depth;
             } 
             if (result >= beta) {
                 if (!sd.pv_table[0][0].is_null()) {
@@ -903,6 +906,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (aspiration_delta < 300) beta += aspiration_delta;
                 else beta = 20001;
                 aspiration_delta = aspiration_delta * 2;
+                --aspiration_depth;
             }
         }
         sd.depth_reached = depth;
