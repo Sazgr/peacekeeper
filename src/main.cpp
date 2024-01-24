@@ -760,7 +760,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
         if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
-        if (move_num != 0 && depth < 5 && movelist[i].sortkey() < 2500 - 500 * depth) continue;
+        if (move_num != 0 && !in_check && depth < 5 && movelist[i].sortkey() < 2500 - 500 * depth) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
         bool gives_check = position.check();
