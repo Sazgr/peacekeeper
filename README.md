@@ -1,5 +1,9 @@
 ![Logo](peacekeeper-large.jpg)
 
+*Solitudinem faciunt, pacem appellant*  
+They make a desert and call it peace  
+**- Tacitus**
+
 ## Peacekeeper
 
 A fairly strong and probably [superhuman](https://dokumen.tips/documents/the-level-of-play-in-ccrl-and-fide-rating-vs-fidepdfthe-level-of-play-in-ccrl-and.html) UCI Chess Engine, written in C++17.
