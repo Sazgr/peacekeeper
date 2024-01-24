@@ -791,13 +791,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd, false);
         } else {
             result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1, sd, true);
+            bool deeper = result > best_value + 70 + 12 * (depth - reduce_all - reduce_this);
             if (reduce_this) {
                 if (alpha < result) {
-                    result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
+                    result = -pvs(position, timer, table, move_order, depth - reduce_all + deeper, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
                 }
             }
             if (alpha < result && is_pv) {
-                result = -pvs(position, timer, table, move_order, depth - reduce_all,  -beta, -alpha, ss + 1, sd, false);
+                result = -pvs(position, timer, table, move_order, depth - reduce_all + deeper,  -beta, -alpha, ss + 1, sd, false);
             }
         }
         position.undo_move<true>(movelist[i], sd.nnue);
