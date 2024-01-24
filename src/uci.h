@@ -60,7 +60,7 @@ inline void print_info(std::ostream& out) {
         << "option name lmr_ispv_divisor type spin default 400 min 0 max 10000" << '\n'
         << "option name nmp_base type spin default 220 min 0 max 10000" << '\n'
         << "option name nmp_depth_divisor type spin default 400 min 0 max 10000" << '\n'
-        << "option name nmp_eval_divisor type spin default 1200 min 0 max 10000" << '\n'
+        << "option name nmp_eval_divisor type spin default 250 min 0 max 10000" << '\n'
         << "option name see_noisy_constant type spin default 1135 min 0 max 10000" << '\n'
         << "option name see_noisy_linear type spin default 0 min 0 max 1000" << '\n'
         << "option name see_noisy_quadratic type spin default 50 min 0 max 1000" << '\n'
