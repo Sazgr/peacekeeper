@@ -633,7 +633,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ss->move = Move{};
         ++sd.nodes;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd, !cutnode);
+        result = -pvs(position, timer, table, move_order, std::max(1, depth - reduce_all - (3 + depth / 4 + improving + static_cast<int>(std::sqrt(static_eval - beta) / nmp_eval_divisor))), -beta, -beta + 1, ss + 1, sd, !cutnode);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             return (abs(result) > 18000 ? beta : result);
