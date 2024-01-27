@@ -18,6 +18,7 @@ struct Search_data {
     Move pv_table[128][128];
     int depth_reached;
     int best_score;
+    bool main_thread;
 };
 
 #endif

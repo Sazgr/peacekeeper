@@ -882,7 +882,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 }
                 time_scale = tc_stability[stability];
                 if (timer.check(sd.nodes, depth)) {break;}
-                if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
+                if (sd.main_thread && !bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale)) {break;}
                 aspiration_delta = 28;
                 alpha = last_score - aspiration_delta;
                 beta = last_score + aspiration_delta;
@@ -899,7 +899,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                     other_move = bestmove;
                     bestmove = sd.pv_table[0][0];
                 }
-                if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
+                if (sd.main_thread && !bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
                 if (aspiration_delta < 300) beta += aspiration_delta;
                 else beta = 20001;
                 aspiration_delta = aspiration_delta * 2;
@@ -913,6 +913,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
 
 int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output) {
     int best_score = -20000;
+    sd.main_thread = true;
     if (threads == 1) {
         iterative_deepening(position, timer, table, move_order, bestmove, sd, output);
         if (output) print_bestmove(out, bestmove);
@@ -931,6 +932,7 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     smp_timer.reset();
     for (int i{}; i < threads - 1; ++i) {
         thread_nnue[i].refresh(position);
+        thread_sd[i].main_thread = false;
         thread_sd[i].nnue = &thread_nnue[i];
         for (int j{}; j < 128; ++j) {
             for (int k{}; k < 128; ++k) {
