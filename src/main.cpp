@@ -597,8 +597,8 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
 }
 
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd, bool cutnode) {
-    bool is_root = (ss->ply == 0);
-    bool is_pv = (beta - alpha) != 1;
+    const bool is_root = (ss->ply == 0);
+    const bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes, 0))) return 0;
     if (depth <= 0) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
@@ -628,6 +628,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && entry.type != tt_none && entry.full_hash == position.hashkey() && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
+    const bool ttpv = is_pv || (entry.type != tt_none && entry.full_hash == position.hashkey() && entry.was_pv);
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
@@ -780,7 +781,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num > 2 + 2 * is_pv) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
+            reduce_this = lmr_reduction(ttpv, depth, move_num);
             if (in_check) --reduce_this;
             if (gives_check) --reduce_this;
             if (cutnode) ++reduce_this;
