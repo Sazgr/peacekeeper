@@ -28,11 +28,11 @@ struct Packed_element {
     Packed_element() {
         data = (static_cast<u64>(tt_none) << 40) | (Move{}.data & 0xFFFFFF);
     }
-    Packed_element(u64 hash, Move move, int sc, u8 tp, u8 dp, u8 ag, int ply) {
+    Packed_element(u64 hash, Move move, int sc, u8 tp, u8 dp, int ply, bool is_pv) {
         u64 full_hash_to_store = hash;
 	if (sc < -18000) sc += ply;
 	if (sc > 18000) sc -= ply;
-        u64 data_to_store = (static_cast<u64>(ag) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(sc))) << 24) | (move.data & 0xFFFFFF);
+        u64 data_to_store = (static_cast<u64>(is_pv) << 56) | (static_cast<u64>(dp) << 48) | (static_cast<u64>(tp) << 40) | (static_cast<u64>(static_cast<u16>(static_cast<i16>(sc))) << 24) | (move.data & 0xFFFFFF);
         full_hash_to_store ^= data_to_store; //xor trick
         data = data_to_store;
         full_hash = full_hash_to_store;
@@ -50,12 +50,12 @@ struct Element {
     int score;
     int type;
     int depth;
-    int age;
+    int was_pv;
     Element() {
         bestmove = Move{};
         type = tt_none;
     }
-    Element(u64 hash, Move move, int sc, u8 tp, u8 dp, u8 ag, int ply) {
+    Element(u64 hash, Move move, int sc, u8 tp, u8 dp, int ply, bool is_pv) {
         full_hash = hash;
         bestmove = move;
         score = sc;
@@ -63,7 +63,7 @@ struct Element {
 	if (score > 18000) score -= ply;
         type = tp;
         depth = dp;
-        age = ag;
+        was_pv = is_pv;
     }
     Element& operator=(const Element& rhs) {
         full_hash = rhs.full_hash;
@@ -71,7 +71,7 @@ struct Element {
         score = rhs.score;
         type = rhs.type;
         depth = rhs.depth;
-        age = rhs.age;
+        was_pv = rhs.was_pv;
         return *this;
     }
     Element(Packed_element& rhs) {
@@ -82,7 +82,7 @@ struct Element {
         score = static_cast<i16>(static_cast<u16>((copy.data >> 24) & 0xFFFF));
         type = (copy.data >> 40) & 0xFF;
         depth = (copy.data >> 48) & 0xFF;
-        age = (copy.data >> 56) & 0xFF;
+        was_pv = (copy.data >> 56) & 0xFF;
     }
     inline Element& adjust_score(int ply) {
         if (score < -18000) score -= ply;
@@ -113,12 +113,12 @@ public:
     void age() {
         ; //nothing needed here
     }
-    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply) {
+    void insert(const u64 hash, int score, u8 type, Move bestmove, u8 dp, int ply, bool is_pv) {
         Element previous = Element(table[hash & (size - 1)]);
         if (bestmove.is_null() && previous.full_hash == hash) {
             bestmove = previous.bestmove;
         }
-        if (previous.depth <= dp + 3) table[hash & (size - 1)] = Packed_element{hash, bestmove, score, type, dp, table_age, ply};
+        if (previous.depth <= dp + 3) table[hash & (size - 1)] = Packed_element{hash, bestmove, score, type, dp, ply, is_pv};
     }
 private:
     std::vector<Packed_element> table;
