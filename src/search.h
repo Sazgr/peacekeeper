@@ -3,6 +3,7 @@
 
 #include "move.h"
 #include "nnue.h"
+#include <atomic>
 
 struct Search_stack {
     Move move{};
@@ -18,6 +19,7 @@ struct Search_data {
     Move pv_table[128][128];
     int depth_reached;
     int best_score;
+    std::atomic<int>* max_thread_depth;
 };
 
 #endif
