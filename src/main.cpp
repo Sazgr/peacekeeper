@@ -780,7 +780,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num > 2 + 2 * is_pv) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
+            reduce_this = lmr_reduction(is_pv && entry.type != tt_alpha, depth, move_num);
             if (in_check) --reduce_this;
             if (gives_check) --reduce_this;
             if (cutnode) ++reduce_this;
