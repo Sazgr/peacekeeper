@@ -41,7 +41,6 @@ spsa double aspiration_base = 28;
 spsa double aspiration_power = 3.16;
 spsa double lmr_base = 0.5;
 spsa double lmr_nopv_divisor = 2.0;
-spsa double lmr_ispv_divisor = 4.0;
 spsa double nmp_base = 2.19999999;
 spsa double nmp_depth_divisor = 4.0;
 spsa double nmp_eval_divisor = 12.0;
@@ -58,7 +57,7 @@ spsa double tc_stability_base = 0.80;
 spsa double tc_stability_multiplier = 1.25;
 spsa double tc_stability_power = 0.313;
 
-int lmr_reduction_table[2][64][220];
+int lmr_reduction_table[64][220];
 
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
@@ -72,13 +71,12 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
 inline void fill_lmr_reduction_table() {
     for (int depth{1}; depth < 64; ++depth) {
         for (int move_num{3}; move_num < 220; ++move_num) {
-            lmr_reduction_table[0][depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
-            lmr_reduction_table[1][depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_ispv_divisor + lmr_base);
+            lmr_reduction_table[depth][move_num] = static_cast<int>((std::log(move_num - 2) * std::log(depth)) / lmr_nopv_divisor + lmr_base);
         }
     }
 }
-inline int lmr_reduction(bool is_pv, int depth, int move_num) {
-    return lmr_reduction_table[is_pv][depth][move_num];
+inline int lmr_reduction(int depth, int move_num) {
+    return lmr_reduction_table[depth][move_num];
 }
 inline int late_move_margin(int depth, int move_num, bool improving) {
     if constexpr (late_move_pruning) {

@@ -254,10 +254,6 @@ int main(int argc, char *argv[]) {
                 lmr_nopv_divisor = 0.01 * stoi(tokens[4]);
                 fill_lmr_reduction_table();
             }
-            if (tokens.size() >= 5 && tokens[2] == "lmr_ispv_divisor" && tokens[3] == "value") {
-                lmr_ispv_divisor = 0.01 * stoi(tokens[4]);
-                fill_lmr_reduction_table();
-            }
             if (tokens.size() >= 5 && tokens[2] == "nmp_base" && tokens[3] == "value") {
                 nmp_base = 0.01 * stoi(tokens[4]);
             }
@@ -780,7 +776,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num > 2 + 2 * is_pv) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
+            reduce_this = lmr_reduction(depth, move_num);
+            if (is_pv) --reduce_this;
             if (in_check) --reduce_this;
             if (gives_check) --reduce_this;
             if (cutnode) ++reduce_this;
