@@ -620,7 +620,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_all{1};
     int reduce_this{};
     Move bestmove{};
-    bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
+    bool improving = !in_check && ss->excluded.is_null() && ((ss - 2)->static_eval != -20001 ? ss->static_eval > (ss - 2)->static_eval : (ss - 4)->static_eval != -20001 && ss->static_eval > (ss - 4)->static_eval);
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
         return (static_eval + beta) / 2;
     }
@@ -780,7 +780,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         //Late Move Reductions
         reduce_this = 0;
         if constexpr (late_move_reductions) if (depth > 2 && move_num > 2 + 2 * is_pv) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
+            reduce_this = lmr_reduction(is_pv && entry.type != tt_alpha, depth, move_num);
             if (in_check) --reduce_this;
             if (gives_check) --reduce_this;
             if (cutnode) ++reduce_this;
@@ -842,7 +842,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
     table.age();
     Movelist movelist;
     Search_stack search_stack[96];
-    search_stack[2].ply = 0;
+    search_stack[4].ply = 0;
     NNUE nnue;
     nnue.refresh(position);
     sd.nnue = &nnue;
@@ -866,7 +866,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         }
         sd.pv_table[0][0] = Move{};
         for (; depth < 64;) {
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
+            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[4], sd, false);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, sd.nodes * threads, static_cast<int>(sd.nodes * threads / timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
