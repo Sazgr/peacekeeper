@@ -606,7 +606,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (depth == 1 && is_pv) sd.pv_table[ss->ply + 1][0] = Move{};
     if (position.draw(ss->ply > 2 ? 1 : 2)) {
         sd.pv_table[ss->ply][0] = Move{};
-        return (ss->ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
+        return (ss->ply & 1) ? -50 - 30 * position.eval_phase() : 50 + 30 * position.eval_phase();
     }
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
@@ -831,7 +831,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (move_num == 0) {
         sd.pv_table[ss->ply][0] = Move{};
         if (in_check) return -20000 + ss->ply;
-        else return 0;
+        else return (ss->ply & 1) ? -50 - 30 * position.eval_phase() : 50 + 30 * position.eval_phase();
     }
     if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
     return timer.stopped() ? 0 : best_value;
