@@ -791,7 +791,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd, false);
         } else {
             result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1, sd, true);
-            if (reduce_this) {
+            if (reduce_this && (is_pv || depth >= 6 || reduce_this > 1)) {
                 if (alpha < result) {
                     result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
                 }
