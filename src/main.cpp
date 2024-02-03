@@ -610,6 +610,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
+    bool is_mated = true;
     int static_eval = position.static_eval(*sd.nnue);
     ss->static_eval = static_eval;
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
@@ -698,6 +699,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     Movelist movelist;
     position.legal_noisy(movelist);
+    if (movelist.size()) is_mated = false;
     for (int i = 0; i < movelist.size(); ++i) {
         movelist[i].add_sortkey(movelist[i].mvv_lva());
     }
@@ -739,6 +741,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     position.legal_quiet(movelist);
+    if (movelist.size()) is_mated = false;
     for (int i = 0; i < movelist.size(); ++i) {
         int score{};
         if constexpr (history_heuristic) {
@@ -830,7 +833,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if (move_num == 0) {
         sd.pv_table[ss->ply][0] = Move{};
-        if (in_check) return -20000 + ss->ply;
+        if (!is_mated) return alpha;
+        else if (in_check) return -20000 + ss->ply;
         else return 0;
     }
     if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
