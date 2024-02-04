@@ -19,7 +19,7 @@ enum Features : bool {
     null_move_pruning    = true,
     static_null_move     = true,
     killer_heuristic     = true,
-    history_heuristic    = true,
+    history_heuristic    = false,
     futility_pruning     = true,
 #ifdef DATAGEN
     late_move_pruning    = false,
