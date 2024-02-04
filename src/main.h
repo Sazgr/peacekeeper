@@ -16,7 +16,7 @@
 #endif
 
 enum Features : bool {
-    null_move_pruning    = true,
+    null_move_pruning    = false,
     static_null_move     = true,
     killer_heuristic     = true,
     history_heuristic    = true,
