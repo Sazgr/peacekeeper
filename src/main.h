@@ -17,7 +17,7 @@
 
 enum Features : bool {
     null_move_pruning    = true,
-    static_null_move     = true,
+    static_null_move     = false,
     killer_heuristic     = true,
     history_heuristic    = true,
     futility_pruning     = true,
