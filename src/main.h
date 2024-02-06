@@ -79,13 +79,6 @@ inline void fill_lmr_reduction_table() {
 inline int lmr_reduction(bool is_pv, int depth, int move_num) {
     return lmr_reduction_table[is_pv][depth][move_num];
 }
-inline int late_move_margin(int depth, int move_num, bool improving) {
-    if constexpr (late_move_pruning) {
-        if (improving) return ((move_num * move_num) / (depth * depth));
-        else return 2 * ((move_num * move_num) / (depth * depth));
-    }
-    else return 0;
-}
 inline bool no_mate(int alpha, int beta) {
     return (-18000 < alpha) && (beta < 18000);
 }
