@@ -596,10 +596,9 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
         hash[ply] ^= zobrist_castling[castling_rights[ply - 1][i]] ^ zobrist_castling[castling_rights[ply][i]];
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply - 1]] ^ zobrist_enpassant[enpassant_square[ply]];
+    nnue_refresh = 0;
     if constexpr (update_nnue) if (piece == black_king + side_to_move && (((start ^ king_end) & 4) || (buckets > 1 && king_buckets[start] != king_buckets[king_end]))) {
-        nnue->refresh(*this);
-        nnue_sub.clear();
-        nnue_add.clear();
+        nnue_refresh = 1 + side_to_move;
     }
     king_square[0] = get_lsb(pieces[10]);
     king_square[1] = get_lsb(pieces[11]);
@@ -676,16 +675,21 @@ template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int 
 }
 
 void Position::nnue_update_accumulator(NNUE& nnue) {
+    if (nnue_refresh) {
+        //nnue.refresh(*this);
+        //nnue_refresh = 3;
+    }
+    if (nnue_refresh) nnue.refresh_side(nnue_refresh - 1, *this);
     if (nnue_sub.empty()) return;
     if (nnue_sub.size() > nnue_add.size()) {
-        nnue.update_accumulator_sub_sub_add(nnue_sub[0], nnue_sub[1], nnue_add[0]);
+        nnue.update_accumulator_sub_sub_add(3 - nnue_refresh, nnue_sub[0], nnue_sub[1], nnue_add[0]);
         nnue_sub.pop_back();
         nnue_sub.pop_back();
         nnue_add.pop_back();
         return;
     }
     while (!nnue_sub.empty()) {
-        nnue.update_accumulator_sub_add(nnue_sub.back(), nnue_add.back());
+        nnue.update_accumulator_sub_add(3 - nnue_refresh, nnue_sub.back(), nnue_add.back());
         nnue_sub.pop_back();
         nnue_add.pop_back();
     }

@@ -68,9 +68,40 @@ template <bool add> void NNUE::update_accumulator(int piece, int square, int bla
     }
 }
 
-void NNUE::update_accumulator_sub_add(std::array<int, 2> sub, std::array<int, 2> add) {
+template <bool add, int side> void NNUE::update_accumulator_side(int piece, int square, int black_king_square, int white_king_square) {
     Accumulator& accumulator = accumulator_stack[current_accumulator];
-    for (int side{}; side < 2; ++side) {
+    const int inputs = index(piece, square, side, side ? white_king_square : black_king_square);
+#ifdef SIMD
+    const register_type* weights = reinterpret_cast<register_type*>(input_weights.data() + inputs * hidden_size);
+    const register_type* input = reinterpret_cast<register_type*>(accumulator[side].data());
+    register_type* output = reinterpret_cast<register_type*>(accumulator[side].data());
+    if constexpr (add) {
+        for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
+            output[i] = register_add_16(input[i], weights[i]);
+        }
+    } else {
+        for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
+            output[i] = register_sub_16(input[i], weights[i]);
+        }
+    }
+#else
+    const i16* weights = input_weights.data() + inputs * hidden_size;
+    if constexpr (add) {
+        for (int i = 0; i < hidden_size; ++i) {
+            accumulator[side][i] += weights[i];
+        }
+    } else {
+        for (int i = 0; i < hidden_size; ++i) {
+            accumulator[side][i] -= weights[i];
+        }
+    }
+#endif
+}
+
+void NNUE::update_accumulator_sub_add(u64 sides, std::array<int, 2> sub, std::array<int, 2> add) {
+    Accumulator& accumulator = accumulator_stack[current_accumulator];
+    while (sides != 0) {
+        int side = pop_lsb(sides);
 #ifdef SIMD
         const register_type* weights_sub = reinterpret_cast<register_type*>(input_weights.data() + sub[side] * hidden_size);
         const register_type* weights_add = reinterpret_cast<register_type*>(input_weights.data() + add[side] * hidden_size);
@@ -89,9 +120,10 @@ void NNUE::update_accumulator_sub_add(std::array<int, 2> sub, std::array<int, 2>
     }
 }
 
-void NNUE::update_accumulator_sub_sub_add(std::array<int, 2> sub1, std::array<int, 2> sub2, std::array<int, 2> add) {
+void NNUE::update_accumulator_sub_sub_add(u64 sides, std::array<int, 2> sub1, std::array<int, 2> sub2, std::array<int, 2> add) {
     Accumulator& accumulator = accumulator_stack[current_accumulator];
-    for (int side{}; side < 2; ++side) {
+    while (sides != 0) {
+        int side = pop_lsb(sides);
 #ifdef SIMD
         const register_type* weights_sub1 = reinterpret_cast<register_type*>(input_weights.data() + sub1[side] * hidden_size);
         const register_type* weights_sub2 = reinterpret_cast<register_type*>(input_weights.data() + sub2[side] * hidden_size);
@@ -122,6 +154,23 @@ void NNUE::refresh(Position& position) {
         int square = pop_lsb(pieces);
         int piece = position.board[square];
         update_accumulator<true>(piece, square, black_king_square, white_king_square);
+    }
+}
+
+void NNUE::refresh_side(int side, Position& position) {
+    Accumulator &accumulator = accumulator_stack[current_accumulator];
+    accumulator.clear_side(side);
+    u64 pieces = position.occupied;
+    const int black_king_square = get_lsb(position.pieces[black_king]);
+    const int white_king_square = get_lsb(position.pieces[white_king]);
+    while (pieces) {
+        int square = pop_lsb(pieces);
+        int piece = position.board[square];
+        if (!side) {
+            update_accumulator_side<true, 0>(piece, square, black_king_square, white_king_square);
+        } else {
+            update_accumulator_side<true, 1>(piece, square, black_king_square, white_king_square);
+        }
     }
 }
 

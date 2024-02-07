@@ -70,6 +70,10 @@ struct Accumulator {
         white = input_bias;
         black = input_bias;
     }
+    inline void clear_side(int side) {
+        if (side) white = input_bias;
+        else black = input_bias;
+    }
 };
 
 class Position;
@@ -94,9 +98,11 @@ public:
         current_accumulator = 0;
     }
     void refresh(Position& position);
+    void refresh_side(int side, Position& position);
     template <bool add> void update_accumulator(int piece, int square, int black_king_square, int white_king_square);
-    void update_accumulator_sub_add(std::array<int, 2> sub, std::array<int, 2> add);
-    void update_accumulator_sub_sub_add(std::array<int, 2> sub1, std::array<int, 2> sub2, std::array<int, 2> add);
+    template <bool add, int side> void update_accumulator_side(int piece, int square, int black_king_square, int white_king_square);
+    void update_accumulator_sub_add(u64 sides, std::array<int, 2> sub, std::array<int, 2> add);
+    void update_accumulator_sub_sub_add(u64 sides, std::array<int, 2> sub1, std::array<int, 2> sub2, std::array<int, 2> add);
     i32 evaluate(bool side);
 };
 

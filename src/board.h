@@ -145,6 +145,7 @@ public:
     int eg_static_eval{};
     std::vector<std::array<int, 2>> nnue_sub;
     std::vector<std::array<int, 2>> nnue_add;
+    int nnue_refresh;
     Position();
     Position& operator=(Position& rhs) {
         memcpy(pieces, rhs.pieces, sizeof(u64) * 13);
