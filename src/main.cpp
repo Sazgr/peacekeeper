@@ -518,6 +518,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
             position.make_move<true>(movelist[i], sd.nnue);
+            table.prefetch(position.hashkey());
             ss->move = movelist[i];
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
@@ -533,7 +534,6 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         }
         return best_value;
     } else {
-        table.prefetch(position.hashkey());
         int static_eval = position.static_eval(*sd.nnue);
         int best_value = -20000;
         if (static_eval >= beta) return static_eval; //if the position is already so good, cutoff immediately
@@ -550,6 +550,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
         if (hash_move_usable) {//searching best move from hashtable
             position.make_move<true>(hash_move, sd.nnue);
+            table.prefetch(position.hashkey());
             ss->move = hash_move;
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
@@ -574,6 +575,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) {
             if (!see(position, movelist[i], -274)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
+            table.prefetch(position.hashkey());
             ss->move = movelist[i];
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
@@ -608,7 +610,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         sd.pv_table[ss->ply][0] = Move{};
         return (ss->ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
     }
-    table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = position.static_eval(*sd.nnue);
     ss->static_eval = static_eval;
@@ -630,6 +631,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && (position.eval_phase() >= 4)) {
         position.make_null();
+        table.prefetch(position.hashkey());
         ss->move = Move{};
         ++sd.nodes;
         (ss + 1)->ply = ss->ply + 1;
@@ -669,6 +671,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
         position.make_move<true>(hash_move, sd.nnue);
+        table.prefetch(position.hashkey());
         ss->move = hash_move;
         ++sd.nodes;
         ++move_num;
@@ -709,6 +712,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
         if (move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
+        table.prefetch(position.hashkey());
         ss->move = movelist[i];
         ++sd.nodes;
         ++move_num;
@@ -762,6 +766,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         if (move_num != 0 && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
         if (move_num != 0 && depth < 5 && movelist[i].sortkey() < 2900 - 500 * depth - 500 * is_pv - 200 * improving) continue;
         position.make_move<true>(movelist[i], sd.nnue);
+        table.prefetch(position.hashkey());
         ss->move = movelist[i];
         bool gives_check = position.check();
         //Standard Late Move Pruning
