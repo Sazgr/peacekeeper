@@ -665,7 +665,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             } else if (singular_beta >= beta) {
                 return singular_beta;
             } else if (entry.score >= beta) {
-                extend_this = -1;
+                extend_this = -1 - (entry.score >= beta + 30);
             }
         }
         position.make_move<true>(hash_move, sd.nnue);
