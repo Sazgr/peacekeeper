@@ -67,7 +67,7 @@ inline void print_info(std::ostream& out) {
         << "option name see_quiet_constant type spin default 900 min 0 max 10000" << '\n'
         << "option name see_quiet_linear type spin default 25 min 0 max 1000" << '\n'
         << "option name see_quiet_quadratic type spin default 55 min 0 max 1000" << '\n'
-        << "option name singular_extension_margin type spin default 64 min 0 max 1000" << '\n'
+        << "option name singular_extension_margin type spin default 48 min 0 max 1000" << '\n'
         << "option name double_extension_margin type spin default 20 min 0 max 1000" << '\n'
         << "option name aspiration_beta_timescale type spin default 135 min 0 max 1000" << '\n'
         << "option name tc_stability_base type spin default 80 min 0 max 1000" << '\n'
