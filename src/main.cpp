@@ -825,8 +825,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     if (move_num == 0) {
-        sd.pv_table[ss->ply][0] = Move{};
-        if (in_check) return -20000 + ss->ply;
+        if (is_pv) sd.pv_table[ss->ply][0] = Move{};
+        if (!ss->excluded.is_null()) return -20000;
+        else if (in_check) return -20000 + ss->ply;
         else return 0;
     }
     if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
