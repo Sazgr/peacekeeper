@@ -611,6 +611,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
     ss->static_eval = position.static_eval(*sd.nnue);
+    ss->eval = ss->static_eval;
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
     int result{};
@@ -628,7 +629,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
-    ss->eval = (entry.type == tt_exact || entry.type == tt_alpha && entry.score < ss->static_eval || entry.type == tt_beta && entry.score > ss->static_eval) ? entry.score : ss->static_eval;
+    if (entry.type == tt_exact || entry.type == tt_alpha && entry.score < ss->static_eval || entry.type == tt_beta && entry.score > ss->static_eval) {
+        ss->eval = entry.score;
+    }
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && ss->eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
