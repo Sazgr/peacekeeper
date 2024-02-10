@@ -629,7 +629,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
-    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
+    if constexpr (null_move_pruning) if (depth >= 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
         ++sd.nodes;
