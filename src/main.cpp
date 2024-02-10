@@ -610,8 +610,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
-    int static_eval = position.static_eval(*sd.nnue);
-    ss->static_eval = static_eval;
+    ss->static_eval = position.static_eval(*sd.nnue);
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
     int result{};
@@ -621,26 +620,27 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
-    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
-        return (static_eval + beta) / 2;
+    if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (ss->eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
+        return (ss->eval + beta) / 2;
     }
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
     if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
-    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
+    ss->eval = (entry.type == tt_exact || entry.type == tt_alpha && entry.score < ss->static_eval || entry.type == tt_beta && entry.score > ss->static_eval) ? entry.score : ss->static_eval;
+    if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && ss->eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
         ++sd.nodes;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(0, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd, !cutnode);
+        result = -pvs(position, timer, table, move_order, std::max(0, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(ss->eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd, !cutnode);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             return (abs(result) > 18000 ? beta : result);
         }
     }
-    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval - 63 + 182 * depth <= alpha) {
+    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && ss->eval - 63 + 182 * depth <= alpha) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
