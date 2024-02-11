@@ -637,6 +637,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         result = -pvs(position, timer, table, move_order, std::max(0, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd, !cutnode);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
+            table.insert(position.hashkey(), abs(result) > 18000 ? beta : result, tt_beta, Move{}, depth, ss->ply);
             return (abs(result) > 18000 ? beta : result);
         }
     }
