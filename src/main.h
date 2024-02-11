@@ -29,6 +29,7 @@ enum Features : bool {
     check_extensions     = true,
     internal_iterative_reduction = true,
     razoring             = true,
+    probcut              = true,
 };
 
 spsa std::array<int, 3> aspiration_bounds{28, 90, 280};

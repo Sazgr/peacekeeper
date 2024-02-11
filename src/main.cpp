@@ -629,6 +629,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return entry.score;
     }
+    Move hash_move = entry.bestmove;
+    bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
@@ -643,9 +645,35 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval - 63 + 182 * depth <= alpha) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
+    if constexpr (probcut) {
+        int probcut_beta = beta + 200;
+        if (depth >= 4 && abs(beta) < 18000 && (!tt_hit || static_eval >= probcut_beta || entry.depth < depth - 3)) {
+            Movelist capture_list;
+            position.legal_noisy(capture_list);
+            for (int i = 0; i < capture_list.size(); ++i) {
+                capture_list[i].add_sortkey(capture_list[i].mvv_lva());
+            }
+            int probcut_result = 0;
+            for (int i = 0; i < capture_list.size(); ++i) {
+                if (!see(position, capture_list[i], 1)) continue;
+                if (capture_list[i] == hash_move) continue;
+                ss->move = capture_list[i];
+                ++sd.nodes;
+                (ss + 1)->ply = ss->ply + 1;
+                position.make_move<true>(capture_list[i], sd.nnue);
+                probcut_result = -quiescence(position, timer, table, -probcut_beta, -probcut_beta + 1, ss + 1, sd);
+                if (probcut_result >= probcut_beta) {
+                    probcut_result = -pvs(position, timer, table, move_order, depth - 4, -probcut_beta, -probcut_beta + 1, ss + 1, sd, !cutnode);
+                }
+                position.undo_move<true>(capture_list[i], sd.nnue);
+                if (probcut_result >= probcut_beta) {
+                    table.insert(position.hashkey(), probcut_result, tt_beta, capture_list[i], depth - 3, ss->ply);
+                    return probcut_result;
+                }
+            }
+        }
+    }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
-    Move hash_move = entry.bestmove;
-    bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
