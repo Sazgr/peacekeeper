@@ -240,11 +240,6 @@ int main(int argc, char *argv[]) {
             }
             if (tokens.size() >= 5 && tokens[2] == "aspiration_base" && tokens[3] == "value") {
                 aspiration_base = 0.1 * stoi(tokens[4]);
-                for (int i{}; i<3; ++i) aspiration_bounds[i] = aspiration_base * std::pow(aspiration_power, i);
-            }
-            if (tokens.size() >= 5 && tokens[2] == "aspiration_power" && tokens[3] == "value") {
-                aspiration_power = 0.01 * stoi(tokens[4]);
-                for (int i{}; i<3; ++i) aspiration_bounds[i] = aspiration_base * std::pow(aspiration_power, i);
             }
             if (tokens.size() >= 5 && tokens[2] == "lmr_base" && tokens[3] == "value") {
                 lmr_base = 0.01 * stoi(tokens[4]);
@@ -305,6 +300,27 @@ int main(int argc, char *argv[]) {
             if (tokens.size() >= 5 && tokens[2] == "tc_stability_power" && tokens[3] == "value") {
                 tc_stability_power = 0.001 * stoi(tokens[4]);
                 for (int i{}; i<4; ++i) tc_stability[i] = tc_stability_multiplier * std::pow(tc_stability_power, i) + tc_stability_base;
+            }
+            if (tokens.size() >= 5 && tokens[2] == "probuct_margin" && tokens[3] == "value") {
+                probcut_margin = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "history_pruning_base" && tokens[3] == "value") {
+                history_pruning_base = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "history_pruning_depth_margin" && tokens[3] == "value") {
+                history_pruning_depth_margin = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "history_pruning_pv_margin" && tokens[3] == "value") {
+                history_pruning_pv_margin = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "history_pruning_improving_margin" && tokens[3] == "value") {
+                history_pruning_improving_margin = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "history_lmr_base" && tokens[3] == "value") {
+                history_lmr_base = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "history_lmr_divisor" && tokens[3] == "value") {
+                history_lmr_divisor = stoi(tokens[4]);
             }
 #endif
         }
@@ -646,7 +662,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (probcut) {
-        int probcut_beta = beta + 200;
+        int probcut_beta = beta + probcut_margin;
         if (depth >= 4 && abs(beta) < 18000 && (!tt_hit || static_eval >= probcut_beta || entry.depth < depth - 3)) {
             Movelist capture_list;
             position.legal_noisy(capture_list);
@@ -736,7 +752,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
+        if (!see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
         ++sd.nodes;
@@ -788,8 +804,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     for (int i{}; i < movelist.size(); ++i) {
         if (movelist[i] == ss->excluded) continue;
         if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (move_num != 0 && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
-        if (move_num != 0 && depth < 5 && movelist[i].sortkey() < 2900 - 500 * depth - 500 * is_pv - 200 * improving) continue;
+        if (!see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
+        if (move_num != 0 && depth < 5 && movelist[i].sortkey() < history_pruning_base - history_pruning_depth_margin * depth - history_pruning_pv_margin * is_pv - history_pruning_improving_margin * improving) continue;
         position.make_move<true>(movelist[i], sd.nnue);
         ss->move = movelist[i];
         bool gives_check = position.check();
@@ -808,7 +824,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             if (in_check) --reduce_this;
             if (gives_check) --reduce_this;
             if (cutnode) ++reduce_this;
-            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / 1000 - 3, -2, 1); //reduce more for moves with worse history
+            reduce_this -= std::clamp((static_cast<int>(movelist[i].sortkey()) - history_lmr_base) / history_lmr_divisor, -2, 1); //reduce more for moves with worse history
             reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
         }
         if (move_num == 1) {
