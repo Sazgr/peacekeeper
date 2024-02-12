@@ -32,7 +32,6 @@ enum Features : bool {
     probcut              = true,
 };
 
-spsa std::array<int, 3> aspiration_bounds{28, 90, 280};
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
 spsa double futility_base = 36;
@@ -57,6 +56,12 @@ spsa double aspiration_beta_timescale = 1.35;
 spsa double tc_stability_base = 0.80;
 spsa double tc_stability_multiplier = 1.25;
 spsa double tc_stability_power = 0.313;
+spsa int probcut_margin = 200;
+spsa int history_pruning_base = 2900;
+spsa int history_pruning_depth_margin = 500;
+spsa int history_pruning_pv_margin = 500;
+spsa int history_pruning_improving_margin = 200;
+spsa int history_lmr_divisor = 1000;
 
 int lmr_reduction_table[2][64][220];
 
