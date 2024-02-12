@@ -73,6 +73,11 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_base type spin default 80 min 0 max 1000" << '\n'
         << "option name tc_stability_multiplier type spin default 125 min 0 max 1000" << '\n'
         << "option name tc_stability_power type spin default 313 min 0 max 1000" << '\n'
+        << "option name probcut_margin type spin default 200 min 0 max 1000" << '\n'
+        << "option name history_pruning_base type spin default 2900 min 0 max 10000" << '\n'
+        << "option name history_pruning_depth_margin type spin default 500 min 0 max 10000" << '\n'
+        << "option name history_pruning_pv_margin type spin default 500 min 0 max 10000" << '\n'
+        << "option name history_pruning_improving_margin type spin default 200 min 0 max 10000" << '\n'
 #endif
         << "uciok" << std::endl;
 }
