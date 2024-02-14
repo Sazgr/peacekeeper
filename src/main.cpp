@@ -634,7 +634,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_all{1};
     int reduce_this{};
     Move bestmove{};
-    bool improving = !in_check && ss->excluded.is_null() && (ss - 2)->static_eval != -20001 && ss->static_eval > (ss - 2)->static_eval;
+    bool improving = !in_check && ss->excluded.is_null() && ((ss - 2)->static_eval != -20001 ? ss->static_eval > (ss - 2)->static_eval : (ss - 4)->static_eval != -20001 ? ss->static_eval > (ss - 4)->static_eval : true);
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
         return (static_eval + beta) / 2;
     }
@@ -880,7 +880,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
     table.age();
     Movelist movelist;
     Search_stack search_stack[96];
-    search_stack[2].ply = 0;
+    search_stack[4].ply = 0;
     NNUE nnue;
     nnue.refresh(position);
     sd.nnue = &nnue;
