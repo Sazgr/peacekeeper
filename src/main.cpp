@@ -686,7 +686,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
     }
-    if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
+    if constexpr (check_extensions) if (depth >= 4 && in_check) {reduce_all -= 1;} //check extension
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     //Stage 1 - Hash Move
     if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
