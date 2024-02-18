@@ -676,7 +676,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 (ss + 1)->ply = ss->ply + 1;
                 position.make_move<true>(capture_list[i], sd.nnue);
                 probcut_result = -quiescence(position, timer, table, -probcut_beta, -probcut_beta + 1, ss + 1, sd);
-                if (probcut_result >= probcut_beta) {
+                if (probcut_result >= probcut_beta && depth > 4) {
                     probcut_result = -pvs(position, timer, table, move_order, depth - 4, -probcut_beta, -probcut_beta + 1, ss + 1, sd, !cutnode);
                 }
                 position.undo_move<true>(capture_list[i], sd.nnue);
@@ -1000,4 +1000,3 @@ int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& t
     }
     return best_score;
 }
-
