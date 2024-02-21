@@ -11,7 +11,7 @@ constexpr int input_size = 12 * 64 * buckets;
 constexpr int hidden_size = 768;
 constexpr int hidden_dsize = hidden_size * 2;
 constexpr int output_size = 1;
-constexpr int input_quantization = 181;
+constexpr int input_quantization = 255;
 constexpr int hidden_quantization = 128;
 
 extern std::array<i16, input_size * hidden_size> input_weights;
