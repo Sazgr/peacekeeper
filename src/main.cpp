@@ -661,7 +661,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (probcut) {
         int probcut_beta = beta + probcut_margin;
-        if (!is_pv && depth >= 4 && abs(beta) < 18000 && (!tt_hit || static_eval >= probcut_beta || entry.depth < depth - 3)) {
+        if (depth >= 4 && !is_pv && !in_check && abs(beta) < 18000 && (!tt_hit || static_eval >= probcut_beta || entry.depth < depth - 3)) {
             Movelist capture_list;
             position.legal_noisy(capture_list);
             for (int i = 0; i < capture_list.size(); ++i) {
