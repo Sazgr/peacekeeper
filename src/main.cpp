@@ -669,8 +669,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
             int probcut_result = 0;
             for (int i = 0; i < capture_list.size(); ++i) {
+                if (capture_list[i] == ss->excluded) continue;
+                if (hash_move_usable && capture_list[i] == hash_move) continue;
                 if (!see(position, capture_list[i], 1)) continue;
-                if (capture_list[i] == hash_move) continue;
                 ss->move = capture_list[i];
                 ++sd.nodes;
                 (ss + 1)->ply = ss->ply + 1;
