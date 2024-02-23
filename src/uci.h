@@ -72,7 +72,7 @@ inline void print_info(std::ostream& out) {
         << "option name tc_stability_base type spin default 84 min 0 max 1000" << '\n'
         << "option name tc_stability_multiplier type spin default 131 min 0 max 1000" << '\n'
         << "option name tc_stability_power type spin default 331 min 0 max 1000" << '\n'
-        << "option name probcut_margin type spin default 208 min 0 max 1000" << '\n'
+        << "option name probcut_margin type spin default 233 min 0 max 1000" << '\n'
         << "option name history_pruning_base type spin default 3058 min 0 max 10000" << '\n'
         << "option name history_pruning_depth_margin type spin default 533 min 0 max 10000" << '\n'
         << "option name history_pruning_pv_margin type spin default 518 min 0 max 10000" << '\n'
