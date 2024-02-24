@@ -617,7 +617,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if (depth == 1 && is_pv) sd.pv_table[ss->ply + 1][0] = Move{};
-    if (position.draw(ss->ply > 2 ? 1 : 2)) {
+    if (position.draw(ss->ply >= 2 ? 1 : 2)) {
         sd.pv_table[ss->ply][0] = Move{};
         return (ss->ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
     }
