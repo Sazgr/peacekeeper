@@ -632,7 +632,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int old_alpha{alpha};
     int best_value = -20000;
     int reduce_all{1};
-    int reduce_this{};
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && ((ss - 2)->static_eval != -20001 ? ss->static_eval > (ss - 2)->static_eval : (ss - 4)->static_eval != -20001 ? ss->static_eval > (ss - 4)->static_eval : true);
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
@@ -689,179 +688,127 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
-    //Stage 1 - Hash Move
-    if (hash_move_usable && hash_move != ss->excluded) {//searching best move from hashtable
-        int extend_this = 0;
-        if (!is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
-            int singular_beta = entry.score - depth * singular_extension_margin / 16;
-            int singular_depth = (depth - 1) / 2;
-            ss->excluded = hash_move;
-            int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd, cutnode);
-            ss->excluded = Move{};
-            if (singular_score < singular_beta) {
-                if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
-                    extend_this = 2;
-                    ++ss->double_extensions;
-                } else {
-                    extend_this = 1;
-                }
-            } else if (singular_beta >= beta) {
-                return singular_beta;
-            } else if (entry.score >= beta) {
-                extend_this = -1 - (entry.score >= beta + 30);
-            }
-        }
-        position.make_move<true>(hash_move, sd.nnue);
-        ss->move = hash_move;
-        ++sd.nodes;
-        ++move_num;
-        (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
-        position.undo_move<true>(hash_move, sd.nnue);
-        if (!timer.stopped() && result > best_value) {
-            best_value = result;
-            if (result > alpha) {
-                alpha = result;
-                bestmove = hash_move;
-                if (is_pv) {
-                    sd.pv_table[ss->ply][0] = bestmove;
-                    memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
-                }
-                if (alpha >= beta) {
-                    if constexpr (history_heuristic) if (bestmove.captured() == 12) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);  
-                    }
-                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
-                    return alpha;
-                }
-            }
-        }
-    }
     Movelist movelist;
-    position.legal_noisy(movelist);
-    for (int i = 0; i < movelist.size(); ++i) {
-        movelist[i].add_sortkey(movelist[i].mvv_lva());
-    }
-    movelist.sort(0, movelist.size());
-    bool can_fut_prune = !in_check && no_mate(alpha, beta) && depth < 6;
-    //Stage 2 - Captures
-    for (int i{}; i < movelist.size(); ++i) {
-        if (movelist[i] == ss->excluded) continue;
-        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
-        position.make_move<true>(movelist[i], sd.nnue);
-        ss->move = movelist[i];
-        ++sd.nodes;
-        ++move_num;
-        (ss + 1)->ply = ss->ply + 1;
-        if (move_num == 1) {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd, false);
-        } else {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha-1, -alpha, ss + 1, sd, !cutnode);
-            if (is_pv && alpha < result) {
-                result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd, false);
-            }
-        }
-        position.undo_move<true>(movelist[i], sd.nnue);
-        if (!timer.stopped() && result > best_value) {
-            best_value = result;
-            if (result > alpha) {
-                alpha = result;
-                bestmove = movelist[i];
-                if (is_pv) {
-                    sd.pv_table[ss->ply][0] = bestmove;
-                    memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
+    for (int stage = stage_hash_move; stage != stage_finished; ++stage) { //generating and sorting one stage
+        switch (stage) {
+            case stage_hash_move:
+                movelist.clear();
+                if (hash_move_usable) movelist.add(hash_move);
+                break;
+            case stage_noisy:
+                position.legal_noisy(movelist);
+                for (int i = 0; i < movelist.size(); ++i) {
+                    movelist[i].add_sortkey(movelist[i].mvv_lva());
                 }
-                if (alpha >= beta) {
-                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
-                    return alpha;
-                }
-            }
-        }
-    }
-    position.legal_quiet(movelist);
-    for (int i = 0; i < movelist.size(); ++i) {
-        int score{};
-        if constexpr (history_heuristic) {
-            score += move_order.history_value(movelist[i].piece(), movelist[i].end());
-            score += move_order.continuation_value((ss - 2)->move, movelist[i]);
-            score += move_order.continuation_value((ss - 1)->move, movelist[i]);
-        }
-        if constexpr (killer_heuristic) {
-            if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 1600;
-            if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 800;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
-            if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
-        }
-        movelist[i].add_sortkey(score);
-    }
-    movelist.sort(0, movelist.size());
-    //Stage 3 - Quiet Moves
-    for (int i{}; i < movelist.size(); ++i) {
-        if (movelist[i] == ss->excluded) continue;
-        if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-        if (move_num != 0 && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
-        if (move_num != 0 && depth < 5 && movelist[i].sortkey() < history_pruning_base - history_pruning_depth_margin * depth - history_pruning_pv_margin * is_pv - history_pruning_improving_margin * improving) continue;
-        position.make_move<true>(movelist[i], sd.nnue);
-        ss->move = movelist[i];
-        bool gives_check = position.check();
-        //Standard Late Move Pruning
-        if constexpr (late_move_pruning) if (depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1)) {
-            position.undo_move<true>(movelist[i], sd.nnue);
-            continue;
-        }
-        ++sd.nodes;
-        ++move_num;
-        (ss + 1)->ply = ss->ply + 1;
-        //Late Move Reductions
-        reduce_this = 0;
-        if constexpr (late_move_reductions) if (depth > 2 && move_num > 2 + 2 * is_pv) {
-            reduce_this = lmr_reduction(is_pv, depth, move_num);
-            if (in_check) --reduce_this;
-            if (gives_check) --reduce_this;
-            if (cutnode) ++reduce_this;
-            reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
-            reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
-        }
-        if (move_num == 1) {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all, -beta, -alpha, ss + 1, sd, false);
-        } else {
-            result = -pvs(position, timer, table, move_order, depth - reduce_all - reduce_this, -alpha - 1, -alpha, ss + 1, sd, true);
-            if (reduce_this) {
-                if (alpha < result) {
-                    result = -pvs(position, timer, table, move_order, depth - reduce_all, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
-                }
-            }
-            if (alpha < result && is_pv) {
-                result = -pvs(position, timer, table, move_order, depth - reduce_all,  -beta, -alpha, ss + 1, sd, false);
-            }
-        }
-        position.undo_move<true>(movelist[i], sd.nnue);
-        if (!timer.stopped() && result > best_value) {
-            best_value = result;
-            if (!timer.stopped() && result > alpha) {
-                alpha = result;
-                bestmove = movelist[i];
-                if (is_pv) {
-                    sd.pv_table[ss->ply][0] = bestmove;
-                    memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
-                }
-                if (alpha >= beta) {
-                    if constexpr (history_heuristic) for (int j{0}; j<i; ++j) {
-                        move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus(depth), false);
-                        move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
-                        move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
-                    }
+                movelist.sort(0, movelist.size());
+                break;
+            case stage_quiet:
+                position.legal_quiet(movelist);
+                for (int i = 0; i < movelist.size(); ++i) {
+                    int score{};
                     if constexpr (history_heuristic) {
-                        move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
-                        move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
+                        score += move_order.history_value(movelist[i].piece(), movelist[i].end());
+                        score += move_order.continuation_value((ss - 2)->move, movelist[i]);
+                        score += move_order.continuation_value((ss - 1)->move, movelist[i]);
                     }
-                    if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
-                    if constexpr (killer_heuristic) move_order.killer_add(bestmove, ss->ply);
-                    return alpha;
+                    if constexpr (killer_heuristic) {
+                        if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 1600;
+                        if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 800;
+                        if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
+                        if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
+                    }
+                    movelist[i].add_sortkey(score);
+                    }
+                movelist.sort(0, movelist.size());
+                break;
+            default:
+                break;
+        }
+        for (int i{}; i < movelist.size(); ++i) {
+            if (movelist[i] == ss->excluded) continue;
+            if (stage != stage_hash_move && hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
+            if (stage == stage_noisy && move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
+            if (stage == stage_quiet && move_num != 0 && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
+            if (stage == stage_quiet && move_num != 0 && depth < 5 && movelist[i].sortkey() < history_pruning_base - history_pruning_depth_margin * depth - history_pruning_pv_margin * is_pv - history_pruning_improving_margin * improving) continue;
+            int extend_this = 0, reduce_this = 0;
+            if (stage == stage_hash_move && !is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
+                int singular_beta = entry.score - depth * singular_extension_margin / 16;
+                int singular_depth = (depth - 1) / 2;
+                ss->excluded = movelist[i];
+                int singular_score = pvs(position, timer, table, move_order, singular_depth, singular_beta - 1, singular_beta, ss, sd, cutnode);
+                ss->excluded = Move{};
+                if (singular_score < singular_beta) {
+                    if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
+                        extend_this = 2;
+                        ++ss->double_extensions;
+                    } else {
+                        extend_this = 1;
+                    }
+                } else if (singular_beta >= beta) {
+                    return singular_beta;
+                } else if (entry.score >= beta) {
+                    extend_this = -1 - (entry.score >= beta + 30);
+                }
+            }
+            position.make_move<true>(movelist[i], sd.nnue);
+            ss->move = movelist[i];
+            bool gives_check = position.check();
+            //Standard Late Move Pruning
+            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && !in_check && !gives_check && move_num >= 3 + depth * depth * (improving + 1)) {
+                position.undo_move<true>(movelist[i], sd.nnue);
+                continue;
+            }
+            ++sd.nodes;
+            ++move_num;
+            (ss + 1)->ply = ss->ply + 1;
+            //late move reductions
+            reduce_this = 0;
+            if constexpr (late_move_reductions) if (stage == stage_quiet && depth > 2 && move_num > 2 + 2 * is_pv) {
+                reduce_this = lmr_reduction(is_pv, depth, move_num);
+                if (in_check) --reduce_this;
+                if (gives_check) --reduce_this;
+                if (cutnode) ++reduce_this;
+                reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
+                reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
+            }
+            if (move_num == 1) {
+                result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
+            } else {
+                result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this - reduce_this, -alpha - 1, -alpha, ss + 1, sd, true);
+                if (reduce_this) {
+                    if (alpha < result) {
+                        result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
+                    }
+                }
+                if (alpha < result && is_pv) {
+                    result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
+                }
+            }
+            position.undo_move<true>(movelist[i], sd.nnue);
+            if (!timer.stopped() && result > best_value) {
+                best_value = result;
+                if (!timer.stopped() && result > alpha) {
+                    alpha = result;
+                    bestmove = movelist[i];
+                    if (is_pv) {
+                        sd.pv_table[ss->ply][0] = bestmove;
+                        memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
+                    }
+                    if (alpha >= beta) {
+                        if constexpr (history_heuristic) if (stage == stage_quiet) for (int j{0}; j<i; ++j) {
+                            move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus(depth), false);
+                            move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
+                            move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
+                        }
+                        if constexpr (history_heuristic) if (bestmove.captured() == 12) {
+                            move_order.history_edit(bestmove.piece(), bestmove.end(), history_bonus(depth), true);
+                            move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
+                            move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
+                        }
+                        if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
+                        if constexpr (killer_heuristic) if (bestmove.captured() == 12) move_order.killer_add(bestmove, ss->ply);
+                        return alpha;
+                    }
                 }
             }
         }

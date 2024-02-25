@@ -64,6 +64,13 @@ spsa int history_lmr_divisor = 951;
 
 int lmr_reduction_table[2][64][220];
 
+enum Stages {
+    stage_hash_move,
+    stage_noisy,
+    stage_quiet,
+    stage_finished
+};
+
 u64 perft(Position& position, int depth);
 template <bool side> u64 perft_f(Position& position, int depth);
 u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
