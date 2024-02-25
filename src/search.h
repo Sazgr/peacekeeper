@@ -16,6 +16,7 @@ struct Search_data {
     u64 nodes{};
     NNUE* nnue = nullptr;
     Move pv_table[128][128];
+    int root_depth;
     int depth_reached;
     int best_score;
 };

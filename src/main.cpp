@@ -700,7 +700,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ss->excluded = Move{};
             if (singular_score < singular_beta) {
                 if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
-                    extend_this = 2;
+                    extend_this = 2 + (depth < (sd.root_depth / 2));
                     ++ss->double_extensions;
                 } else {
                     extend_this = 1;
@@ -904,6 +904,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         }
         sd.pv_table[0][0] = Move{};
         for (; depth < 64;) {
+            sd.root_depth = depth;
             result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
