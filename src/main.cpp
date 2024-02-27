@@ -748,6 +748,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     return singular_beta;
                 } else if (entry.score >= beta) {
                     extend_this = -1 - (entry.score >= beta + 30);
+                } else if (entry.score <= alpha) {
+                    extend_this = -1;
                 }
             }
             position.make_move<true>(movelist[i], sd.nnue);
