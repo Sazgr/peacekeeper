@@ -718,7 +718,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
                     }
                     movelist[i].add_sortkey(score);
-                    }
+                }
                 movelist.sort(0, movelist.size());
                 break;
             default:
