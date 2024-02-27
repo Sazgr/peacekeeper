@@ -763,12 +763,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             (ss + 1)->ply = ss->ply + 1;
             //late move reductions
             reduce_this = 0;
-            if constexpr (late_move_reductions) if (stage == stage_quiet && depth > 2 && move_num > 2 + 2 * is_pv) {
+            if constexpr (late_move_reductions) if (depth > 2 && move_num > 2 + 2 * is_pv && (stage == stage_quiet || (stage == stage_noisy && !see(position, movelist[i], -274)))) {
                 reduce_this = lmr_reduction(is_pv, depth, move_num);
                 if (in_check) --reduce_this;
                 if (gives_check) --reduce_this;
                 if (cutnode) ++reduce_this;
-                reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
+                if (stage == stage_quiet) reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
                 reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
             }
             if (move_num == 1) {
