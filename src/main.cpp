@@ -766,6 +766,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             if constexpr (late_move_reductions) if (stage == stage_quiet && depth > 2 && move_num > 2 + 2 * is_pv) {
                 reduce_this = lmr_reduction(is_pv, depth, move_num);
                 if (in_check) --reduce_this;
+                else reduce_this += std::clamp((alpha - static_eval) / 800, 0, 2);
                 if (gives_check) --reduce_this;
                 if (cutnode) ++reduce_this;
                 reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
