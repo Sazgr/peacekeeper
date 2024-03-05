@@ -852,7 +852,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
         sd.pv_table[0][0] = Move{};
         for (; depth < 64;) {
             result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
-            if (alpha < result && result < beta) {
+            if (alpha < result) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, sd.nodes * threads, static_cast<int>(sd.nodes * threads / timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
                 ++depth;
@@ -877,16 +877,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 //no time checks here because we failed low, we allow for some extra time
                 if (aspiration_delta < 300) alpha -= aspiration_delta;
                 else alpha = -20001;
-                aspiration_delta = aspiration_delta * 2;
-            } 
-            if (result >= beta) {
-                if (!sd.pv_table[0][0].is_null()) {
-                    other_move = bestmove;
-                    bestmove = sd.pv_table[0][0];
-                }
-                if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
-                if (aspiration_delta < 300) beta += aspiration_delta;
-                else beta = 20001;
                 aspiration_delta = aspiration_delta * 2;
             }
         }
