@@ -613,8 +613,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool is_root = (ss->ply == 0);
     bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes, 0))) return 0;
+    bool in_check = position.check();//condition for NMP, futility, and LMR
     if (depth <= 0) {
-        return quiescence(position, timer, table, alpha, beta, ss, sd);
+        if (in_check) ++depth;
+        else return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if (depth == 1 && is_pv) sd.pv_table[ss->ply + 1][0] = Move{};
     if (position.draw(ss->ply > 2 ? 1 : 2)) {
@@ -622,7 +624,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return (ss->ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
     }
     table.prefetch(position.hashkey());
-    bool in_check = position.check();//condition for NMP, futility, and LMR
     int static_eval = in_check ? -20001 : position.static_eval(*sd.nnue);
     if (in_check) position.nnue_update_accumulator(*sd.nnue);
     ss->static_eval = static_eval;
@@ -686,7 +687,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
     }
-    if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     Movelist movelist;
     for (int stage = stage_hash_move; stage != stage_finished; ++stage) { //generating and sorting one stage
