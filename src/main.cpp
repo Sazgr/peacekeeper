@@ -402,6 +402,7 @@ void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit) {
             position.make_move(movelist[unint(random) % movelist.size()]);
         }
         position.legal_moves(movelist);
+        if (abs(position.static_eval()) >= 800) continue;
         if (!movelist.size()) continue;
         //std::cout << 't' << thread_id << ' ' << position.export_fen() << std::endl; //for debugging
         hash.clear();
