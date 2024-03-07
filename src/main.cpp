@@ -701,7 +701,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 for (int i = 0; i < movelist.size(); ++i) {
                     movelist[i].add_sortkey(movelist[i].mvv_lva());
                 }
-                movelist.sort(0, movelist.size());
                 break;
             case stage_quiet:
                 position.legal_quiet(movelist);
@@ -726,6 +725,17 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 break;
         }
         for (int i{}; i < movelist.size(); ++i) {
+            if (stage == stage_noisy) {
+                int best = i;
+                u64 best_score = movelist[i].data;
+                for (int j = i + 1; j < movelist.size(); ++j) {
+                    if (movelist[j].data > best_score) {
+                        best = j;
+                        best_score = movelist[j].data;
+                    }
+                }
+                if (best != i) std::swap(movelist[i], movelist[best]);
+            }
             if (movelist[i] == ss->excluded) continue;
             if (stage != stage_hash_move && hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
             if (stage == stage_noisy && move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
