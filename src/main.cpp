@@ -687,7 +687,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             }
         }
     }
-    if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     Movelist movelist;
     for (int stage = stage_hash_move; stage != stage_finished; ++stage) { //generating and sorting one stage
@@ -763,11 +762,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ++move_num;
             (ss + 1)->ply = ss->ply + 1;
             //late move reductions
-            reduce_this = 0;
+            reduce_this = ((depth == 1 && gives_check) ? -1 : 0);
             if constexpr (late_move_reductions) if (stage == stage_quiet && depth > 2 && move_num > 2 + 2 * is_pv) {
                 reduce_this = lmr_reduction(is_pv, depth, move_num);
                 if (in_check) --reduce_this;
-                if (gives_check) --reduce_this;
                 if (cutnode) ++reduce_this;
                 reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
                 reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
