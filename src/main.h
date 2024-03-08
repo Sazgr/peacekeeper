@@ -23,7 +23,7 @@ enum Features : bool {
 #ifdef DATAGEN
     late_move_pruning    = false,
 #else
-    late_move_pruning    = true,
+    late_move_pruning    = false,
 #endif
     late_move_reductions = true,
     check_extensions     = true,
