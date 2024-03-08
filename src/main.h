@@ -29,7 +29,7 @@ enum Features : bool {
     check_extensions     = true,
     internal_iterative_reduction = true,
     razoring             = true,
-    probcut              = true,
+    probcut              = false,
 };
 
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
