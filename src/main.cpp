@@ -881,6 +881,12 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 aspiration_delta = aspiration_delta * 2;
             } 
             if (result >= beta) {
+                if (!timer.stopped()) last_score = result;
+                if (sd.pv_table[0][0] == bestmove) {
+                    stability = std::min(stability + 1, 3);
+                } else {
+                    stability = 0;
+                }
                 if (!sd.pv_table[0][0].is_null()) {
                     other_move = bestmove;
                     bestmove = sd.pv_table[0][0];
