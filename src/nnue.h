@@ -6,7 +6,7 @@
 #include <array>
 #include <cstring>
 
-constexpr int buckets = 6;
+constexpr int buckets = 8;
 constexpr int input_size = 12 * 64 * buckets;
 constexpr int hidden_size = 768;
 constexpr int hidden_dsize = hidden_size * 2;
@@ -21,13 +21,13 @@ extern std::array<i32, output_size> hidden_bias;
 
 const int king_buckets[64] {
     0, 0, 1, 1, 1, 1, 0, 0,
-    0, 0, 1, 1, 1, 1, 0, 0,
-    2, 2, 3, 3, 3, 3, 2, 2,
     2, 2, 3, 3, 3, 3, 2, 2,
     4, 4, 5, 5, 5, 5, 4, 4,
     4, 4, 5, 5, 5, 5, 4, 4,
-    4, 4, 5, 5, 5, 5, 4, 4,
-    4, 4, 5, 5, 5, 5, 4, 4,
+    6, 6, 7, 7, 7, 7, 6, 6,
+    6, 6, 7, 7, 7, 7, 6, 6,
+    6, 6, 7, 7, 7, 7, 6, 6,
+    6, 6, 7, 7, 7, 7, 6, 6,
 };
 
 static inline int king_bucket(int king_square, bool king_color) {
