@@ -301,8 +301,11 @@ int main(int argc, char *argv[]) {
                 tc_stability_power = 0.001 * stoi(tokens[4]);
                 for (int i{}; i<4; ++i) tc_stability[i] = tc_stability_multiplier * std::pow(tc_stability_power, i) + tc_stability_base;
             }
-            if (tokens.size() >= 5 && tokens[2] == "probuct_margin" && tokens[3] == "value") {
-                probcut_margin = stoi(tokens[4]);
+            if (tokens.size() >= 5 && tokens[2] == "probuct_base" && tokens[3] == "value") {
+                probcut_base = stoi(tokens[4]);
+            }
+            if (tokens.size() >= 5 && tokens[2] == "probuct_improving_margin" && tokens[3] == "value") {
+                probcut_improving_margin = stoi(tokens[4]);
             }
             if (tokens.size() >= 5 && tokens[2] == "history_pruning_base" && tokens[3] == "value") {
                 history_pruning_base = stoi(tokens[4]);
@@ -660,7 +663,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (probcut) {
-        int probcut_beta = beta + probcut_margin;
+        int probcut_beta = beta + probcut_base - probcut_improving_margin * improving;
         if (!is_pv && depth >= 4 && ss->excluded.is_null() && abs(beta) < 18000 && (!tt_hit || static_eval >= probcut_beta || entry.depth < depth - 3)) {
             Movelist capture_list;
             position.legal_noisy(capture_list);
