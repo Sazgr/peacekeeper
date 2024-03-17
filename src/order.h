@@ -8,6 +8,8 @@ int history_bonus(int depth) {
 }
 struct Move_order_tables {
     Move killer_table[128][2]{};
+    int caphist_successes[12][64][7]{};
+    int caphist_all[12][64][7]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
     int* continuation_successes;
@@ -23,12 +25,28 @@ struct Move_order_tables {
     void reset() {
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
+                for (int k{}; k<7; ++k) {
+                    caphist_all[i][j][k] = 0;
+                    caphist_successes[i][j][k] = 0;
+                }
+            }
+        }
+        for (int i{}; i<12; ++i) {
+            for (int j{}; j<64; ++j) {
                 history_all[i][j] = 0;
                 history_successes[i][j] = 0;
             }
         }
     }
     void age() {
+        for (int i{}; i<12; ++i) {
+            for (int j{}; j<64; ++j) {
+                for (int k{}; k<7; ++k) {
+                    caphist_all[i][j][k] /= 2;
+                    caphist_successes[i][j][k] /= 2;
+                }
+            }
+        }
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
                 history_all[i][j] /= 2;
@@ -39,6 +57,20 @@ struct Move_order_tables {
             continuation_all[i] /= 2;
             continuation_successes[i] /= 2;
         }
+    }
+    void caphist_edit(Move move, int change, bool success) {
+        if (move.captured() == 12 && move.flag() != queen_pr) return;
+        caphist_all[move.piece()][move.end()][move.captured() >> 1] += change;
+        if (success) caphist_successes[move.piece()][move.end()][move.captured() >> 1] += change << 12;
+        if (caphist_all[move.piece()][move.end()][move.captured() >> 1] > 0x3FFFF) {
+            caphist_all[move.piece()][move.end()][move.captured() >> 1] /= 2;
+            caphist_successes[move.piece()][move.end()][move.captured() >> 1] /= 2;
+        }
+    }
+    int caphist_value(Move move) {
+        if (move.captured() == 12 && move.flag() != queen_pr) return 0;
+        if (!caphist_all[move.piece()][move.end()][move.captured() >> 1]) return (1 << 11);
+        return caphist_successes[move.piece()][move.end()][move.captured() >> 1] / caphist_all[move.piece()][move.end()][move.captured() >> 1]; //ranges from 0 to 4095
     }
     void history_edit(int piece, int to_square, int change, bool success) {
         history_all[piece][to_square] += change;
