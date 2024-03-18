@@ -689,7 +689,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
     if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
-    Movelist movelist;
+    Movelist movelist, noisy_list;
     for (int stage = stage_hash_move; stage != stage_finished; ++stage) { //generating and sorting one stage
         switch (stage) {
             case stage_hash_move:
@@ -709,6 +709,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 movelist.sort(0, movelist.size());
                 break;
             case stage_quiet:
+                noisy_list = movelist;
                 position.legal_quiet(movelist);
                 for (int i = 0; i < movelist.size(); ++i) {
                     int score{};
@@ -801,11 +802,17 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                     }
                     if (alpha >= beta) {
-                        if constexpr (history_heuristic) if (stage == stage_noisy) {
-                            for (int j{0}; j<i; ++j) {
-                                move_order.mvvlva_edit(movelist[j], history_bonus(depth), false);
+                        if constexpr (history_heuristic) {
+                            if (stage == stage_noisy) {
+                                for (int j{0}; j<i; ++j) {
+                                    move_order.mvvlva_edit(movelist[j], history_bonus(depth), false);
+                                }
+                                move_order.mvvlva_edit(bestmove, history_bonus(depth), true);
+                            } else if (stage == stage_quiet) {
+                                for (int j{0}; j<noisy_list.size(); ++j) {
+                                    move_order.mvvlva_edit(noisy_list[j], history_bonus(depth) / 2, false);
+                                }
                             }
-                            move_order.mvvlva_edit(bestmove, history_bonus(depth), true);
                         }
                         if constexpr (history_heuristic) if (stage == stage_quiet) for (int j{0}; j<i; ++j) {
                             move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus(depth), false);
