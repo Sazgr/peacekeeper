@@ -803,9 +803,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     if (alpha >= beta) {
                         if constexpr (history_heuristic) if (stage == stage_noisy) {
                             for (int j{0}; j<i; ++j) {
-                                move_order.mvvlva_edit(movelist[j], history_bonus(depth), false);
+                                move_order.mvvlva_edit(movelist[j], depth, false);
                             }
-                            move_order.mvvlva_edit(bestmove, history_bonus(depth), true);
+                            move_order.mvvlva_edit(bestmove, depth, true);
                         }
                         if constexpr (history_heuristic) if (stage == stage_quiet) for (int j{0}; j<i; ++j) {
                             move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus(depth), false);
