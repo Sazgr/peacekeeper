@@ -58,7 +58,7 @@ struct Move_order_tables {
         if (move.captured() == 12 && move.flag() != queen_pr) return;
         mvvlva_all[move.piece()][move.captured() >> 1] += change;
         if (success) mvvlva_successes[move.piece()][move.captured() >> 1] += change << 12;
-        if (mvvlva_all[move.piece()][move.captured() >> 1] > 0x3FFFF) {
+        if (mvvlva_all[move.piece()][move.captured() >> 1] > 0xFFFF) {
             mvvlva_all[move.piece()][move.captured() >> 1] /= 2;
             mvvlva_successes[move.piece()][move.captured() >> 1] /= 2;
         }
