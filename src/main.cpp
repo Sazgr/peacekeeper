@@ -699,7 +699,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             case stage_noisy:
                 position.legal_noisy(movelist);
                 for (int i = 0; i < movelist.size(); ++i) {
-                    movelist[i].add_sortkey(movelist[i].mvv_lva());
+                    movelist[i].add_sortkey(movelist[i].mvv_lva() + 2000 * see(position, movelist[i], -128));
                 }
                 movelist.sort(0, movelist.size());
                 break;
