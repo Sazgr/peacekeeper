@@ -667,6 +667,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             for (int i = 0; i < capture_list.size(); ++i) {
                 capture_list[i].add_sortkey(capture_list[i].mvv_lva());
             }
+            capture_list.sort(0, capture_list.size());
             int probcut_result = 0;
             for (int i = 0; i < capture_list.size(); ++i) {
                 if (!see(position, capture_list[i], 1)) continue;
