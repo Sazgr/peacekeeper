@@ -700,7 +700,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             case stage_noisy:
                 position.legal_noisy(movelist);
                 for (int i = 0; i < movelist.size(); ++i) {
-                    movelist[i].add_sortkey(movelist[i].mvv_lva());
+                    int score{};
+                    score += 4 * movelist[i].mvv_lva();
+                    if constexpr (history_heuristic) {
+                        score += move_order.caphist_value(movelist[i]);
+                    }
+                    movelist[i].add_sortkey(score);
                 }
                 movelist.sort(0, movelist.size());
                 break;
@@ -797,6 +802,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         memcpy(&sd.pv_table[ss->ply][1], &sd.pv_table[ss->ply + 1][0], sizeof(Move) * 127);
                     }
                     if (alpha >= beta) {
+                        if constexpr (history_heuristic) if (stage == stage_noisy) {
+                            for (int j{0}; j<i; ++j) {
+                                move_order.caphist_edit(movelist[j], history_bonus(depth), false);
+                            }
+                            move_order.caphist_edit(bestmove, history_bonus(depth), true);
+                        }
                         if constexpr (history_heuristic) if (stage == stage_quiet) for (int j{0}; j<i; ++j) {
                             move_order.history_edit(movelist[j].piece(), movelist[j].end(), history_bonus(depth), false);
                             move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
