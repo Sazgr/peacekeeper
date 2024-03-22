@@ -522,15 +522,43 @@ bool see(Position& position, Move move, const int threshold) {
 int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd) {
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes))) return 0;
     if (position.check()) {
-        int result = -20000;
         int best_value = -20000;
         position.nnue_update_accumulator(*sd.nnue);
+        int old_alpha{alpha};
+        Move bestmove{};
+        Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+            return entry.score;
+        }
+        int result = -20000;
+        Move hash_move = entry.bestmove;
+        bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
+        if (hash_move_usable) {//searching best move from hashtable
+            position.make_move<true>(hash_move, sd.nnue);
+            ss->move = hash_move;
+            ++sd.nodes;
+            (ss + 1)->ply = ss->ply + 1;
+            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            position.undo_move<true>(hash_move, sd.nnue);
+            if (result > best_value) {
+                best_value = result;
+                if (result > alpha) {
+                    alpha = result;
+                    bestmove = hash_move;
+                    if (alpha >= beta) {
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
+                        return alpha;
+                    }
+                }
+            }
+        }
         Movelist movelist;
         position.legal_moves(movelist);
         if (movelist.size() == 0) return -20000 + ss->ply;
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].evade_order());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
+            if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
@@ -541,10 +569,15 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                 best_value = result;
                 if (result > alpha) {
                     alpha = result;
-                    if (alpha >= beta) return alpha;
+                    bestmove = movelist[i];
+                    if (alpha >= beta) {
+                        if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
+                        return alpha;
+                    }
                 }
             }
         }
+        if (!timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha)?tt_exact:tt_alpha), bestmove, 0, ss->ply);
         return best_value;
     } else {
         table.prefetch(position.hashkey());
@@ -586,6 +619,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
+            if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
             if (!see(position, movelist[i], -274)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
