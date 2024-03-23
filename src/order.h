@@ -68,17 +68,17 @@ struct Move_order_tables {
         if (!caphist_all[move.captured()][move.end()]) return (1 << 11);
         return caphist_successes[move.captured()][move.end()] / caphist_all[move.captured()][move.end()]; //ranges from 0 to 4095
     }
-    void history_edit(int piece, int to_square, int change, bool success) {
-        history_all[piece][to_square] += change;
-        if (success) history_successes[piece][to_square] += change << 12;
-        if (history_all[piece][to_square] > 0x3FFFF) {
-            history_all[piece][to_square] /= 2;
-            history_successes[piece][to_square] /= 2;
+    void history_edit(Move move, int change, bool success) {
+        history_all[move.piece()][move.end()] += change;
+        if (success) history_successes[move.piece()][move.end()] += change << 12;
+        if (history_all[move.piece()][move.end()] > 0x3FFFF) {
+            history_all[move.piece()][move.end()] /= 2;
+            history_successes[move.piece()][move.end()] /= 2;
         }
     }
-    int history_value(int piece, int to_square) {
-        if (!history_all[piece][to_square]) return (1 << 11);
-        return history_successes[piece][to_square] / history_all[piece][to_square]; //ranges from 0 to 4095
+    int history_value(Move move) {
+        if (!history_all[move.piece()][move.end()]) return (1 << 11);
+        return history_successes[move.piece()][move.end()] / history_all[move.piece()][move.end()]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
