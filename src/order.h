@@ -6,12 +6,15 @@
 int history_bonus(int depth) {
     return depth * depth;
 }
+
 struct Move_order_tables {
     Move killer_table[128][2]{};
     int caphist_successes[13][64]{};
     int caphist_all[13][64]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
+    int butterfly_successes[2][64][64]{};
+    int butterfly_all[2][64][64]{};
     int* continuation_successes;
     int* continuation_all;
     Move_order_tables() {
@@ -79,6 +82,18 @@ struct Move_order_tables {
     int history_value(Move move) {
         if (!history_all[move.piece()][move.end()]) return (1 << 11);
         return history_successes[move.piece()][move.end()] / history_all[move.piece()][move.end()]; //ranges from 0 to 4095
+    }
+    void butterfly_edit(Move move, int change, bool success) {
+        butterfly_all[move.piece() & 1][move.start()][move.end()] += change;
+        if (success) butterfly_successes[move.piece() & 1][move.start()][move.end()] += change << 12;
+        if (butterfly_all[move.piece() & 1][move.start()][move.end()] > 0x3FFFF) {
+            butterfly_all[move.piece() & 1][move.start()][move.end()] /= 2;
+            butterfly_successes[move.piece() & 1][move.start()][move.end()] /= 2;
+        }
+    }
+    int butterfly_value(Move move) {
+        if (!butterfly_all[move.piece() & 1][move.start()][move.end()]) return (1 << 11);
+        return butterfly_successes[move.piece() & 1][move.start()][move.end()] / butterfly_all[move.piece() & 1][move.start()][move.end()]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
