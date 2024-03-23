@@ -586,6 +586,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
+            if (hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
             if (!see(position, movelist[i], -274)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
