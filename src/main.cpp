@@ -714,8 +714,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 for (int i = 0; i < movelist.size(); ++i) {
                     int score{};
                     if constexpr (history_heuristic) {
-                        score += move_order.history_value(movelist[i]) / 2;
-                        score += move_order.butterfly_value(movelist[i]) / 2;
+                        score += move_order.butterfly_value(movelist[i]);
                         score += move_order.continuation_value((ss - 2)->move, movelist[i]);
                         score += move_order.continuation_value((ss - 1)->move, movelist[i]);
                     }
@@ -810,13 +809,11 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                             move_order.caphist_edit(bestmove, history_bonus(depth), true);
                         }
                         if constexpr (history_heuristic) if (stage == stage_quiet) for (int j{0}; j<i; ++j) {
-                            move_order.history_edit(movelist[j], history_bonus(depth), false);
                             move_order.butterfly_edit(movelist[j], history_bonus(depth), false);
                             move_order.continuation_edit((ss - 2)->move, movelist[j], history_bonus(depth), false);
                             move_order.continuation_edit((ss - 1)->move, movelist[j], history_bonus(depth), false);
                         }
                         if constexpr (history_heuristic) if (bestmove.captured() == 12) {
-                            move_order.history_edit(bestmove, history_bonus(depth), true);
                             move_order.butterfly_edit(bestmove, history_bonus(depth), true);
                             move_order.continuation_edit((ss - 2)->move, bestmove, history_bonus(depth), true);
                             move_order.continuation_edit((ss - 1)->move, bestmove, history_bonus(depth), true);
