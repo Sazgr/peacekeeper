@@ -15,15 +15,21 @@ struct Move_order_tables {
     int history_all[12][64]{};
     int butterfly_successes[12][64][64]{};
     int butterfly_all[12][64][64]{};
-    int* continuation_successes;
-    int* continuation_all;
+    int* continuation_to_successes;
+    int* continuation_to_all;
+    int* continuation_from_successes;
+    int* continuation_from_all;
     Move_order_tables() {
-        continuation_successes = new int[12 * 64 * 12 * 64];
-        continuation_all = new int[12 * 64 * 12 * 64];
+        continuation_to_successes = new int[12 * 64 * 12 * 64];
+        continuation_to_all = new int[12 * 64 * 12 * 64];
+        continuation_from_successes = new int[12 * 64 * 12 * 64];
+        continuation_from_all = new int[12 * 64 * 12 * 64];
     }
     ~Move_order_tables() {
-        delete[] continuation_successes;
-        delete[] continuation_all;
+        delete[] continuation_to_successes;
+        delete[] continuation_to_all;
+        delete[] continuation_from_successes;
+        delete[] continuation_from_all;
     }
     void reset() {
         for (int i{}; i<13; ++i) {
@@ -61,8 +67,10 @@ struct Move_order_tables {
             }
         }
         for (int i{}; i<12 * 64 * 12 * 64; ++i) {
-            continuation_all[i] /= 2;
-            continuation_successes[i] /= 2;
+            continuation_to_all[i] /= 2;
+            continuation_to_successes[i] /= 2;
+            continuation_from_all[i] /= 2;
+            continuation_from_successes[i] /= 2;
         }
     }
     void caphist_edit(Move move, int change, bool success) {
@@ -105,16 +113,26 @@ struct Move_order_tables {
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
-        continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
-        if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
-        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
-            continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
-            continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+        continuation_to_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
+        continuation_from_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()] += change;
+        if (success) {
+            continuation_to_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
+            continuation_from_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()] += change << 10;
+        }
+        if (continuation_to_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
+            continuation_to_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+            continuation_to_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+        }
+        if (continuation_from_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()] > 0x3FFFF) {
+            continuation_from_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()] /= 2;
+            continuation_from_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()] /= 2;
         }
     }
     int continuation_value(Move previous, Move current) {
         if (previous.is_null()) return 512;
-        return (8192 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
+        int continuation_to_value = (8192 + continuation_to_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_to_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
+        int continuation_from_value = (8192 + continuation_from_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()]) / (16 + continuation_from_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.start()]); //ranges from 0 to 1023
+        return (continuation_to_value + continuation_from_value) / 2;
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {
