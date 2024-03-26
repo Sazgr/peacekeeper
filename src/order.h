@@ -6,6 +6,9 @@
 int history_bonus(int depth) {
     return depth * depth;
 }
+int continuation_bonus(int depth) {
+    return 4 * depth;
+}
 
 struct Move_order_tables {
     Move killer_table[128][2]{};
