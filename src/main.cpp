@@ -703,7 +703,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     int score{};
                     score += 4 * movelist[i].mvv_lva();
                     if constexpr (history_heuristic) {
-                        score += move_order.caphist_value(movelist[i]);
+                        score += move_order.caphist_value(movelist[i]) / 2;
+                        score += move_order.caphist_large_value(movelist[i]) / 2;
                     }
                     movelist[i].add_sortkey(score);
                 }
@@ -806,8 +807,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         if constexpr (history_heuristic) if (stage == stage_noisy) {
                             for (int j{0}; j<i; ++j) {
                                 move_order.caphist_edit(movelist[j], history_bonus(depth), false);
+                                move_order.caphist_large_edit(movelist[j], history_bonus(depth), false);
                             }
                             move_order.caphist_edit(bestmove, history_bonus(depth), true);
+                            move_order.caphist_large_edit(bestmove, history_bonus(depth), true);
                         }
                         if constexpr (history_heuristic) if (stage == stage_quiet) for (int j{0}; j<i; ++j) {
                             move_order.history_edit(movelist[j], history_bonus(depth), false);

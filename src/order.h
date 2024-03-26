@@ -11,6 +11,8 @@ struct Move_order_tables {
     Move killer_table[128][2]{};
     int caphist_successes[13][64]{};
     int caphist_all[13][64]{};
+    int caphist_large_successes[12][13][64]{};
+    int caphist_large_all[12][13][64]{};
     int history_successes[12][64]{};
     int history_all[12][64]{};
     int butterfly_successes[12][64][64]{};
@@ -30,6 +32,10 @@ struct Move_order_tables {
             for (int j{}; j<64; ++j) {
                 caphist_all[i][j] = 0;
                 caphist_successes[i][j] = 0;
+                for (int k{}; k<12; ++k) {
+                    caphist_large_all[k][i][j] = 0;
+                    caphist_large_successes[k][i][j] = 0;
+                }
             }
         }
         for (int i{}; i<12; ++i) {
@@ -48,6 +54,10 @@ struct Move_order_tables {
             for (int j{}; j<64; ++j) {
                 caphist_all[i][j] /= 2;
                 caphist_successes[i][j] /= 2;
+                for (int k{}; k<12; ++k) {
+                    caphist_large_all[k][i][j] /= 2;
+                    caphist_large_successes[k][i][j] /= 2;
+                }
             }
         }
         for (int i{}; i<12; ++i) {
@@ -78,6 +88,20 @@ struct Move_order_tables {
         if (move.captured() == 12 && move.flag() != queen_pr) return 0;
         if (!caphist_all[move.captured()][move.end()]) return (1 << 11);
         return caphist_successes[move.captured()][move.end()] / caphist_all[move.captured()][move.end()]; //ranges from 0 to 4095
+    }
+    void caphist_large_edit(Move move, int change, bool success) {
+        if (move.captured() == 12 && move.flag() != queen_pr) return;
+        caphist_large_all[move.piece()][move.captured()][move.end()] += change;
+        if (success) caphist_large_successes[move.piece()][move.captured()][move.end()] += change << 12;
+        if (caphist_large_all[move.piece()][move.captured()][move.end()] > 0x3FFFF) {
+            caphist_large_all[move.piece()][move.captured()][move.end()] /= 2;
+            caphist_large_successes[move.piece()][move.captured()][move.end()] /= 2;
+        }
+    }
+    int caphist_large_value(Move move) {
+        if (move.captured() == 12 && move.flag() != queen_pr) return 0;
+        if (!caphist_large_all[move.piece()][move.captured()][move.end()]) return (1 << 11);
+        return caphist_large_successes[move.piece()][move.captured()][move.end()] / caphist_large_all[move.piece()][move.captured()][move.end()]; //ranges from 0 to 4095
     }
     void history_edit(Move move, int change, bool success) {
         history_all[move.piece()][move.end()] += change;
