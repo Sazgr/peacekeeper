@@ -104,7 +104,7 @@ struct Move_order_tables {
         return butterfly_successes[move.piece()][move.start()][move.end()] / butterfly_all[move.piece()][move.start()][move.end()]; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
-        if (previous.is_null()) return;
+        if (previous.is_null() || previous.captured() != 12) return;
         continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
         if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
         if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
