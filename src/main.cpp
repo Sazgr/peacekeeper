@@ -758,14 +758,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     extend_this = -1 - (entry.score >= beta + 30);
                 }
             }
+            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && !in_check && move_num >= (2 + depth * depth) * (improving + 1)) {
+                break;
+            }
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             bool gives_check = position.check();
             //Standard Late Move Pruning
-            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && !in_check && !gives_check && move_num >= (2 + depth * depth) * (improving + 1)) {
-                position.undo_move<true>(movelist[i], sd.nnue);
-                break;
-            }
             ++sd.nodes;
             ++move_num;
             (ss + 1)->ply = ss->ply + 1;
