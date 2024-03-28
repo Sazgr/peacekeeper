@@ -16,20 +16,21 @@
 #endif
 
 enum Features : bool {
-    null_move_pruning    = true,
-    static_null_move     = true,
-    killer_heuristic     = true,
-    history_heuristic    = true,
+    null_move_pruning     = true,
+    static_null_move      = true,
+    killer_heuristic      = true,
+    history_heuristic     = true,
 #ifdef DATAGEN
-    late_move_pruning    = false,
+    late_move_pruning     = false,
 #else
-    late_move_pruning    = true,
+    late_move_pruning     = true,
 #endif
-    late_move_reductions = true,
-    check_extensions     = true,
+    late_move_reductions  = true,
+    check_extensions      = true,
     internal_iterative_reduction = true,
-    razoring             = true,
-    probcut              = true,
+    razoring              = true,
+    probcut               = true,
+    countermove_heuristic = true,
 };
 
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};

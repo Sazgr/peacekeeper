@@ -9,6 +9,7 @@ int history_bonus(int depth) {
 
 struct Move_order_tables {
     Move killer_table[128][2]{};
+    Move counter_table[12][64]{};
     int caphist_successes[13][64]{};
     int caphist_all[13][64]{};
     int history_successes[12][64]{};
@@ -124,6 +125,12 @@ struct Move_order_tables {
     }
     Move killer_move(int ply, int index) {
         return killer_table[ply][index];
+    }
+    void counter_add(Move previous, Move current) {
+        counter_table[previous.piece()][previous.end()] = current;
+    }
+    Move counter_move(Move previous) {
+        return counter_table[previous.piece()][previous.end()];
     }
 };
 

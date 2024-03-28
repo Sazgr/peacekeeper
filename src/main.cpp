@@ -725,6 +725,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
                         if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
                     }
+                    if constexpr (countermove_heuristic) {
+                        if (movelist[i] == move_order.counter_move((ss - 1)->move)) score += 1000;
+                    }
                     movelist[i].add_sortkey(score);
                 }
                 movelist.sort(0, movelist.size());
@@ -783,12 +786,12 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
             } else {
                 result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this - reduce_this, -alpha - 1, -alpha, ss + 1, sd, true);
-                if (reduce_this) {
-                    if (alpha < result) {
-                        result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
-                    }
+                if (result > alpha && reduce_this) {
+                    bool deeper = result > best_value + 100;
+                    reduce_this = -deeper;
+                    result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this - reduce_this, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
                 }
-                if (alpha < result && is_pv) {
+                if (result > alpha && is_pv) {
                     result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
                 }
             }
@@ -823,6 +826,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         }
                         if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                         if constexpr (killer_heuristic) if (bestmove.captured() == 12) move_order.killer_add(bestmove, ss->ply);
+                        if constexpr (countermove_heuristic) if (bestmove.captured() == 12) move_order.counter_add((ss - 1)->move, bestmove);
                         return alpha;
                     }
                 }
