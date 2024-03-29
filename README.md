@@ -30,7 +30,7 @@ Ratings prefixed with ~ have large error margins because of few games played.
 Note that ratings from different rating lists are not comparable to each other.
 
 Version | CCRL Blitz | CCRL 40/15 | CCRL FRC | CEGT 40/4 | CEGT 40/20
---------|------------|------------|----------|-----------------------
+--------|------------|------------|----------|-----------|-----------
 v1.10   | 2385       | 2347       | *        | *         | *
 v1.20   | 2509       | 2450       | *        | *         | *
 v1.30   | 2600       | 2594       | *        | *         | *
