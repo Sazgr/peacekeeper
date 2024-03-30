@@ -586,7 +586,10 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
-            if (!see(position, movelist[i], -274)) continue;
+            if (!see(position, movelist[i], -274)) {
+                best_value = std::max(best_value, static_eval - 274);
+                continue;
+            }
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
@@ -656,7 +659,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             return (abs(result) > 18000 ? beta : result);
         }
     }
-    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval - 63 + 182 * depth <= alpha) {
+    if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval + 30 + 90 * depth * depth <= alpha) {
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (probcut) {
