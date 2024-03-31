@@ -725,9 +725,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
                         if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
                     }
-                    if constexpr (countermove_heuristic) {
-                        if (movelist[i] == move_order.counter_move((ss - 1)->move)) score += 1000;
-                    }
                     movelist[i].add_sortkey(score);
                 }
                 movelist.sort(0, movelist.size());
@@ -826,7 +823,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                         }
                         if (ss->excluded.is_null()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, depth, ss->ply);
                         if constexpr (killer_heuristic) if (bestmove.captured() == 12) move_order.killer_add(bestmove, ss->ply);
-                        if constexpr (countermove_heuristic) if (bestmove.captured() == 12) move_order.counter_add((ss - 1)->move, bestmove);
                         return alpha;
                     }
                 }
