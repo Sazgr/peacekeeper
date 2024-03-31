@@ -792,7 +792,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this - reduce_this, -alpha - 1, -alpha, ss + 1, sd, !cutnode);
                 }
                 if (result > alpha && is_pv) {
-                    result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this, -beta, -alpha, ss + 1, sd, false);
+                    result = -pvs(position, timer, table, move_order, depth - reduce_all + extend_this - reduce_this, -beta, -alpha, ss + 1, sd, false);
                 }
             }
             position.undo_move<true>(movelist[i], sd.nnue);
