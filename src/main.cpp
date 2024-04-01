@@ -872,7 +872,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
-                if (output) print_uci(out, last_score, depth, sd.nodes * threads, static_cast<int>(sd.nodes * threads / timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv);
+                if (output) print_uci(out, last_score, depth, sd.nodes * threads, static_cast<int>(sd.nodes * threads / timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
                 ++depth;
                 if (sd.pv_table[0][0] == bestmove) {
                     stability = std::min(stability + 1, 3);
@@ -881,7 +881,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 }
                 if (!sd.pv_table[0][0].is_null()) {
                     bestmove = sd.pv_table[0][0];
-                    memcpy(&sd.pv_table[0][0], &sd.pv[0], sizeof(Move) * 128);
                 }
                 time_scale = tc_stability[stability];
                 if (timer.check(sd.nodes, depth)) {break;}
@@ -900,7 +899,6 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             if (result >= beta) {
                 if (!sd.pv_table[0][0].is_null()) {
                     bestmove = sd.pv_table[0][0];
-                    memcpy(&sd.pv_table[0][0], &sd.pv[0], sizeof(Move) * 128);
                 }
                 if (!bestmove.is_null() && timer.check(sd.nodes, depth, true, (movelist.size() == 1 ? 0.5 : 1) * time_scale * aspiration_beta_timescale)) {break;}
                 if (aspiration_delta < 300) beta += aspiration_delta;
