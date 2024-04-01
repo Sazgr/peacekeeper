@@ -660,7 +660,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         return quiescence(position, timer, table, alpha, beta, ss, sd);
     }
     if constexpr (probcut) {
-        int probcut_beta = beta + probcut_margin;
+        int probcut_beta = beta + probcut_margin - 50 * improving;
         if (!is_pv && depth >= 4 && ss->excluded.is_null() && abs(beta) < 18000 && (!tt_hit || static_eval >= probcut_beta || entry.depth < depth - 3)) {
             Movelist capture_list;
             position.legal_noisy(capture_list);
