@@ -689,7 +689,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
-    if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
+    if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) depth--;
     Movelist movelist;
     for (int stage = stage_hash_move; stage != stage_finished; ++stage) { //generating and sorting one stage
         switch (stage) {
