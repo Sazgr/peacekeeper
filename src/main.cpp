@@ -645,6 +645,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     Move hash_move = entry.bestmove;
     bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
+    if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) depth -= 1;
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && !(tt_hit && entry.type == tt_alpha && entry.score < beta) && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
@@ -689,7 +690,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     if constexpr (check_extensions) if (in_check) {reduce_all -= 1;} //check extension
-    if constexpr (internal_iterative_reduction) if (depth >= 6 && !hash_move_usable) reduce_all += 1;
     Movelist movelist;
     for (int stage = stage_hash_move; stage != stage_finished; ++stage) { //generating and sorting one stage
         switch (stage) {
