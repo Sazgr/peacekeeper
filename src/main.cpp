@@ -682,8 +682,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 }
                 position.undo_move<true>(capture_list[i], sd.nnue);
                 if (probcut_result >= probcut_beta) {
-                    table.insert(position.hashkey(), probcut_result, tt_beta, capture_list[i], depth - 3, ss->ply);
-                    return probcut_result;
+                    table.insert(position.hashkey(), (probcut_result + beta) / 2, tt_beta, capture_list[i], depth - 3, ss->ply);
+                    return (probcut_result + beta) / 2;
                 }
             }
         }
