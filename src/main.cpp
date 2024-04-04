@@ -751,6 +751,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 if (singular_score < singular_beta) {
                     if (!is_pv && singular_score < singular_beta - double_extension_margin && ss->double_extensions <= 4) {
                         extend_this = 2;
+                        depth += depth < 8;
                         ++ss->double_extensions;
                     } else {
                         extend_this = 1;
