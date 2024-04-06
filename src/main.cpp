@@ -657,7 +657,8 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval + 30 + 90 * depth * depth <= alpha) {
-        return quiescence(position, timer, table, alpha, beta, ss, sd);
+        result = quiescence(position, timer, table, alpha, beta, ss, sd);
+        if (result <= alpha) return result;
     }
     if constexpr (probcut) {
         int probcut_beta = beta + probcut_margin;
