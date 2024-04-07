@@ -161,7 +161,8 @@ int main(int argc, char *argv[]) {
             if (movetime == 0 && calculate == true) {
                 mytime = position.side_to_move ? wtime : btime;
                 int myinc{position.side_to_move ? winc : binc};
-                if (movestogo == 0 || movestogo > std::max(20, (40 - position.ply / 5))) {movestogo = std::max(20, (40 - position.ply / 5));} //estimated number of moves until fresh time or end of game
+                int expected_movestogo = std::max(20, (35 - position.ply / 8));
+                if (movestogo == 0 || movestogo > expected_movestogo) movestogo = expected_movestogo; //estimated number of moves until fresh time or end of game
                 movetime = (mytime / movestogo + winc * 3 / 4); //time usable in terms of time remaining and increment
                 movetime -= move_overhead; //accounting for lag, network delay, etc
                 movetime = std::max(1, movetime); //no negative movetime
