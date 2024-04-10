@@ -1,25 +1,21 @@
-![Logo](peacekeeper-large.jpg)
+## Peacekeeper
+
+<img src="logo.svg" alt="Logo" width="200" height="200">
 
 *Solitudinem faciunt, pacem appellant*  
 They make a desert and call it peace  
 **- Tacitus**
 
-## Peacekeeper
-
-A fairly strong and probably [superhuman](https://dokumen.tips/documents/the-level-of-play-in-ccrl-and-fide-rating-vs-fidepdfthe-level-of-play-in-ccrl-and.html) UCI Chess Engine, written in C++17.
+A strong UCI Chess Engine written in C++17.
 
 Achieved top 100 in [CCRL Blitz](https://web.archive.org/web/20230918233014/http://ccrl.chessdom.com/ccrl/404/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list&profile_step=50&profile_numbers=1&print=Results+table&print=LOS+table&table_size=100&ct_from_elo=0&ct_to_elo=10000&match_length=30&cross_tables_for_best_versions_only=1&sort_tables=by+rating&diag=0&reference_list=None&recalibrate=no) and [CCRL 40/15](https://web.archive.org/web/20230916145417/http://ccrl.chessdom.com/ccrl/4040/cgi/compare_engines.cgi?class=Single-CPU+engines&only_best_in_class=on&num_best_in_class=1&print=Rating+list&profile_step=50&profile_numbers=1&print=Results+table&print=LOS+table&table_size=100&ct_from_elo=0&ct_to_elo=10000&match_length=30&cross_tables_for_best_versions_only=1&sort_tables=by+rating&diag=0&reference_list=None&recalibrate=no) with hand crafted evaluation (HCE).
 
-### Engine Issues
-
-Issues on github can be created for any bugs, other issues found, or questions.
-
-### Compilation
+### Download / Compilation
 
 Peacekeeper can be compiled from source with GNU C++ or Clang with `g++ -Ofast -DNDEBUG -march=native -o peacekeeper src/*.cpp`
 MSVC intrinsics are supported as well as C++20 bit intrinsics, so the engine can in theory be compiled on a large range of compilers.
 
-Windows (and formerly linux) executables are provided for each release in the [Releases](https://github.com/Sazgr/peacekeeper/releases) section.
+Windows (and formerly linux) executables are provided to download for each release in the [Releases](https://github.com/Sazgr/peacekeeper/releases) section.
 
 ### Ratings
 
@@ -42,6 +38,10 @@ v2.00   | *          | 3285       | 3529     | 3194      | *
 v2.10   | 3392       | 3337       | 3599     | 3274      | 3253
 v2.20   | 3468       | 3393       | 3685     | 3337      | *
 v2.30   | 3521       | 3427       | 3754     | *         | 3372
+
+### Issues
+
+Issues on github can be created for any bugs, other issues found, or questions.
 
 ### Features
 
@@ -130,7 +130,8 @@ In no particular order.
 - Andrew Zhuo (@StackFish5) for constantly looking over my code
 - @albert-wastakentoomuch, @ccao25 for help in generating data
 - PeSTO for starter piece square tables
-- [Chess cache](https://www.chesscache.com/ChessEngines.html) (Dusan Stamenkovic) and Graham from CCRL for logos
+- Desmos for making the logo (lol)
+- [Chess cache](https://www.chesscache.com/ChessEngines.html) (Dusan Stamenkovic) and Graham from CCRL for other logos that you can use
 - Some engines which I got inspiration from (in alphabetical order) along with their authors:
     - [Altair](https://github.com/Alex2262/AltairChessEngine)
     - [Blunder](https://github.com/algerbrex/blunder)
