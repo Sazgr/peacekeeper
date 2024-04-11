@@ -758,7 +758,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 } else if (singular_beta >= beta) {
                     return singular_beta;
                 } else if (entry.score >= beta) {
-                    extend_this = -1 - (entry.score >= beta + 30);
+                    ss->excluded = movelist[i];
+                    int singular_score = pvs(position, timer, table, move_order, singular_depth, beta - 1, beta, ss, sd, cutnode);
+                    ss->excluded = Move{};
+                    if (singular_score >= beta) return entry.score;
                 }
             }
             position.make_move<true>(movelist[i], sd.nnue);
