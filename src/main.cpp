@@ -635,6 +635,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     int reduce_all{1};
     Move bestmove{};
     bool improving = !in_check && ss->excluded.is_null() && ((ss - 2)->static_eval != -20001 ? ss->static_eval > (ss - 2)->static_eval : (ss - 4)->static_eval != -20001 ? ss->static_eval > (ss - 4)->static_eval : true);
+    bool failing = !in_check && ss->excluded.is_null() && ((ss - 2)->static_eval != -20001 ? ss->static_eval < (ss - 2)->static_eval - 30 : (ss - 4)->static_eval != -20001 ? ss->static_eval < (ss - 4)->static_eval - 30 : true);
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
         return (static_eval + beta) / 2;
     }
@@ -650,7 +651,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         ss->move = Move{};
         ++sd.nodes;
         (ss + 1)->ply = ss->ply + 1;
-        result = -pvs(position, timer, table, move_order, std::max(0, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd, !cutnode);
+        result = -pvs(position, timer, table, move_order, std::max(0, depth - reduce_all - static_cast<int>(nmp_base + depth / nmp_depth_divisor + improving - failing + std::sqrt(static_eval - beta) / nmp_eval_divisor)), -beta, -beta + 1, ss + 1, sd, !cutnode);
         position.undo_null();
         if (!timer.stopped() && result >= beta) {
             return (abs(result) > 18000 ? beta : result);
