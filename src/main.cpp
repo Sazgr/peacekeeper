@@ -559,6 +559,9 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         if (entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
             return entry.score;
         }
+        if (entry.type != tt_none && entry.full_hash == position.hashkey() && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= best_value) || (entry.type == tt_beta && entry.score >= best_value))) {
+            return entry.score;
+        }        
         int result = -20000;
         Move hash_move = entry.bestmove;
         bool hash_move_usable = entry.type != tt_none && entry.full_hash == position.hashkey() && !hash_move.is_null() && hash_move.captured() != 12 && position.board[hash_move.start()] == hash_move.piece() && position.board[hash_move.end()] == hash_move.captured();
