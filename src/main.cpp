@@ -770,7 +770,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ss->move = movelist[i];
             bool gives_check = position.check();
             //Standard Late Move Pruning
-            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && !in_check && !gives_check && move_num >= (2 + depth * depth) * (improving + 1)) {
+            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && !in_check && !gives_check && move_num >= (2 + depth * depth * 3 / 4) * (improving + 1)) {
                 position.undo_move<true>(movelist[i], sd.nnue);
                 break;
             }
