@@ -785,6 +785,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 if (gives_check) --reduce_this;
                 if (cutnode) ++reduce_this;
                 if (improving) --reduce_this;
+                if (!in_check && abs(alpha) < 18000) reduce_this += std::clamp((static_eval - alpha) / 500, 0, 2);
                 reduce_this -= std::clamp(static_cast<int>(movelist[i].sortkey()) / history_lmr_divisor - 3, -2, 1); //reduce more for moves with worse history
                 reduce_this = std::clamp(reduce_this, 0, depth - reduce_all - 1);
             }
