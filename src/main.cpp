@@ -590,6 +590,10 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
             if (!see(position, movelist[i], -274)) continue;
+            if (see(position, movelist[i], beta - static_eval + 800)) {
+                best_value = beta;
+                break;
+            }
             position.make_move<true>(movelist[i], sd.nnue);
             ss->move = movelist[i];
             ++sd.nodes;
