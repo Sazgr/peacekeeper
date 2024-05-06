@@ -13,6 +13,8 @@ Peacekeeper Chess Engine
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma comment(linker, "/STACK:33554432")
+
 #include "fixed_vector.h"
 #include "main.h"
 #include "nnue.h"
