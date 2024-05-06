@@ -629,6 +629,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     }
     table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
+    Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
+    bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
+    if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+        return entry.score;
+    }
+    Move hash_move = entry.bestmove;
+    bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     int static_eval = in_check ? -20001 : position.static_eval(*sd.nnue);
     if (in_check) position.nnue_update_accumulator(*sd.nnue);
     ss->static_eval = static_eval;
@@ -643,13 +650,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if constexpr (static_null_move) if (depth < 6 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && (static_eval - futility_base - futility_depth_margin * (depth - improving) >= beta)) {
         return (static_eval + beta) / 2;
     }
-    Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
-    bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
-    if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
-        return entry.score;
-    }
-    Move hash_move = entry.bestmove;
-    bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     if constexpr (null_move_pruning) if (depth > 2 && !(ss - 1)->move.is_null() && !is_pv && !in_check && ss->excluded.is_null() && beta > -18000 && static_eval > beta && !(tt_hit && (entry.type == tt_alpha || entry.type == tt_exact) && entry.score < beta) && (position.eval_phase() >= 4)) {
         position.make_null();
         ss->move = Move{};
