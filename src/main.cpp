@@ -616,6 +616,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
 }
 
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd, bool cutnode) {
+    table.prefetch(position.hashkey());
     bool is_root = (ss->ply == 0);
     bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes, 0))) return 0;
@@ -627,7 +628,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         sd.pv_table[ss->ply][0] = Move{};
         return (ss->ply & 1) ? std::max(0, 3 * position.eval_phase() - 12) : std::min(0, 12 - 3 * position.eval_phase());
     }
-    table.prefetch(position.hashkey());
     bool in_check = position.check();//condition for NMP, futility, and LMR
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
