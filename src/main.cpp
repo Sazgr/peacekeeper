@@ -727,8 +727,6 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                     if constexpr (killer_heuristic) {
                         if (movelist[i] == move_order.killer_move(ss->ply, 0)) score += 1600;
                         if (movelist[i] == move_order.killer_move(ss->ply, 1)) score += 800;
-                        if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 0)) score += 400;
-                        if (ss->ply > 2 && movelist[i] == move_order.killer_move(ss->ply - 2, 1)) score += 200;
                     }
                     if constexpr (countermove_heuristic) {
                         if (movelist[i] == move_order.counter_move((ss - 1)->move)) score += 1000;
