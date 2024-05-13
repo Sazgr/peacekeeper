@@ -77,7 +77,7 @@ template <bool side> u64 perft_f(Position& position, int depth);
 u64 perft_split(Position& position, int depth, std::vector<std::pair<Move, int>>& list);
 void datagen_thread(int thread_id, std::string out_base, int soft_nodes_limit);
 bool see(Position& position, Move move, const int threshold);
-int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd);
+int quiescence(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int alpha, int beta, Search_stack* ss, Search_data& sd);
 int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int depth, int alpha, int beta, Search_stack* ss, Search_data& sd, bool cutnode);
 void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
 int iterative_deepening_base(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, Move& bestmove, Search_data& sd, bool output);
