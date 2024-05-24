@@ -743,9 +743,14 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         for (int i{}; i < movelist.size(); ++i) {
             if (movelist[i] == ss->excluded) continue;
             if (stage != stage_hash_move && hash_move_usable && movelist[i] == hash_move) continue; //continuing if we already searched the hash move
-            if (stage == stage_quiet && move_num != 0 && depth < 5 && movelist[i].sortkey() < history_pruning_base - history_pruning_depth_margin * depth - history_pruning_pv_margin * is_pv - history_pruning_improving_margin * improving) continue;
-            if (stage == stage_noisy && move_num != 0 && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
-            if (stage == stage_quiet && move_num != 0 && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
+            if (!is_root && best_value > -18000) {
+                //history pruning
+                if (stage == stage_quiet && depth < 5 && movelist[i].sortkey() < history_pruning_base - history_pruning_depth_margin * depth - history_pruning_pv_margin * is_pv - history_pruning_improving_margin * improving) continue;
+                //noisy see pruning
+                if (stage == stage_noisy && !see(position, movelist[i], -see_noisy_constant - see_noisy_linear * depth - see_noisy_quadratic * depth * depth)) continue;
+                //quiet see pruning
+                if (stage == stage_quiet && !see(position, movelist[i], -see_quiet_constant - see_quiet_linear * depth - see_quiet_quadratic * depth * depth)) continue;
+            }
             int extend_this = 0, reduce_this = 0;
             if (stage == stage_hash_move && !is_root && depth >= (6 + is_pv) && (entry.type == tt_exact || entry.type == tt_beta) && no_mate(entry.score, entry.score) && entry.depth >= depth - 3) {
                 int singular_beta = entry.score - depth * singular_extension_margin / 16;
