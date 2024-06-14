@@ -631,7 +631,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool in_check = position.check();//condition for NMP, futility, and LMR
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
-    if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+    if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta)) && abs(entry.score) < 18000) {
         return entry.score;
     }
     Move hash_move = entry.bestmove;
