@@ -632,7 +632,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
     if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
-        return entry.score;
+        return std::clamp(entry.score, -18000, 18000);
     }
     Move hash_move = entry.bestmove;
     bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
@@ -777,7 +777,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
             ss->move = movelist[i];
             bool gives_check = position.check();
             //Standard Late Move Pruning
-            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && !in_check && !gives_check && move_num >= (2 + depth * depth) * (improving + 1)) {
+            if constexpr (late_move_pruning) if (stage == stage_quiet && depth < 8 && best_value > -18000 && !in_check && !gives_check && move_num >= (2 + depth * depth) * (improving + 1)) {
                 position.undo_move<true>(movelist[i], sd.nnue);
                 break;
             }
