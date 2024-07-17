@@ -174,6 +174,8 @@ template <bool side_to_attack> u64 Position::attack_map(u64 occ) {
 }
 
 template <Move_types types, bool side> void Position::gen_legal(Movelist& movelist) {
+    assert(popcount(pieces[black_king]) == 1);
+    assert(popcount(pieces[white_king]) == 1);
     constexpr bool gen_quiet = types & 1;
     constexpr bool gen_noisy = types & 2;
     movelist.clear();
