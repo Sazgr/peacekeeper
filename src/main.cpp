@@ -881,8 +881,9 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
             }
         }
         sd.pv_table[0][0] = Move{};
+        int used_depth = depth;
         for (; depth < 64;) {
-            result = pvs(position, timer, table, move_order, depth, alpha, beta, &search_stack[2], sd, false);
+            result = pvs(position, timer, table, move_order, used_depth, alpha, beta, &search_stack[2], sd, false);
             if (alpha < result && result < beta) {
                 if (!timer.stopped()) last_score = result;
                 if (output) print_uci(out, last_score, depth, sd.nodes * threads, static_cast<int>(sd.nodes * threads / timer.elapsed()), static_cast<int>(timer.elapsed()*1000), sd.pv_table[0]);
@@ -901,6 +902,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 aspiration_delta = 28;
                 alpha = last_score - aspiration_delta;
                 beta = last_score + aspiration_delta;
+                used_depth = depth;
                 continue;
             }
             if (result <= alpha) {
@@ -908,6 +910,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (aspiration_delta < 300) alpha -= aspiration_delta;
                 else alpha = -20001;
                 aspiration_delta = aspiration_delta * 2;
+                used_depth = depth;
             } 
             if (result >= beta) {
                 if (!sd.pv_table[0][0].is_null()) {
@@ -917,6 +920,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 if (aspiration_delta < 300) beta += aspiration_delta;
                 else beta = 20001;
                 aspiration_delta = aspiration_delta * 2;
+                used_depth = std::max(used_depth - 1, depth - 5);
             }
         }
         sd.depth_reached = depth;
