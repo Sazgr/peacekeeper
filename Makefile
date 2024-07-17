@@ -5,7 +5,7 @@ SOURCES := src/*.cpp
 
 CXX := g++
 
-CXXFLAGS := -pthread -std=c++17 -O3 -ffast-math -DNDEBUG -Wl,--stack,33554432 -march=native -static -DVERSION=-1 -DNETWORK_FILE=\"$(EVALFILE)\"
+CXXFLAGS := -pthread -std=c++17 -O3 -ffast-math -DNDEBUG -DSPSA -Wl,--stack,33554432 -march=native -static -DVERSION=-1 -DNETWORK_FILE=\"$(EVALFILE)\"
 
 LINKER :=
 
