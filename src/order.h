@@ -2,9 +2,10 @@
 #define PEACEKEEPER_HISTORY
 
 #include "move.h"
+#include <algorithm>
 
 int history_bonus(int depth) {
-    return 5 * depth - 2;
+    return std::min(5 * depth - 2, 40);
 }
 
 struct Move_order_tables {
