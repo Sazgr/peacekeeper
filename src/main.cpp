@@ -904,7 +904,7 @@ void iterative_deepening(Position& position, Stop_timer& timer, Hashtable& table
                 continue;
             }
             if (result <= alpha) {
-                //no time checks here because we failed low, we allow for some extra time
+                if (!bestmove.is_null() && timer.check(sd.nodes, depth, false)) {break;}
                 if (aspiration_delta < 300) alpha -= aspiration_delta;
                 else alpha = -20001;
                 aspiration_delta = aspiration_delta * 2;
