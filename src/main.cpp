@@ -638,6 +638,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     int static_eval = in_check ? -20001 : position.static_eval(*sd.nnue);
     if (in_check) position.nnue_update_accumulator(*sd.nnue);
+    if (ss->excluded.is_null() && tt_hit && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= static_eval) || (entry.type == tt_beta && entry.score >= static_eval)) && abs(entry.score) < 18000) {
+        static_eval = entry.score;
+    }
     ss->static_eval = static_eval;
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
