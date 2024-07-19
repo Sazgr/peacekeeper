@@ -143,7 +143,7 @@ struct Move_order_tables {
     void correction_edit(u64 pawn_hash, bool side_to_move, int correction_bonus) {
         correction[pawn_hash & 0xffffull][side_to_move][0] += correction_bonus;
         ++correction[pawn_hash & 0xffffull][side_to_move][1];
-        if (correction[pawn_hash & 0xffffull][side_to_move][1] > 0x3FFFF) {
+        if (correction[pawn_hash & 0xffffull][side_to_move][1] > 0xFFF) {
             correction[pawn_hash & 0xffffull][side_to_move][0] /= 2;
             correction[pawn_hash & 0xffffull][side_to_move][1] /= 2;
         }

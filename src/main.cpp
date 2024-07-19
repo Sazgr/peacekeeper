@@ -851,7 +851,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         else return 0;
     }
     if (!in_check && (bestmove == Move{} || bestmove.captured() == 12) && !(best_value >= beta && best_value <= static_eval) && !(bestmove == Move{} && best_value >= static_eval)) {
-        int correction_bonus = std::clamp(best_value - static_eval, -256, 256);
+        int correction_bonus = std::clamp(best_value - static_eval, -512, 512);
         move_order.correction_edit(position.pawn_hashkey(), position.side_to_move, correction_bonus);
     }
     if (bestmove.is_null()) sd.pv_table[ss->ply][0] = Move{};
