@@ -2,6 +2,7 @@
 #define PEACEKEEPER_HISTORY
 
 #include "move.h"
+#include <iostream>
 
 int history_bonus(int depth) {
     return depth * depth;
@@ -16,6 +17,7 @@ struct Move_order_tables {
     int history_all[12][64]{};
     int butterfly_successes[12][64][64]{};
     int butterfly_all[12][64][64]{};
+    int correction[65536][2][2]{};
     int* continuation_successes;
     int* continuation_all;
     Move_order_tables() {
@@ -41,6 +43,12 @@ struct Move_order_tables {
                     butterfly_all[i][j][k] = 0;
                     butterfly_successes[i][j][k] = 0;
                 }
+            }
+        }
+        for (int i{}; i<65536; ++i) {
+            for (int j{}; j<2; ++j) {
+                correction[i][j][0] = 0;
+                correction[i][j][1] = 0;
             }
         }
     }
@@ -131,6 +139,17 @@ struct Move_order_tables {
     }
     Move counter_move(Move previous) {
         return counter_table[previous.piece()][previous.end()];
+    }
+    void correction_edit(u64 pawn_hash, bool side_to_move, int correction_bonus) {
+        correction[pawn_hash & 0xffffull][side_to_move][0] += correction_bonus;
+        ++correction[pawn_hash & 0xffffull][side_to_move][1];
+        if (correction[pawn_hash & 0xffffull][side_to_move][1] > 0x3FFFF) {
+            correction[pawn_hash & 0xffffull][side_to_move][0] /= 2;
+            correction[pawn_hash & 0xffffull][side_to_move][1] /= 2;
+        }
+    }
+    int correction_value(u64 pawn_hash, bool side_to_move) {
+        return correction[pawn_hash & 0xffffull][side_to_move][0] / (correction[pawn_hash & 0xffffull][side_to_move][1] + 1);
     }
 };
 

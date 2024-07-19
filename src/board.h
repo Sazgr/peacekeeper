@@ -106,6 +106,7 @@ public:
     u64 xray_rook_attacks(u64 occupied, u64 blockers, int from_square);
     u64 xray_bishop_attacks(u64 occupied, u64 blockers, int from_square);
     u64 hashkey() {return hash[ply];}
+    u64 pawn_hashkey() {return pawn_hash[ply];}
 public:
     u64 pieces[13] {
         0x000000000000ff00,
@@ -140,6 +141,7 @@ public:
     int castling_rights[1024][4] {0, 7, 56, 63};
     int halfmove_clock[1024] {0};
     u64 hash[1024] {};
+    u64 pawn_hash[1024] {};
     int eval_phase();
     int mg_static_eval{};
     int eg_static_eval{};

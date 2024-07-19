@@ -539,6 +539,7 @@ template <bool update_nnue> void Position::make_move(Move move, NNUE* nnue) {
     }
     ++ply;
     hash[ply] = hash[ply - 1];
+    pawn_hash[ply] = pawn_hash[ply - 1];
     hash[ply] ^= zobrist_black;
     int start = move.start();
     int end = move.end();
@@ -665,6 +666,7 @@ template <bool update_nnue> void Position::undo_move(Move move, NNUE* nnue) {
 
 template <bool update_nnue, bool update_hash> inline void Position::fill_sq(int sq, int piece, NNUE* nnue) {
     if constexpr (update_hash) {
+        pawn_hash[ply] ^= zobrist_pawn[board[sq]][sq] ^ zobrist_pawn[piece][sq];
         hash[ply] ^= zobrist_pieces[board[sq]][sq] ^ zobrist_pieces[piece][sq];
     }
     if constexpr (update_nnue) {
@@ -1005,4 +1007,6 @@ void Position::zobrist_update() {
         hash[ply] ^= zobrist_castling[castling_rights[ply][i]];
     }
     hash[ply] ^= zobrist_enpassant[enpassant_square[ply]];
+    pawn_hash[ply] = 0;
+    for (int i{0}; i < 64; ++i) pawn_hash[ply] ^= zobrist_pawn[board[i]][i];
 }

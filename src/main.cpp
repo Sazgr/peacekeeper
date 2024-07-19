@@ -638,6 +638,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
     int static_eval = in_check ? -20001 : position.static_eval(*sd.nnue);
     if (in_check) position.nnue_update_accumulator(*sd.nnue);
+    static_eval += move_order.correction_value(position.pawn_hashkey(), position.side_to_move);
     ss->static_eval = static_eval;
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
     int move_num{0};
@@ -848,6 +849,10 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         sd.pv_table[ss->ply][0] = Move{};
         if (in_check) return -20000 + ss->ply;
         else return 0;
+    }
+    if (!in_check && (bestmove == Move{} || bestmove.captured() == 12) && !(best_value >= beta && best_value <= static_eval) && !(bestmove == Move{} && best_value >= static_eval)) {
+        int correction_bonus = std::clamp(best_value - static_eval, -256, 256);
+        move_order.correction_edit(position.pawn_hashkey(), position.side_to_move, correction_bonus);
     }
     if (bestmove.is_null()) sd.pv_table[ss->ply][0] = Move{};
     if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
