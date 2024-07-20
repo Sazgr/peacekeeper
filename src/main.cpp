@@ -631,8 +631,13 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool in_check = position.check();//condition for NMP, futility, and LMR
     Element entry = table.query(position.hashkey()).adjust_score(ss->ply);
     bool tt_hit = entry.type != tt_none && entry.full_hash == position.hashkey();
+    bool would_tt_cutoff = false;
     if (!is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
         return std::clamp(entry.score, -18000, 18000);
+    }
+    if (is_pv && ss->excluded.is_null() && tt_hit && entry.depth >= depth + 2 && (entry.type == tt_exact || (entry.type == tt_alpha && entry.score <= alpha) || (entry.type == tt_beta && entry.score >= beta))) {
+        would_tt_cutoff = true;
+        --depth;
     }
     Move hash_move = entry.bestmove;
     bool hash_move_usable = tt_hit && !hash_move.is_null() && position.board[hash_move.start()] == hash_move.piece();
@@ -850,7 +855,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         else return 0;
     }
     if (bestmove.is_null()) sd.pv_table[ss->ply][0] = Move{};
-    if (ss->excluded.is_null() && !timer.stopped()) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
+    if (ss->excluded.is_null() && !timer.stopped() && !would_tt_cutoff) table.insert(position.hashkey(), best_value, ((alpha > old_alpha) ? tt_exact : tt_alpha), bestmove, depth, ss->ply);
     return timer.stopped() ? 0 : best_value;
 }
 
