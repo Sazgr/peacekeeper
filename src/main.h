@@ -35,33 +35,33 @@ enum Features : bool {
 
 spsa std::array<double, 4> tc_stability{2.05, 1.20, 0.90, 0.85};
 
-spsa double futility_base = 35;
-spsa double futility_depth_margin = 91;
-spsa double aspiration_base = 26;
+spsa double futility_base = 34;
+spsa double futility_depth_margin = 85;
+spsa double aspiration_base = 28;
 spsa double lmr_base = 0.94;
 spsa double lmr_nopv_divisor = 2.26;
 spsa double lmr_ispv_divisor = 4.13;
-spsa double nmp_base = 2.14999999;
-spsa double nmp_depth_divisor = 3.91;
-spsa double nmp_eval_divisor = 12.0;
+spsa double nmp_base = 2.16999999;
+spsa double nmp_depth_divisor = 4.22;
+spsa double nmp_eval_divisor = 11.7;
 spsa double see_noisy_constant = 282.4;
 spsa double see_noisy_linear = 0.0;
 spsa double see_noisy_quadratic = 21.0;
 spsa double see_quiet_constant = 232.4;
 spsa double see_quiet_linear = 23.6;
 spsa double see_quiet_quadratic = 23.0;
-spsa int singular_extension_margin = 63;
-spsa int double_extension_margin = 16;
-spsa double aspiration_beta_timescale = 1.32;
-spsa double tc_stability_base = 0.84;
-spsa double tc_stability_multiplier = 1.31;
-spsa double tc_stability_power = 0.331;
-spsa int probcut_margin = 208;
-spsa int history_pruning_base = 3058;
-spsa int history_pruning_depth_margin = 533;
-spsa int history_pruning_pv_margin = 518;
-spsa int history_pruning_improving_margin = 210;
-spsa int history_lmr_divisor = 951;
+spsa int singular_extension_margin = 65;
+spsa int double_extension_margin = 15;
+spsa double aspiration_beta_timescale = 1.31;
+spsa double tc_stability_base = 0.83;
+spsa double tc_stability_multiplier = 1.35;
+spsa double tc_stability_power = 0.334;
+spsa int probcut_margin = 220;
+spsa int history_pruning_base = 3012;
+spsa int history_pruning_depth_margin = 579;
+spsa int history_pruning_pv_margin = 535;
+spsa int history_pruning_improving_margin = 231;
+spsa int history_lmr_divisor = 1049;
 
 int lmr_reduction_table[2][64][220];
 
