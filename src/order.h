@@ -2,6 +2,7 @@
 #define PEACEKEEPER_HISTORY
 
 #include "move.h"
+#include <algorithm>
 
 int history_bonus(int depth) {
     return depth * depth;
@@ -10,36 +11,31 @@ int history_bonus(int depth) {
 struct Move_order_tables {
     Move killer_table[128][2]{};
     Move counter_table[12][64]{};
-    int caphist_successes[13][64]{};
-    int caphist_all[13][64]{};
-    int history_successes[12][64]{};
-    int history_all[12][64]{};
-    int butterfly_successes[12][64][64]{};
-    int butterfly_all[12][64][64]{};
-    int* continuation_successes;
-    int* continuation_all;
+    int caphist[13][64]{};
+    constexpr static int caphist_max = 1 << 11;
+    int history[12][64]{};
+    constexpr static int history_max = 1 << 11;
+    int butterfly[12][64][64]{};
+    constexpr static int butterfly_max = 1 << 11;
+    int* continuation;
+    constexpr static int continuation_max = 1 << 9;
     Move_order_tables() {
-        continuation_successes = new int[12 * 64 * 12 * 64];
-        continuation_all = new int[12 * 64 * 12 * 64];
+        continuation = new int[12 * 64 * 12 * 64];
     }
     ~Move_order_tables() {
-        delete[] continuation_successes;
-        delete[] continuation_all;
+        delete[] continuation;
     }
     void reset() {
         for (int i{}; i<13; ++i) {
             for (int j{}; j<64; ++j) {
-                caphist_all[i][j] = 0;
-                caphist_successes[i][j] = 0;
+                caphist[i][j] = 0;
             }
         }
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
-                history_all[i][j] = 0;
-                history_successes[i][j] = 0;
+                history[i][j] = 0;
                 for (int k{}; k<64; ++k) {
-                    butterfly_all[i][j][k] = 0;
-                    butterfly_successes[i][j][k] = 0;
+                    butterfly[i][j][k] = 0;
                 }
             }
         }
@@ -47,75 +43,52 @@ struct Move_order_tables {
     void age() {
         for (int i{}; i<13; ++i) {
             for (int j{}; j<64; ++j) {
-                caphist_all[i][j] /= 2;
-                caphist_successes[i][j] /= 2;
+                caphist[i][j] /= 2;
             }
         }
         for (int i{}; i<12; ++i) {
             for (int j{}; j<64; ++j) {
-                history_all[i][j] /= 2;
-                history_successes[i][j] /= 2;
+                history[i][j] /= 2;
                 for (int k{}; k<64; ++k) {
-                    butterfly_all[i][j][k] /= 2;
-                    butterfly_successes[i][j][k] /= 2;
+                    butterfly[i][j][k] /= 2;
                 }
             }
         }
         for (int i{}; i<12 * 64 * 12 * 64; ++i) {
-            continuation_all[i] /= 2;
-            continuation_successes[i] /= 2;
+            continuation[i] /= 2;
         }
     }
     void caphist_edit(Move move, int change, bool success) {
         if (move.captured() == 12 && move.flag() != queen_pr) return;
-        caphist_all[move.captured()][move.end()] += change;
-        if (success) caphist_successes[move.captured()][move.end()] += change << 12;
-        if (caphist_all[move.captured()][move.end()] > 0x3FFFF) {
-            caphist_all[move.captured()][move.end()] /= 2;
-            caphist_successes[move.captured()][move.end()] /= 2;
-        }
+        change = std::clamp(success ? change : -change, -caphist_max, caphist_max);
+        caphist[move.captured()][move.end()] += change - caphist[move.captured()][move.end()] * std::abs(change) / caphist_max;
     }
     int caphist_value(Move move) {
         if (move.captured() == 12 && move.flag() != queen_pr) return 0;
-        if (!caphist_all[move.captured()][move.end()]) return (1 << 11);
-        return caphist_successes[move.captured()][move.end()] / caphist_all[move.captured()][move.end()]; //ranges from 0 to 4095
+        return caphist[move.captured()][move.end()] + caphist_max; //ranges from 0 to 4095
     }
     void history_edit(Move move, int change, bool success) {
-        history_all[move.piece()][move.end()] += change;
-        if (success) history_successes[move.piece()][move.end()] += change << 12;
-        if (history_all[move.piece()][move.end()] > 0x3FFFF) {
-            history_all[move.piece()][move.end()] /= 2;
-            history_successes[move.piece()][move.end()] /= 2;
-        }
+        change = std::clamp(success ? change : -change, -history_max, history_max);
+        history[move.piece()][move.end()] += change - history[move.piece()][move.end()] * std::abs(change) / history_max;
     }
     int history_value(Move move) {
-        if (!history_all[move.piece()][move.end()]) return (1 << 11);
-        return history_successes[move.piece()][move.end()] / history_all[move.piece()][move.end()]; //ranges from 0 to 4095
+        return history[move.piece()][move.end()] + history_max; //ranges from 0 to 4095
     }
     void butterfly_edit(Move move, int change, bool success) {
-        butterfly_all[move.piece()][move.start()][move.end()] += change;
-        if (success) butterfly_successes[move.piece()][move.start()][move.end()] += change << 12;
-        if (butterfly_all[move.piece()][move.start()][move.end()] > 0x3FFFF) {
-            butterfly_all[move.piece()][move.start()][move.end()] /= 2;
-            butterfly_successes[move.piece()][move.start()][move.end()] /= 2;
-        }
+        change = std::clamp(success ? change : -change, -butterfly_max, butterfly_max);
+        butterfly[move.piece()][move.start()][move.end()] += change - butterfly[move.piece()][move.start()][move.end()] * std::abs(change) / butterfly_max;
     }
     int butterfly_value(Move move) {
-        if (!butterfly_all[move.piece()][move.start()][move.end()]) return (1 << 11);
-        return butterfly_successes[move.piece()][move.start()][move.end()] / butterfly_all[move.piece()][move.start()][move.end()]; //ranges from 0 to 4095
+        return butterfly[move.piece()][move.start()][move.end()] + butterfly_max; //ranges from 0 to 4095
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
-        continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
-        if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
-        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
-            continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
-            continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
-        }
+        change = std::clamp(success ? change : -change, -continuation_max, continuation_max);
+        continuation[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change - continuation[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] * std::abs(change) / continuation_max;
     }
     int continuation_value(Move previous, Move current) {
         if (previous.is_null()) return 512;
-        return (8192 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
+        return continuation[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] + continuation_max; //ranges from 0 to 1023
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {
