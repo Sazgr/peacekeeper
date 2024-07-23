@@ -17,13 +17,15 @@ struct Move_order_tables {
     constexpr static int history_max = 1 << 11;
     int butterfly[12][64][64]{};
     constexpr static int butterfly_max = 1 << 11;
-    int* continuation;
-    constexpr static int continuation_max = 1 << 9;
+    int* continuation_successes;
+    int* continuation_all;
     Move_order_tables() {
-        continuation = new int[12 * 64 * 12 * 64];
+        continuation_successes = new int[12 * 64 * 12 * 64];
+        continuation_all = new int[12 * 64 * 12 * 64];
     }
     ~Move_order_tables() {
-        delete[] continuation;
+        delete[] continuation_successes;
+        delete[] continuation_all;
     }
     void reset() {
         for (int i{}; i<13; ++i) {
@@ -55,7 +57,8 @@ struct Move_order_tables {
             }
         }
         for (int i{}; i<12 * 64 * 12 * 64; ++i) {
-            continuation[i] /= 2;
+            continuation_all[i] /= 2;
+            continuation_successes[i] /= 2;
         }
     }
     void caphist_edit(Move move, int change, bool success) {
@@ -83,12 +86,16 @@ struct Move_order_tables {
     }
     void continuation_edit(Move previous, Move current, int change, bool success) {
         if (previous.is_null()) return;
-        change = std::clamp(success ? change : -change, -continuation_max, continuation_max);
-        continuation[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change - continuation[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] * std::abs(change) / continuation_max;
+        continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change;
+        if (success) continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] += change << 10;
+        if (continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] > 0x3FFFF) {
+            continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+            continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] /= 2;
+        }
     }
     int continuation_value(Move previous, Move current) {
         if (previous.is_null()) return 512;
-        return continuation[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()] + continuation_max; //ranges from 0 to 1023
+        return (8192 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {
