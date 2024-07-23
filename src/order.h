@@ -126,6 +126,10 @@ struct Move_order_tables {
     Move killer_move(int ply, int index) {
         return killer_table[ply][index];
     }
+    void clear_killers(int ply) {
+        killer_table[ply][0] = Move{};
+        killer_table[ply][1] = Move{};
+    }
     void counter_add(Move previous, Move current) {
         counter_table[previous.piece()][previous.end()] = current;
     }

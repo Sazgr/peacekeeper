@@ -640,6 +640,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     if (in_check) position.nnue_update_accumulator(*sd.nnue);
     ss->static_eval = static_eval;
     ss->double_extensions = (is_root ? 0 : (ss - 1)->double_extensions);
+    move_order.clear_killers(ss->ply + 2);
     int move_num{0};
     int result{};
     int old_alpha{alpha};
