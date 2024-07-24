@@ -593,6 +593,10 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         for (int i = 0; i < movelist.size(); ++i) {
             if (!see(position, movelist[i], -274)) continue;
             position.make_move<true>(movelist[i], sd.nnue);
+            if (i > 2 && !position.check() && movelist[i].end() != (ss - 1)->move.end()) {
+                position.undo_move<true>(movelist[i], sd.nnue);
+                continue;
+            }
             ss->move = movelist[i];
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
