@@ -521,7 +521,7 @@ bool see(Position& position, Move move, const int threshold) {
     return side != (attacker & 1);
 }
 
-int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alpha, int beta, Search_stack* ss, Search_data& sd) {
+int quiescence(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tables& move_order, int alpha, int beta, Search_stack* ss, Search_data& sd) {
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes))) return 0;
     if (position.check()) {
         int result = -20000;
@@ -537,7 +537,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             ss->move = movelist[i];
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
-            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            result = -quiescence(position, timer, table, move_order, -beta, -alpha, ss + 1, sd);
             position.undo_move<true>(movelist[i], sd.nnue);
             if (result > best_value) {
                 best_value = result;
@@ -572,7 +572,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             ss->move = hash_move;
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
-            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            result = -quiescence(position, timer, table, move_order, -beta, -alpha, ss + 1, sd);
             position.undo_move<true>(hash_move, sd.nnue);
             if (result > best_value) {
                 best_value = result;
@@ -588,7 +588,14 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
         }
         Movelist movelist;
         position.legal_noisy(movelist);
-        for (int i = 0; i < movelist.size(); ++i) movelist[i].add_sortkey(movelist[i].mvv_lva());
+        for (int i = 0; i < movelist.size(); ++i) {
+            int score{};
+            score += 4 * movelist[i].mvv_lva();
+            if constexpr (history_heuristic) {
+                score += move_order.caphist_value(movelist[i]);
+            }
+            movelist[i].add_sortkey(score);
+        }
         movelist.sort(0, movelist.size());
         for (int i = 0; i < movelist.size(); ++i) {
             if (!see(position, movelist[i], -274)) continue;
@@ -596,7 +603,7 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
             ss->move = movelist[i];
             ++sd.nodes;
             (ss + 1)->ply = ss->ply + 1;
-            result = -quiescence(position, timer, table, -beta, -alpha, ss + 1, sd);
+            result = -quiescence(position, timer, table, move_order, -beta, -alpha, ss + 1, sd);
             position.undo_move<true>(movelist[i], sd.nnue);
             if (result > best_value) {
                 best_value = result;
@@ -604,6 +611,10 @@ int quiescence(Position& position, Stop_timer& timer, Hashtable& table, int alph
                     alpha = result;
                     bestmove = movelist[i];
                     if (alpha >= beta) {
+                        for (int j{0}; j<i; ++j) {
+                            move_order.caphist_edit(movelist[j], 1, false);
+                        }
+                        move_order.caphist_edit(bestmove, 1, true);
                         if (!timer.stopped()) table.insert(position.hashkey(), alpha, tt_beta, bestmove, 0, ss->ply);
                         return alpha;
                     }
@@ -621,7 +632,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
     bool is_pv = (beta - alpha) != 1;
     if (timer.stopped() || (!(sd.nodes & 4095) && timer.check(sd.nodes, 0))) return 0;
     if (depth <= 0) {
-        return quiescence(position, timer, table, alpha, beta, ss, sd);
+        return quiescence(position, timer, table, move_order, alpha, beta, ss, sd);
     }
     if (depth == 1 && is_pv) sd.pv_table[ss->ply + 1][0] = Move{};
     if (position.draw(ss->ply > 2 ? 1 : 2)) {
@@ -662,7 +673,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
         }
     }
     if constexpr (razoring) if (depth < 4 && !is_pv && !in_check && ss->excluded.is_null() && static_eval + 30 + 90 * depth * depth <= alpha) {
-        return quiescence(position, timer, table, alpha, beta, ss, sd);
+        return quiescence(position, timer, table, move_order, alpha, beta, ss, sd);
     }
     if constexpr (probcut) {
         int probcut_beta = beta + probcut_margin;
@@ -681,7 +692,7 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 ++sd.nodes;
                 (ss + 1)->ply = ss->ply + 1;
                 position.make_move<true>(capture_list[i], sd.nnue);
-                probcut_result = -quiescence(position, timer, table, -probcut_beta, -probcut_beta + 1, ss + 1, sd);
+                probcut_result = -quiescence(position, timer, table, move_order, -probcut_beta, -probcut_beta + 1, ss + 1, sd);
                 if (probcut_result >= probcut_beta) {
                     probcut_result = -pvs(position, timer, table, move_order, depth - 4, -probcut_beta, -probcut_beta + 1, ss + 1, sd, !cutnode);
                 }

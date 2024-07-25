@@ -4,7 +4,7 @@
 #include "move.h"
 
 int history_bonus(int depth) {
-    return depth * depth;
+    return 4 * depth * depth;
 }
 
 struct Move_order_tables {
@@ -115,7 +115,7 @@ struct Move_order_tables {
     }
     int continuation_value(Move previous, Move current) {
         if (previous.is_null()) return 512;
-        return (8192 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (16 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
+        return (32768 + continuation_successes[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]) / (64 + continuation_all[previous.piece() * 64 * 12 * 64 + previous.end() * 12 * 64 + current.piece() * 64 + current.end()]); //ranges from 0 to 1023
     }
     void killer_add(Move move, int ply) {
         if (killer_table[ply][0] != move) {
