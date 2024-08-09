@@ -6,12 +6,12 @@
 #include <array>
 #include <cstring>
 
-constexpr int buckets = 8;
+constexpr int buckets = 1;
 constexpr int input_size = 12 * 64 * buckets;
-constexpr int hidden_size = 1536;
+constexpr int hidden_size = 1024;
 constexpr int hidden_dsize = hidden_size * 2;
 constexpr int output_size = 1;
-constexpr int input_quantization = 181;
+constexpr int input_quantization = 64;
 constexpr int hidden_quantization = 128;
 
 extern std::array<i16, input_size * hidden_size> input_weights;
@@ -50,9 +50,9 @@ static inline int index(int piece, int square, bool view, int king_square) {
     return square + (piece_type) * 64 + !(piece_color ^ view) * 64 * 6 + king_bucket(king_square, view) * 64 * 12;
 }
 
-static inline i16 screlu(i16 input) {
-    i16 clipped = std::clamp<i16>(input, 0, input_quantization);
-    return clipped * clipped;
+static inline i16 relu(i16 input) {
+    i16 clipped = std::max<i16>(input, 0);
+    return clipped;
 }
 
 struct Accumulator {
