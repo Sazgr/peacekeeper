@@ -719,8 +719,9 @@ int pvs(Position& position, Stop_timer& timer, Hashtable& table, Move_order_tabl
                 for (int i = 0; i < movelist.size(); ++i) {
                     int score{};
                     if constexpr (history_heuristic) {
-                        score += move_order.history_value(movelist[i]) / 2;
-                        score += move_order.butterfly_value(movelist[i]) / 2;
+                        int history_value = move_order.history_value(movelist[i]);
+                        int butterfly_value = move_order.butterfly_value(movelist[i]);
+                        score += std::max(history_value, butterfly_value) / 2 + history_value / 4 + butterfly_value / 4;
                         score += move_order.continuation_value((ss - 2)->move, movelist[i]);
                         score += move_order.continuation_value((ss - 1)->move, movelist[i]);
                     }
