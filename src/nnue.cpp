@@ -221,20 +221,20 @@ i32 NNUE::evaluate(bool side) {
     const register_type* weights = reinterpret_cast<register_type*>(hidden_weights.data());
     for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
         const register_type clipped = register_min_16(register_max_16(accumulator_us[i], screlu_min), screlu_max);
-        res = register_add_32(res, register_madd_16(register_mul_16(clipped, clipped), weights[i]));
+        res = register_add_32(res, register_madd_16(register_mul_16(clipped, weights[i]), accumulator_us[i]));
     }
     for (int i = 0; i < hidden_size / I16_STRIDE; ++i) {
         const register_type clipped = register_min_16(register_max_16(accumulator_them[i], screlu_min), screlu_max);
-        res = register_add_32(res, register_madd_16(register_mul_16(clipped, clipped), weights[i + hidden_size / I16_STRIDE]));
+        res = register_add_32(res, register_madd_16(register_mul_16(clipped, weights[i + hidden_size / I16_STRIDE]), accumulator_them[i]));
     }
     i32 output = register_sum_32(res) + (hidden_bias[0] * input_quantization);
 #else
     i32 output = hidden_bias[0] * input_quantization;
     for (int i = 0; i < hidden_size; ++i) {
-        output += screlu(accumulator[side][i]) * hidden_weights[i];
+        output += xcrelu(accumulator[side][i]) * hidden_weights[i];
     }
     for (int i = 0; i < hidden_size; ++i) {
-        output += screlu(accumulator[!side][i]) * hidden_weights[hidden_size + i];
+        output += xcrelu(accumulator[!side][i]) * hidden_weights[hidden_size + i];
     }
 #endif
     return (output / input_quantization * 400) / input_quantization / hidden_quantization;
