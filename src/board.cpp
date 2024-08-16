@@ -131,6 +131,7 @@ bool Position::check() {
 bool Position::draw(int num_reps = 2) {
     if (halfmove_clock[ply] < 8) return false;
     if (halfmove_clock[ply] >= 100) return true;
+    if (!pieces[0] && !pieces[1] && eval_phase() <= 1) return true;
     u64 curr_hash = hash[ply];
     int repeats{};
     for (int i{ply - 4}; i >= ply - halfmove_clock[ply] && repeats < num_reps; i -= 2) repeats += (hash[i] == curr_hash);
